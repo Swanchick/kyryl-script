@@ -1,19 +1,9 @@
 mod lexer;
 
-use lexer::lexer::Lexer;
-use lexer::token::Token; 
+use lexer::lexer::Lexer; 
 
 fn main() {
     let mut lexer = Lexer::new("test.kys").unwrap();
-
-    let expected_tokens: Vec<Token> = vec![
-        Token::Identifier("print".to_string()),
-        Token::LeftParenthesis,
-        Token::StringLiteral("Hello World".to_string()),
-        Token::RightParenthesis,
-        Token::Semicolon
-    ];
-
     let line = String::from("print(\"Hello World\");");
 
     let tokens = lexer.read_line(&line).unwrap();
@@ -27,6 +17,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lexer::token::Token;
 
     #[test]
     fn test_lexer() {

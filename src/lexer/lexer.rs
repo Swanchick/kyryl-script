@@ -1,14 +1,11 @@
 use std::fs::read_to_string;
 use std::io;
-use std::thread::current;
 
 
-use crate::lexer::token::{Token, TokenLine};
-use crate::lexer::token::{is_keyword, is_symbol};
+use super::token::{Token, TokenLine};
+use super::token::{is_keyword};
 
-use crate::lexer::lexer_state::LexerState;
-
-use super::token;
+use super::lexer_state::LexerState;
 
 
 pub struct Lexer {

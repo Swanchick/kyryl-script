@@ -1,21 +1,5 @@
 use std::fmt;
 
-pub fn is_symbol(c: &char) -> bool {
-    match c {
-        '(' => true,
-        ')' => true,
-        '{' => true,
-        '}' => true,
-        ';' => true,
-        '=' => true,
-        '+' => true,
-        '-' => true,
-        '*' => true,
-        '/' => true,
-        _ => false
-    }
-}
-
 pub fn is_keyword(text: &str) -> bool {
     match text {
         "let" => true,
