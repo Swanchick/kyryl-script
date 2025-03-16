@@ -3,14 +3,13 @@ mod lexer;
 use lexer::lexer::Lexer; 
 
 fn main() {
-    let mut lexer = Lexer::new("test.kys").unwrap();
-    let line = String::from("print(\"Hello World\");");
+    let mut lexer = Lexer::load("test.kys").unwrap();
+    
+    lexer.lexer().unwrap();
 
-    let tokens = lexer.read_line(&line).unwrap();
-
-    for token in tokens.iter() {
+    for token in lexer.get_tokens() {
         println!("{}", token);
-    }  
+    }
 }
 
 
@@ -21,7 +20,7 @@ mod tests {
 
     #[test]
     fn test_lexer() {
-        let mut lexer = Lexer::new("test.kys").unwrap();
+        let mut lexer = Lexer::load("test.kys").unwrap();
 
         let expected_tokens: Vec<Token> = vec![
             Token::Identifier("print".to_string()),
@@ -33,9 +32,15 @@ mod tests {
 
         let line = String::from("print(\"Hello World\");");
 
-        let tokens = lexer.read_line(&line).unwrap();
+        let tokens = lexer.lex_line(&line).unwrap();
 
         assert_eq!(tokens, expected_tokens);
+    }
+
+
+    #[test]
+    fn test_lexer_from_file() {
+        // let mut lexer = Lexer::load("test.kys").unwrap();
     }
 }
 

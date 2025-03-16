@@ -15,6 +15,7 @@ pub fn is_keyword(text: &str) -> bool {
         "bool" => true,
         "true" => true,
         "false" => true,
+        "using" => true,
         _ => false
         
     }
@@ -60,23 +61,5 @@ impl fmt::Display for Token {
             Token::Multiply => write!(f, "multiply"),
             Token::Divide => write!(f, "divide")
         }
-    }
-}
-
-pub struct TokenLine {
-    token_line: Vec<Token>
-}
-
-impl TokenLine {
-    pub fn new(token_line: Vec<Token>) -> TokenLine {
-        TokenLine {
-            token_line: token_line
-        }
-    }
-
-    pub fn show(&self) {
-        // for token in self.token_line.iter() {
-        //     println!("{} -> {}", token.value(), token.token_type());
-        // }
     }
 }

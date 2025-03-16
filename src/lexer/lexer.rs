@@ -1,16 +1,14 @@
 use std::fs::read_to_string;
 use std::io;
 
-
-use super::token::{Token, TokenLine};
-use super::token::{is_keyword};
+use super::token::Token;
+use super::token::is_keyword;
 
 use super::lexer_state::LexerState;
 
 
 pub struct Lexer {
-    lines: Vec<TokenLine>,
-    indexes: Vec<i32>,
+    tokens: Vec<Token>,
     source_path: String,
     source_lines: Vec<String>,
     source: String,
@@ -18,24 +16,31 @@ pub struct Lexer {
     output: Vec<String>
 }
 
-
 impl Lexer {
-    pub fn new(source_path: &str) -> io::Result<Lexer> {
+    pub fn new(source: String) -> Lexer {
+        let source_lines: Vec<String> = source.lines().map(|s| s.to_string()).collect();
+        
+        Lexer {
+            tokens: Vec::new(),
+            source_path: String::new(),
+            output: Vec::new(),
+            source_lines: source_lines,
+            source: source,
+            current_line: 0,
+        }
+    }
+    
+    pub fn load(source_path: &str) -> io::Result<Lexer> {
         let source: String = read_to_string(source_path)?;
         let source_lines: Vec<String> = source.lines().map(|s| s.to_string()).collect();
-        let lines: Vec<TokenLine> = Vec::new();
-        let indexes: Vec<i32> = Vec::new();
-        let output: Vec<String> = Vec::new();
-        let current_line: i32 = 0;
 
         Ok(Lexer {
-            lines,
-            indexes,
+            tokens: Vec::new(),
+            output: Vec::new(),
+            current_line: 0,
             source_path: source_path.to_string(),
             source_lines,
             source,
-            current_line,
-            output
         })
     }
 
@@ -64,7 +69,7 @@ impl Lexer {
         }
     }
 
-    pub fn read_line(&mut self, line: &str) -> io::Result<Vec<Token>> {
+    pub fn lex_line(&mut self, line: &str) -> io::Result<Vec<Token>> {
         let mut tokens: Vec<Token> = Vec::new();
         let mut cur: usize = 0;
         let mut state = LexerState::None;
@@ -144,9 +149,21 @@ impl Lexer {
         
         Ok(tokens)
     }
-    
-    pub fn lexer(&self) -> io::Result<()> {
-        todo!()
+
+    pub fn lexer(&mut self) -> io::Result<()> {
+        
+        for line in self.source_lines.clone() {
+            let tokens = self.lex_line(&line)?;
+            self.tokens.extend(tokens);
+        }
+
+        Ok(())
+    }
+
+    pub fn get_tokens(&self) -> &Vec<Token> {
+        &self.tokens
     }
 }
 
+// Todo:
+// - Implement the lexer method
