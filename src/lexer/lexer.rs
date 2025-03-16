@@ -125,6 +125,8 @@ impl Lexer {
                             tokens.push(Token::IntegerLiteral(num));
                             buffer.clear();
                             state = LexerState::None;
+
+                            continue;
                         } else {
                             return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid integer literal"));
                         }
