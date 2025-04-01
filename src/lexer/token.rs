@@ -48,7 +48,7 @@ pub fn get_symbol(c: char) -> Option<Token> {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Keyword(String),
     Identifier(String),
