@@ -1,8 +1,8 @@
 use std::fs::read_to_string;
 use std::io;
-
+  
 use super::token::Token;
-use super::token::is_keyword;
+use super::token::{is_keyword, get_symbol};
 
 use super::lexer_state::LexerState;
 
@@ -52,23 +52,6 @@ impl Lexer {
         }
     }
 
-    fn handle_symbol(&mut self, c: char, tokens: &mut Vec<Token>) {
-        match c {
-            '(' => tokens.push(Token::LeftParenthesis),
-            ')' => tokens.push(Token::RightParenthesis),
-            '{' => tokens.push(Token::LeftBrace),
-            '}' => tokens.push(Token::RightBrace),
-            ';' => tokens.push(Token::Semicolon),
-            ':' => tokens.push(Token::Colon),
-            '=' => tokens.push(Token::Equal),
-            '+' => tokens.push(Token::Plus),
-            '-' => tokens.push(Token::Minus),
-            '*' => tokens.push(Token::Multiply),
-            '/' => tokens.push(Token::Divide),
-            _ => {}
-        }
-    }
-
     pub fn lex_line(&mut self, line: &str) -> io::Result<Vec<Token>> {
         let mut tokens: Vec<Token> = Vec::new();
         let mut cur: usize = 0;
@@ -95,7 +78,11 @@ impl Lexer {
                     } else if current_char == '"' {
                         state = LexerState::String;
                     } else {
-                        self.handle_symbol(current_char, &mut tokens);
+                        if let Some(symbol) = get_symbol(current_char) {
+                            tokens.push(symbol);
+                        } else {
+                            return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid character"));
+                        }
                     }
                 }
 
@@ -166,6 +153,3 @@ impl Lexer {
         &self.tokens
     }
 }
-
-// Todo:
-// - Implement the lexer method

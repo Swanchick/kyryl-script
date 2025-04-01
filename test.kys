@@ -1,4 +1,6 @@
-function main() {
+using stdlib;
+
+function main(): void {
     let value: float = 10.2f;
     let value2: int = 10;
     
