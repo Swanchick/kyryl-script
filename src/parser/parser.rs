@@ -1,7 +1,6 @@
 use crate::lexer::token::Token;
-use crate::parser::parameter;
 use super::data_type::DataType;
-use super::function::{self, Function};
+use super::function::Function;
 use super::parameter::Parameter;
 use std::io;
 
@@ -65,8 +64,6 @@ impl Parser {
     }
 
     fn parse_parameter(&mut self) -> io::Result<Parameter> { 
-        // (test: int, test2: int)
-
         let name = self.consume_identefier()?;
         self.consume_token(Token::Colon)?;
         let data_type = self.consume_data_type()?;
