@@ -2,6 +2,7 @@ use super::data_type::DataType;
 use super::expression::Expression;
 
 
+#[derive(PartialEq, Debug)]
 pub enum Statement {
     VarableDeclaration {
         name: String,

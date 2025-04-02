@@ -1,3 +1,4 @@
+#[derive(PartialEq, Debug)]
 pub enum Expression {
     IntegerLiteral(i32),
     FloatLiteral(f64),

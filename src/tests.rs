@@ -1,5 +1,10 @@
 use super::*;
+use lexer::lexer::Lexer;
 use lexer::token::Token;
+use parser::parser::Parser;
+use parser::function::Function;
+use parser::data_type::DataType;
+use parser::parameter::Parameter;
 
 #[test]
 fn test_lexer() {
@@ -65,4 +70,224 @@ fn test_lexer_from_file() {
     let tokens = lexer.get_tokens();
 
     assert_eq!(tokens, &expected_tokens);
+}
+
+
+#[test]
+fn test_lexer_identefier_underscore() {
+    let source = concat!(
+        "function test_function() {\n",
+        "}\n"
+    );
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let expected_tokens: Vec<Token> = vec![
+        Token::Keyword("function".to_string()),
+        Token::Identifier("test_function".to_string()),
+        Token::LeftParenthesis,
+        Token::RightParenthesis,
+        Token::LeftBrace,
+        Token::RightBrace
+    ];
+
+    let tokens = lexer.get_tokens();
+
+    assert_eq!(tokens, &expected_tokens);
+}
+
+
+#[test]
+fn test_function_parse_name() {
+    let source = concat!(
+        "function add(a: int, b: int): int {\n",
+        "}\n"
+    );
+
+    let test_function = Function {
+        name: String::from("add"),
+        return_type: DataType::Int,
+        parameters: vec![
+            Parameter {
+                name: String::from("a"),
+                data_type: DataType::Int
+            },
+            Parameter {
+                name: String::from("b"),
+                data_type: DataType::Int
+            }
+        ],
+        body: Vec::new()
+    };
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let function = parser.parse_function().unwrap();
+
+    assert_eq!(function.name, test_function.name);
+}
+
+#[test]
+fn test_parser_parameter() {
+    let source = concat!(
+        "function add(test: int): int {\n",
+        "}\n"
+    );
+
+    let test_function = Function {
+        name: String::from("add"),
+        return_type: DataType::Int,
+        parameters: vec![
+            Parameter {
+                name: String::from("test"),
+                data_type: DataType::Int
+            },
+        ],
+        body: Vec::new()
+    };
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    for token in lexer.get_tokens().iter() {
+        println!("Token: {}", token);
+    }
+
+    println!("====================");
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let function = parser.parse_function().unwrap();
+
+    assert_eq!(function.name, test_function.name);
+}
+
+#[test]
+fn test_parser_parameters() {
+    let source = concat!(
+        "function test_function(test1: int, test2: int): int {\n",
+        "}\n"
+    );
+    
+    let function_test = Function {
+        name: String::from("test_function"),
+        return_type: DataType::Int,
+        parameters: vec![
+            Parameter {
+                name: String::from("test1"),
+                data_type: DataType::Int
+            },
+            Parameter {
+                name: String::from("test2"),
+                data_type: DataType::Int
+            }
+        ],
+        body: Vec::new()
+    };
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let function = parser.parse_function().unwrap();
+
+    assert_eq!(function.parameters, function_test.parameters);
+}
+
+#[test]
+fn test_parser_function_type() {
+    let source = concat!(
+        "function test_function(test1: float, test2: float): float {\n",
+        "}\n"
+    );
+    
+    let function_test = Function {
+        name: String::from("test_function"),
+        return_type: DataType::Float,
+        parameters: vec![
+            Parameter {
+                name: String::from("test1"),
+                data_type: DataType::Int
+            },
+            Parameter {
+                name: String::from("test2"),
+                data_type: DataType::Int
+            }
+        ],
+        body: Vec::new()
+    };
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let function = parser.parse_function().unwrap();
+
+    assert_eq!(function.return_type, function_test.return_type);
+}
+
+#[test]
+fn test_parser_function_no_type() {
+    let source = concat!(
+        "function test_function(test1: float, test2: float) {\n",
+        "}\n"
+    );
+    
+    let function_test = Function {
+        name: String::from("test_function"),
+        return_type: DataType::Void,
+        parameters: vec![
+            Parameter {
+                name: String::from("test1"),
+                data_type: DataType::Int
+            },
+            Parameter {
+                name: String::from("test2"),
+                data_type: DataType::Int
+            }
+        ],
+        body: Vec::new()
+    };
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let function = parser.parse_function().unwrap();
+
+    assert_eq!(function.return_type, function_test.return_type);
+}
+
+#[test]
+fn test_function_parse() {
+    let source = concat!(
+        "function test_function(test1: float, test2: float) {\n",
+        "}\n"
+    );
+    
+    let function_test = Function {
+        name: String::from("test_function"),
+        return_type: DataType::Void,
+        parameters: vec![
+            Parameter {
+                name: String::from("test1"),
+                data_type: DataType::Float
+            },
+            Parameter {
+                name: String::from("test2"),
+                data_type: DataType::Float
+            }
+        ],
+        body: Vec::new()
+    };
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let function = parser.parse_function().unwrap();
+
+    assert_eq!(function, function_test);
 }

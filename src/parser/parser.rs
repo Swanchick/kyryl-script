@@ -1,5 +1,10 @@
 use crate::lexer::token::Token;
+use crate::parser::parameter;
+use super::data_type::DataType;
+use super::function::{self, Function};
+use super::parameter::Parameter;
 use std::io;
+
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -14,22 +19,86 @@ impl Parser {
         }
     }
 
-    pub fn parse_function(&mut self) -> io::Result<()> {
+    pub fn parse_function(&mut self) -> io::Result<Function> {
         self.consume_keyword("function")?;
-        self.consume_token(Token::LeftBrace)?;
+        println!("{}", self.current_token);
 
+        let function_name = self.consume_identefier()?;
+        println!("{}", self.current_token);
 
-        Ok(())
+        println!("Curearear a: {}", self.tokens[self.current_token]);
+        self.consume_token(Token::LeftParenthesis)?;
+        println!("{}", self.current_token);
+        let parameters = self.parse_parameters()?;
+
+        let mut function_type = DataType::Void;
+
+        if self.match_token(&Token::Colon) {
+            function_type = self.consume_data_type()?;
+        }
+
+        Ok(
+            Function {
+                name: function_name,
+                return_type: function_type,
+                parameters: parameters,
+                body: Vec::new()
+            }
+        )
     }
 
-    pub fn parse_parameter(&mut self) -> io::Result<()> {
+    fn parse_parameters(&mut self) -> io::Result<Vec<Parameter>> {
+        let mut parameters: Vec<Parameter> = Vec::new();
 
+        loop {
+            let parameter = self.parse_parameter()?;
+            parameters.push(parameter);
 
-        Ok(())
+            if self.match_token(&Token::RightParenthesis) {
+                break;
+            } else {
+                self.consume_token(Token::Comma)?;
+            }
+        }
+
+        Ok(parameters)
     }
 
-    fn check(&self, token: &Token) -> bool {
+    fn parse_parameter(&mut self) -> io::Result<Parameter> { 
+        // (test: int, test2: int)
+
+        let name = self.consume_identefier()?;
+        self.consume_token(Token::Colon)?;
+        let data_type = self.consume_data_type()?;
+
+        let parameter = Parameter {
+            name: name,
+            data_type: data_type
+        };
+
+        Ok(parameter)
+    }
+
+    fn check(&mut self, token: &Token) -> bool {
         self.peek() == token
+    }
+
+    fn consume_data_type(&mut self) -> io::Result<DataType> {
+        let token = self.advance().unwrap();
+        
+        if let Token::Keyword(data_type_str) = token {
+            let data_type_str = data_type_str.as_str();
+
+            match data_type_str {
+                "int" => Ok(DataType::Int),
+                "float" => Ok(DataType::Float),
+                "string" => Ok(DataType::String),
+                "bool" => Ok(DataType::Bool),
+                _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected type got {}", data_type_str)))
+            }
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, "Expected keyword!"))
+        }
     }
 
     fn consume_token(&mut self, token: Token) -> io::Result<Token> {
@@ -41,19 +110,29 @@ impl Parser {
 
     }
 
-    fn consume_keyword(&mut self, keyword: &str) -> io::Result<()> {
-        if (self.match_keyword(keyword)) {
-            return Ok(());
-        } else {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected keyword: {}", keyword)));
-        }
+    fn consume_identefier(&mut self) -> io::Result<String> {
+        let token= self.peek().clone();
 
-        Ok(())
+        if let Token::Identifier(name) = token {
+            self.advance();
+            
+            Ok(name.to_string())
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, "Expected token identefier!"))
+        }
+    }
+
+    fn consume_keyword(&mut self, keyword: &str) -> io::Result<()> {
+        if self.match_keyword(keyword) {
+            Ok(())
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected keyword: {}", keyword)))
+        }
     }
 
     fn advance(&mut self) -> Option<Token> {
         if self.current_token < self.tokens.len() {
-            let token = self.tokens[self.current_token].clone();
+            let token = self.peek().clone();
             self.current_token += 1;
             Some(token)
         } else {
@@ -78,7 +157,7 @@ impl Parser {
             return false;
         }
 
-        if &self.tokens[self.current_token] == token {
+        if self.check(token) {
             self.advance();
             true
         } else {
@@ -91,9 +170,10 @@ impl Parser {
             return false;
         }
 
-        if let Token::Keyword(ref k) = self.tokens[self.current_token] {
+        if let Token::Keyword(ref k) = self.peek() {
             if k == keyword {
                 self.advance();
+                
                 return true;
             }
         }
@@ -101,7 +181,8 @@ impl Parser {
         false
     }
 
-    fn peek(&self) -> &Token {
+    fn peek(&mut self) -> &Token {
+        println!("Current Token: {}", &self.tokens[self.current_token]);
         &self.tokens[self.current_token]
     }
 }

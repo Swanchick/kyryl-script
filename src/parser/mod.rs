@@ -1,6 +1,6 @@
-mod parser;
-mod data_type;
-mod expression;
-mod statement;
-mod parameter;
-mod function;
+pub mod parser;
+pub mod data_type;
+pub mod expression;
+pub mod statement;
+pub mod parameter;
+pub mod function;
