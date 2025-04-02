@@ -9,11 +9,7 @@ use super::lexer_state::LexerState;
 
 pub struct Lexer {
     tokens: Vec<Token>,
-    source_path: String,
     source_lines: Vec<String>,
-    source: String,
-    current_line: i32,
-    output: Vec<String>
 }
 
 impl Lexer {
@@ -22,11 +18,7 @@ impl Lexer {
         
         Lexer {
             tokens: Vec::new(),
-            source_path: String::new(),
-            output: Vec::new(),
             source_lines: source_lines,
-            source: source,
-            current_line: 0,
         }
     }
     
@@ -36,11 +28,7 @@ impl Lexer {
 
         Ok(Lexer {
             tokens: Vec::new(),
-            output: Vec::new(),
-            current_line: 0,
-            source_path: source_path.to_string(),
             source_lines,
-            source,
         })
     }
 
@@ -80,9 +68,7 @@ impl Lexer {
                     } else {
                         if let Some(symbol) = get_symbol(current_char) {
                             tokens.push(symbol);
-                        } else {
-                            return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid character"));
-                        }
+                        } 
                     }
                 }
 
@@ -121,7 +107,7 @@ impl Lexer {
                 }
 
                 LexerState::Identifier => {
-                    if current_char.is_alphabetic() || current_char.is_numeric() {
+                    if current_char.is_alphabetic() || current_char.is_numeric() || current_char == '_' {
                         buffer.push(current_char);
                     } else {
                         self.add_token(buffer.as_str(), &mut tokens);

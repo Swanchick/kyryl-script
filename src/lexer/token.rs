@@ -44,6 +44,7 @@ pub fn get_symbol(c: char) -> Option<Token> {
         '<' => Some(Token::LessThan),
         '>' => Some(Token::GreaterThan),
         '~' => Some(Token::Tilde),
+        ',' => Some(Token::Comma),
         _ => None
     }
 }
@@ -63,6 +64,7 @@ pub enum Token {
     LeftSquareBracket,
     Semicolon,
     Colon,
+    Comma,
     Equal,
     Plus,
     Minus,
@@ -89,6 +91,7 @@ impl fmt::Display for Token {
             Token::LeftSquareBracket => write!(f, "left square bracket"),
             Token::Semicolon => write!(f, "semicolon"),
             Token::Colon => write!(f, "colon"),
+            Token::Comma => write!(f, "comma"),
             Token::Equal => write!(f, "equal"),
             Token::Plus => write!(f, "plus"),
             Token::Minus => write!(f, "minus"),
