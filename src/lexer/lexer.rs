@@ -86,7 +86,7 @@ impl Lexer {
                     if current_char.is_numeric() || current_char == '.' {
                         buffer.push(current_char);
                     } else if current_char == 'f' {
-                        if let Ok(num) = buffer.parse::<f32>() {
+                        if let Ok(num) = buffer.parse::<f64>() {
                             tokens.push(Token::FloatLiteral(num));
                             buffer.clear();
                             state = LexerState::None;

@@ -30,8 +30,5 @@ pub enum Statement {
     WhileStatement {
         condition: Expression,
         body: Vec<Statement>
-    },
-    Block {
-        statements: Vec<Statement>
     }
 }

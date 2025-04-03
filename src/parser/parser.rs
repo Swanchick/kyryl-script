@@ -1,9 +1,13 @@
 use crate::lexer::token::Token;
+
+use super::operator::Operator;
 use super::data_type::DataType;
+use super::expression::Expression;
 use super::function::Function;
 use super::parameter::Parameter;
-use std::io;
+use super::statement::Statement;
 
+use std::io;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -76,7 +80,93 @@ impl Parser {
         Ok(parameter)
     }
 
-    fn check(&mut self, token: &Token) -> bool {
+    pub fn parse_statement(&mut self) -> io::Result<Statement> {
+        if self.match_keyword("let") {
+            self.parse_variable_declaration_statement()
+        } else if self.match_keyword("return") {
+            self.parse_return_statement()
+        } else {
+            todo!()
+        }
+    }
+
+    fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> {
+        let name = self.consume_identefier()?;
+        
+        self.consume_token(Token::Colon)?;
+        
+        let data_type = self.consume_data_type()?;
+        self.consume_token(Token::Equal)?;
+        let expression = self.parse_binary_expression()?;
+        
+        self.consume_token(Token::Semicolon)?;
+
+        Ok(
+            Statement::VarableDeclaration {
+                name: name,
+                data_type: Some(data_type),
+                value: Some(expression)
+            }
+        )
+    }
+
+    fn parse_return_statement(&mut self) -> io::Result<Statement> {
+        let expression = self.parse_binary_expression()?;
+        
+        Ok(
+            Statement::ReturnStatement {
+                value: Some(expression)
+            }
+        )
+    }
+
+    pub fn parse_binary_expression(&mut self) -> io::Result<Expression> {
+        let mut expression = self.parse_primary()?;
+        self.advance();
+
+        while self.match_token(&Token::Plus) || self.match_token(&Token::Minus) || self.match_token(&Token::Multiply) || self.match_token(&Token::Divide) {
+            let operator = match self.previous() {
+                Token::Plus => Operator::Plus,
+                Token::Minus => Operator::Minus,
+                Token::Multiply => Operator::Multiply,
+                Token::Divide => Operator::Divide,
+                Token::Power => Operator::Power,
+                _ => unreachable!()
+            };
+
+            let right = self.parse_primary()?;
+            self.advance();
+
+            expression = Expression::BinaryOp {
+                left: Box::new(expression),
+                operator: operator,
+                right: Box::new(right)
+            };
+        }
+
+        Ok(expression)
+    }
+
+    fn parse_primary(&mut self) -> io::Result<Expression> {
+        match self.peek() {
+            Token::IntegerLiteral(value) => Ok(Expression::IntegerLiteral(value.to_owned())),
+            Token::FloatLiteral(value) => Ok(Expression::FloatLiteral(value.to_owned())),
+            Token::StringLiteral(value) => Ok(Expression::StringLiteral(value.to_owned())),
+            Token::Keyword(keyword) => {
+                let keyword = keyword.as_str();
+                
+                match keyword {
+                    "true" => Ok(Expression::BooleanLiteral(true)),
+                    "false" => Ok(Expression::BooleanLiteral(false)),
+                    _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Unexpected keyword, expected boolean"))
+                }
+            },
+            Token::Identifier(name) => Ok(Expression::Identifier(name.to_owned())),
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Expected expression")) 
+        }
+    }
+
+    fn check(&self, token: &Token) -> bool {
         self.peek() == token
     }
 
@@ -178,8 +268,11 @@ impl Parser {
         false
     }
 
-    fn peek(&mut self) -> &Token {
-        println!("Current Token: {}", &self.tokens[self.current_token]);
+    fn previous(&self) -> &Token {
+        &self.tokens[self.current_token - 1]
+    }
+
+    fn peek(&self) -> &Token {
         &self.tokens[self.current_token]
     }
 }

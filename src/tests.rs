@@ -1,3 +1,6 @@
+use crate::parser::expression::Expression;
+use crate::parser::statement::Statement;
+
 use super::*;
 use lexer::lexer::Lexer;
 use lexer::token::Token;
@@ -5,6 +8,7 @@ use parser::parser::Parser;
 use parser::function::Function;
 use parser::data_type::DataType;
 use parser::parameter::Parameter;
+use parser::operator::Operator;
 
 #[test]
 fn test_lexer() {
@@ -290,4 +294,94 @@ fn test_function_parse() {
     let function = parser.parse_function().unwrap();
 
     assert_eq!(function, function_test);
+}
+
+
+#[test]
+fn test_expression() {
+    // 10
+
+    let test_expression = Expression::BinaryOp {
+        left: Box::new(
+            Expression::BinaryOp {
+                left: Box::new(Expression::IntegerLiteral(10)),
+                operator: Operator::Plus,
+                right: Box::new(Expression::IntegerLiteral(20))
+            }
+        ),
+        operator: Operator::Plus,
+        right: Box::new(Expression::IntegerLiteral(30))
+    };
+
+    let tokens = vec![
+        Token::IntegerLiteral(10),
+        Token::Plus,
+        Token::IntegerLiteral(20),
+        Token::Plus,
+        Token::IntegerLiteral(30)
+    ];
+
+    let mut parser = Parser::new(tokens);
+    let expression = parser.parse_binary_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+}
+
+#[test]
+fn test_single_expression() {
+    let test_expression = Expression::IntegerLiteral(10);
+
+    let tokens = vec![
+        Token::IntegerLiteral(10),
+    ];
+
+    let mut parser = Parser::new(tokens);
+    let expression = parser.parse_binary_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+}
+
+#[test]
+fn test_variable_declaration_statement() {
+    // let a: int = 10;
+
+    let tokens = vec![
+        Token::Keyword(String::from("let")),
+        Token::Identifier(String::from("a")),
+        Token::Colon,
+        Token::Keyword(String::from("int")),
+        Token::Equal,
+        Token::IntegerLiteral(10),
+        Token::Semicolon
+    ];
+
+    let test_statement = Statement::VarableDeclaration {
+        name: String::from("a"),
+        data_type: Some(DataType::Int),
+        value: Some(Expression::IntegerLiteral(10))
+    };
+
+    let mut parser = Parser::new(tokens);
+    let statement = parser.parse_statement().unwrap();
+
+    assert_eq!(statement, test_statement);
+}
+
+#[test]
+fn test_return_statement() {
+    let tokens = vec![
+        Token::Keyword(String::from("return")),
+        Token::IntegerLiteral(10)
+    ];
+
+    let test_statement = Statement::VarableDeclaration {
+        name: String::from("a"),
+        data_type: Some(DataType::Int),
+        value: Some(Expression::IntegerLiteral(10))
+    };
+
+    let mut parser = Parser::new(tokens);
+    let statement = parser.parse_statement().unwrap();
+
+    assert_eq!(statement, test_statement);
 }

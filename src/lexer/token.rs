@@ -45,6 +45,7 @@ pub fn get_symbol(c: char) -> Option<Token> {
         '>' => Some(Token::GreaterThan),
         '~' => Some(Token::Tilde),
         ',' => Some(Token::Comma),
+        '^' => Some(Token::Power),
         _ => None
     }
 }
@@ -55,7 +56,7 @@ pub enum Token {
     Identifier(String),
     StringLiteral(String),
     IntegerLiteral(i32),
-    FloatLiteral(f32),
+    FloatLiteral(f64),
     RightParenthesis,
     LeftParenthesis,
     RightBrace,
@@ -73,6 +74,7 @@ pub enum Token {
     LessThan,
     GreaterThan,
     Tilde,
+    Power,
 }
 
 impl fmt::Display for Token {
@@ -100,6 +102,7 @@ impl fmt::Display for Token {
             Token::LessThan => write!(f, "less than"),
             Token::GreaterThan => write!(f, "greater than"),
             Token::Tilde => write!(f, "tilde"),
+            Token::Power => write!(f, "power"),
         }
     }
 }
