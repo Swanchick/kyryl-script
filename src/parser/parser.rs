@@ -185,7 +185,7 @@ impl Parser {
                 let expression = self.parse_expression()?;
                 
                 if !self.match_token(&Token::RightParenthesis) {
-                    Err(io::Error::new(io::ErrorKind::InvalidData, "Expected closed expression."))
+                    Err(io::Error::new(io::ErrorKind::InvalidData, "Expected closed expression with right parenthesis."))
                 } else {
                     Ok(expression)
                 }

@@ -1,7 +1,7 @@
 mod lexer;
 mod parser;
 
-use lexer::{lexer::Lexer, token::Token};
+use lexer::lexer::Lexer;
 
 fn main() {
     let mut lexer = Lexer::load("test.kys").unwrap();
@@ -11,8 +11,6 @@ fn main() {
     for (i, token) in lexer.get_tokens().iter().enumerate() {
         println!("{} {}", i, token);
     }
-
-    let il = Token::IntegerLiteral(10);
 
     // println!("{}", )
     

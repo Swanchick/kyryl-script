@@ -65,10 +65,8 @@ impl Lexer {
                         buffer.push(current_char);
                     } else if current_char == '"' {
                         state = LexerState::String;
-                    } else {
-                        if let Some(symbol) = get_symbol(current_char) {
-                            tokens.push(symbol);
-                        } 
+                    } else if let Some(symbol) = get_symbol(current_char) {
+                        // buffer.push(c);
                     }
                 }
 
@@ -116,6 +114,12 @@ impl Lexer {
 
                         continue;
                     }
+                }
+
+                LexerState::Symbol => {
+                    
+                    
+                    tokens.push(symbol);
                 }
             }
 

@@ -2,5 +2,6 @@ pub enum LexerState {
     None,
     String,
     Number,
-    Identifier
+    Identifier,
+    Symbol
 }

@@ -57,24 +57,26 @@ pub enum Token {
     StringLiteral(String),
     IntegerLiteral(i32),
     FloatLiteral(f64),
-    RightParenthesis,
-    LeftParenthesis,
-    RightBrace,
-    LeftBrace,
-    RightSquareBracket,
-    LeftSquareBracket,
-    Semicolon,
-    Colon,
-    Comma,
-    Equal,
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-    LessThan,
-    GreaterThan,
-    Tilde,
-    Power,
+    LeftParenthesis, // (
+    RightParenthesis, // )
+    LeftBrace, // {
+    RightBrace, // }
+    LeftSquareBracket, // [
+    RightSquareBracket, // ]
+    Semicolon, // ;
+    Colon, // :
+    Comma, // ,
+    Equal, // =
+    Plus, // +
+    Minus, // -
+    Multiply, // *
+    Divide, // /
+    LessThan, // <
+    GreaterThan, // >
+    Tilde, // ~
+    Power, // ^
+    EqualEqual, // ==
+    TildeEqual, // ~=
 }
 
 impl fmt::Display for Token {
@@ -103,6 +105,8 @@ impl fmt::Display for Token {
             Token::GreaterThan => write!(f, "greater than"),
             Token::Tilde => write!(f, "tilde"),
             Token::Power => write!(f, "power"),
+            Token::EqualEqual => write!(f, "equal equal"),
+            Token::TildeEqual => write!(f, "tilde equal")
         }
     }
 }
