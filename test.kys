@@ -1,6 +1,3 @@
-function add(a: int, b: int): int {
-    let a2: int = 10 + 20 - 10 / 3 * 2;
-    let b2: int = 20;
+function main() {
     
-    return a + b;
 }

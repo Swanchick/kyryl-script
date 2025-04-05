@@ -1,8 +1,9 @@
 use std::fs::read_to_string;
 use std::io;
+use std::path::Component;
   
 use super::token::Token;
-use super::token::{is_keyword, get_symbol};
+use super::token::{is_keyword, get_symbol, is_symbol};
 
 use super::lexer_state::LexerState;
 
@@ -40,7 +41,10 @@ impl Lexer {
         }
     }
 
-    pub fn lex_line(&mut self, line: &str) -> io::Result<Vec<Token>> {
+    pub fn lex_line(&mut self, line: &str) -> io::Result<Vec<Token>> {  
+        let mut line = line.to_string();
+        line.push(' ');
+
         let mut tokens: Vec<Token> = Vec::new();
         let mut cur: usize = 0;
         let mut state = LexerState::None;
@@ -49,7 +53,7 @@ impl Lexer {
 
         while cur < line.len() {
             let current_char = line.chars().nth(cur).unwrap();
-            
+
             match state {
                 LexerState::None => {
                     if current_char.is_whitespace() {
@@ -65,8 +69,9 @@ impl Lexer {
                         buffer.push(current_char);
                     } else if current_char == '"' {
                         state = LexerState::String;
-                    } else if let Some(symbol) = get_symbol(current_char) {
-                        // buffer.push(c);
+                    } else if is_symbol(current_char) {
+                        state = LexerState::Symbol;
+                        buffer.push(current_char);
                     }
                 }
 
@@ -115,11 +120,21 @@ impl Lexer {
                         continue;
                     }
                 }
-
+                // Todo:
+                // When someone enters () or {} it should be read by lexer as separate tokens
                 LexerState::Symbol => {
-                    
-                    
-                    tokens.push(symbol);
+                    if is_symbol(current_char) && cur != line.len() {
+                        buffer.push(current_char);
+                    } else {
+                        if let Some(symbol) = get_symbol(&buffer) {
+                            tokens.push(symbol);
+                        }
+
+                        buffer.clear();
+                        state = LexerState::None;
+
+                        continue;
+                    }
                 }
             }
 

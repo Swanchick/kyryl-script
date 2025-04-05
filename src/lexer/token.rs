@@ -1,5 +1,7 @@
 use std::fmt;
 
+const SYMBOLS: &str = "()[]{};:=+-*/<>~,^";
+
 pub fn is_keyword(text: &str) -> bool {
     match text {
         "let" => true,
@@ -26,28 +28,34 @@ pub fn is_keyword(text: &str) -> bool {
     }
 }
 
-pub fn get_symbol(c: char) -> Option<Token> {
+pub fn get_symbol(c: &str) -> Option<Token> {
     match c {
-        '(' => Some(Token::LeftParenthesis),
-        ')' => Some(Token::RightParenthesis),
-        '{' => Some(Token::LeftBrace),
-        '}' => Some(Token::RightBrace),
-        '[' => Some(Token::LeftSquareBracket),
-        ']' => Some(Token::RightSquareBracket),
-        ';' => Some(Token::Semicolon),
-        ':' => Some(Token::Colon),
-        '=' => Some(Token::Equal),
-        '+' => Some(Token::Plus),
-        '-' => Some(Token::Minus),
-        '*' => Some(Token::Multiply),
-        '/' => Some(Token::Divide),
-        '<' => Some(Token::LessThan),
-        '>' => Some(Token::GreaterThan),
-        '~' => Some(Token::Tilde),
-        ',' => Some(Token::Comma),
-        '^' => Some(Token::Power),
+        "(" => Some(Token::LeftParenthesis),
+        ")" => Some(Token::RightParenthesis),
+        "{" => Some(Token::LeftBrace),
+        "}" => Some(Token::RightBrace),
+        "[" => Some(Token::LeftSquareBracket),
+        "]" => Some(Token::RightSquareBracket),
+        ";" => Some(Token::Semicolon),
+        ":" => Some(Token::Colon),
+        "=" => Some(Token::Equal),
+        "+" => Some(Token::Plus),
+        "-" => Some(Token::Minus),
+        "*" => Some(Token::Multiply),
+        "/" => Some(Token::Divide),
+        "<" => Some(Token::LessThan),
+        ">" => Some(Token::GreaterThan),
+        "~" => Some(Token::Tilde),
+        "," => Some(Token::Comma),
+        "^" => Some(Token::Power),
+        "==" => Some(Token::EqualEqual),
+        "~=" => Some(Token::TildeEqual),
         _ => None
     }
+}
+
+pub fn is_symbol(c: char) -> bool {
+    SYMBOLS.contains(c)
 }
 
 #[derive(Debug, PartialEq, Clone)]

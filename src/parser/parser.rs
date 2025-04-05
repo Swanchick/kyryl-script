@@ -1,7 +1,6 @@
 use crate::lexer::token::Token;
-use crate::parser::expression;
 
-use super::operator::{self, Operator};
+use super::operator::Operator;
 use super::data_type::DataType;
 use super::expression::Expression;
 use super::function::Function;

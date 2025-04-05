@@ -11,22 +11,27 @@ use parser::parameter::Parameter;
 use parser::operator::Operator;
 
 #[test]
-fn test_lexer() {
-    let mut lexer = Lexer::load("test.kys").unwrap();
+fn test_lexer_easy() {
+    let source = concat!(
+        "function main() {\n",
+        "}\n"
+    );
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
 
     let expected_tokens: Vec<Token> = vec![
-        Token::Identifier("print".to_string()),
+        Token::Keyword("function".to_string()),
+        Token::Identifier("main".to_string()),
         Token::LeftParenthesis,
-        Token::StringLiteral("Hello World".to_string()),
         Token::RightParenthesis,
-        Token::Semicolon
+        Token::LeftBrace,
+        Token::RightBrace
     ];
 
-    let line = String::from("print(\"Hello World\");");
+    let tokens = lexer.get_tokens();
 
-    let tokens = lexer.lex_line(&line).unwrap();
-
-    assert_eq!(tokens, expected_tokens);
+    assert_eq!(tokens, &expected_tokens);
 }
 
 
