@@ -13,5 +13,10 @@ pub enum Expression {
         left: Box<Expression>,
         operator: Operator,
         right: Box<Expression>
+    },
+
+    UnaryOp {
+        expression: Box<Expression>,
+        operator: Operator
     }
 }

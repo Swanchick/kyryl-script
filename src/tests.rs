@@ -299,8 +299,6 @@ fn test_function_parse() {
 
 #[test]
 fn test_expression() {
-    // 10
-
     let test_expression = Expression::BinaryOp {
         left: Box::new(
             Expression::BinaryOp {
@@ -322,7 +320,85 @@ fn test_expression() {
     ];
 
     let mut parser = Parser::new(tokens);
-    let expression = parser.parse_binary_expression().unwrap();
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+}
+
+#[test]
+fn test_complex_expression() {
+    let test_expression = Expression::BinaryOp {
+        left: Box::new(Expression::BinaryOp {
+            left: Box::new(Expression::IntegerLiteral(3)),
+            operator: Operator::Plus,
+            right: Box::new(Expression::BinaryOp {
+                left: Box::new(Expression::IntegerLiteral(2)),
+                operator: Operator::Multiply,
+                right: Box::new(Expression::IntegerLiteral(3))
+            })
+        }),
+        operator: Operator::Minus,
+        right: Box::new(Expression::IntegerLiteral(8))
+    };
+
+    // 3 + 2 * 3 - 8
+
+    let tokens = vec![
+        Token::IntegerLiteral(3),
+        Token::Plus,
+        Token::IntegerLiteral(2),
+        Token::Multiply,
+        Token::IntegerLiteral(3),
+        Token::Minus,
+        Token::IntegerLiteral(8)
+    ];
+
+    let mut parser = Parser::new(tokens);
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+}
+
+#[test]
+fn test_complex_even_more_complex_expression() {
+    let test_expression = Expression::BinaryOp {
+        left: Box::new(Expression::BinaryOp {
+            left: Box::new(Expression::BinaryOp {
+                left: Box::new(Expression::IntegerLiteral(2)),
+                operator: Operator::Plus,
+                right: Box::new(Expression::IntegerLiteral(2))
+            }),
+            operator: Operator::Divide,
+            right: Box::new(Expression::IntegerLiteral(3))
+        }),
+        operator: Operator::Plus,
+        right: Box::new(Expression::BinaryOp {
+            left: Box::new(Expression::IntegerLiteral(4)),
+            operator: Operator::Multiply,
+            right: Box::new(Expression::IntegerLiteral(8))
+        })
+    };
+
+    // (2 + 2) / 3 + 4 * 8
+
+    let tokens = vec![
+        Token::LeftParenthesis,
+        Token::IntegerLiteral(2),
+        Token::Plus,
+        Token::IntegerLiteral(2),
+        Token::RightParenthesis,
+        Token::Divide,
+        Token::IntegerLiteral(3),
+        Token::Plus,
+        Token::IntegerLiteral(4),
+        Token::Multiply,
+        Token::IntegerLiteral(8)
+    ];
+
+    let mut parser = Parser::new(tokens);
+    let expression = parser.parse_expression().unwrap();
+
+    println!("{:?}", expression);
 
     assert_eq!(expression, test_expression);
 }
@@ -336,7 +412,7 @@ fn test_single_expression() {
     ];
 
     let mut parser = Parser::new(tokens);
-    let expression = parser.parse_binary_expression().unwrap();
+    let expression = parser.parse_expression().unwrap();
 
     assert_eq!(expression, test_expression);
 }
@@ -353,25 +429,6 @@ fn test_variable_declaration_statement() {
         Token::Equal,
         Token::IntegerLiteral(10),
         Token::Semicolon
-    ];
-
-    let test_statement = Statement::VarableDeclaration {
-        name: String::from("a"),
-        data_type: Some(DataType::Int),
-        value: Some(Expression::IntegerLiteral(10))
-    };
-
-    let mut parser = Parser::new(tokens);
-    let statement = parser.parse_statement().unwrap();
-
-    assert_eq!(statement, test_statement);
-}
-
-#[test]
-fn test_return_statement() {
-    let tokens = vec![
-        Token::Keyword(String::from("return")),
-        Token::IntegerLiteral(10)
     ];
 
     let test_statement = Statement::VarableDeclaration {

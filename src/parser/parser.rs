@@ -1,6 +1,7 @@
 use crate::lexer::token::Token;
+use crate::parser::expression;
 
-use super::operator::Operator;
+use super::operator::{self, Operator};
 use super::data_type::DataType;
 use super::expression::Expression;
 use super::function::Function;
@@ -97,7 +98,7 @@ impl Parser {
         
         let data_type = self.consume_data_type()?;
         self.consume_token(Token::Equal)?;
-        let expression = self.parse_binary_expression()?;
+        let expression = self.parse_expression()?;
         
         self.consume_token(Token::Semicolon)?;
 
@@ -111,7 +112,7 @@ impl Parser {
     }
 
     fn parse_return_statement(&mut self) -> io::Result<Statement> {
-        let expression = self.parse_binary_expression()?;
+        let expression = self.parse_expression()?;
         
         Ok(
             Statement::ReturnStatement {
@@ -120,48 +121,118 @@ impl Parser {
         )
     }
 
-    pub fn parse_binary_expression(&mut self) -> io::Result<Expression> {
-        let mut expression = self.parse_primary()?;
-        self.advance();
+    pub fn parse_expression(&mut self) -> io::Result<Expression> {
+        self.parse_addition()
+    }
 
-        while self.match_token(&Token::Plus) || self.match_token(&Token::Minus) || self.match_token(&Token::Multiply) || self.match_token(&Token::Divide) {
+    fn parse_addition(&mut self) -> io::Result<Expression> {
+        let mut expression = self.parse_multipilcation()?;
+        
+        while self.match_token(&Token::Plus) || self.match_token(&Token::Minus) {
             let operator = match self.previous() {
                 Token::Plus => Operator::Plus,
                 Token::Minus => Operator::Minus,
-                Token::Multiply => Operator::Multiply,
-                Token::Divide => Operator::Divide,
-                Token::Power => Operator::Power,
                 _ => unreachable!()
             };
 
-            let right = self.parse_primary()?;
-            self.advance();
+            let right = self.parse_multipilcation()?;
 
-            expression = Expression::BinaryOp {
-                left: Box::new(expression),
-                operator: operator,
-                right: Box::new(right)
-            };
+            expression = Expression::BinaryOp { left: Box::new(expression), operator: operator, right: Box::new(right) };
         }
 
         Ok(expression)
     }
 
+    fn parse_multipilcation(&mut self) -> io::Result<Expression> {
+        let mut expression = self.parse_unary()?;
+
+        while self.match_token(&Token::Multiply) || self.match_token(&Token::Divide) {
+            let operator = match self.previous() {
+                Token::Multiply => Operator::Multiply,
+                Token::Divide => Operator::Divide,
+                _ => unreachable!()
+            };
+
+            let right = self.parse_unary()?;
+
+            expression = Expression::BinaryOp { left: Box::new(expression), operator: operator, right: Box::new(right) };
+        }
+
+        Ok(expression)
+    }
+
+    fn parse_unary(&mut self) -> io::Result<Expression> {
+        if self.match_token(&Token::Minus) {
+            let expression = self.parse_primary()?;
+            
+            Ok(
+                Expression::UnaryOp {
+                    expression: Box::new(expression),
+                    operator: Operator::Minus
+                }
+            )
+        } else {
+            let expression = self.parse_primary();
+
+            expression
+        }
+    }
+
     fn parse_primary(&mut self) -> io::Result<Expression> {
         match self.peek() {
-            Token::IntegerLiteral(value) => Ok(Expression::IntegerLiteral(value.to_owned())),
-            Token::FloatLiteral(value) => Ok(Expression::FloatLiteral(value.to_owned())),
-            Token::StringLiteral(value) => Ok(Expression::StringLiteral(value.to_owned())),
+            Token::LeftParenthesis => {
+                self.advance();
+                let expression = self.parse_expression()?;
+                
+                if !self.match_token(&Token::RightParenthesis) {
+                    Err(io::Error::new(io::ErrorKind::InvalidData, "Expected closed expression."))
+                } else {
+                    Ok(expression)
+                }
+            },
+            Token::IntegerLiteral(value) => {
+                let value = value.to_owned();
+                let expression = Expression::IntegerLiteral(value);
+                self.advance();
+                
+                Ok(expression)
+            },
+            Token::FloatLiteral(value) => {
+                let value = value.to_owned();
+                let expression = Expression::FloatLiteral(value);
+                self.advance();
+
+                Ok(expression)
+            },
+            Token::StringLiteral(value) => {
+                let value = value.to_owned();
+                let expression = Expression::StringLiteral(value);
+                self.advance();
+
+                Ok(expression)
+            },
             Token::Keyword(keyword) => {
                 let keyword = keyword.as_str();
                 
                 match keyword {
-                    "true" => Ok(Expression::BooleanLiteral(true)),
-                    "false" => Ok(Expression::BooleanLiteral(false)),
+                    "true" => {
+                        self.advance();
+                        Ok(Expression::BooleanLiteral(true))
+                    },
+                    "false" => {
+                        self.advance();
+                        Ok(Expression::BooleanLiteral(true))
+                    },
                     _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Unexpected keyword, expected boolean"))
                 }
             },
-            Token::Identifier(name) => Ok(Expression::Identifier(name.to_owned())),
+            Token::Identifier(name) => {
+                let name = name.to_owned();
+                let expression = Expression::Identifier(name);
+                self.advance();
+                
+                Ok(expression)
+            },
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Expected expression")) 
         }
     }
