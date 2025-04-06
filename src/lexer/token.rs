@@ -58,6 +58,15 @@ pub fn is_symbol(c: char) -> bool {
     SYMBOLS.contains(c)
 }
 
+pub fn double_symbol(c: &str) -> Option<(Token, Token)> {
+    match c {
+        "()" => Some((Token::LeftParenthesis, Token::RightParenthesis)),
+        "{}" => Some((Token::LeftBrace, Token::RightBrace)),
+        "[]" => Some((Token::LeftSquareBracket, Token::RightSquareBracket)),
+        _ => None
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Keyword(String),

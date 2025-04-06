@@ -1,9 +1,8 @@
 use std::fs::read_to_string;
 use std::io;
-use std::path::Component;
-  
+
 use super::token::Token;
-use super::token::{is_keyword, get_symbol, is_symbol};
+use super::token::{is_keyword, get_symbol, is_symbol, double_symbol};
 
 use super::lexer_state::LexerState;
 
@@ -41,7 +40,7 @@ impl Lexer {
         }
     }
 
-    pub fn lex_line(&mut self, line: &str) -> io::Result<Vec<Token>> {  
+    pub fn lex_line(&mut self, line: &str) -> io::Result<Vec<Token>> { 
         let mut line = line.to_string();
         line.push(' ');
 
@@ -120,19 +119,18 @@ impl Lexer {
                         continue;
                     }
                 }
-                // Todo:
-                // When someone enters () or {} it should be read by lexer as separate tokens
+
                 LexerState::Symbol => {
                     if is_symbol(current_char) && cur != line.len() {
                         buffer.push(current_char);
                     } else {
-                        if let Some(symbol) = get_symbol(&buffer) {
-                            tokens.push(symbol);
-                        }
+                        let mut symbols = self.get_symbols(&buffer);
+
+                        tokens.append(&mut symbols);
 
                         buffer.clear();
                         state = LexerState::None;
-
+                        
                         continue;
                     }
                 }
@@ -142,6 +140,25 @@ impl Lexer {
         }  
         
         Ok(tokens)
+    }
+
+    fn get_symbols(&self, buffer: &str) -> Vec<Token> {
+        let mut tokens: Vec<Token> = Vec::new();
+        
+        if let Some((left, right)) = double_symbol(&buffer) {
+            tokens.push(left);
+            tokens.push(right);
+        } else if let Some(symbol) = get_symbol(&buffer) {
+            tokens.push(symbol);
+        } else if buffer.len() == 2 {
+            for c in buffer.chars() {
+                if let Some(symbol) = get_symbol(&c.to_string()) {
+                    tokens.push(symbol);
+                }
+            }
+        }
+
+        tokens
     }
 
     pub fn lexer(&mut self) -> io::Result<()> {
