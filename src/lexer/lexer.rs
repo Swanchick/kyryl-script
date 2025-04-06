@@ -41,6 +41,8 @@ impl Lexer {
     }
 
     pub fn lex_line(&mut self, line: &str) -> io::Result<Vec<Token>> { 
+        // Todo:
+        // Remove this thing
         let mut line = line.to_string();
         line.push(' ');
 
