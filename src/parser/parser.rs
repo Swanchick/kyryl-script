@@ -121,13 +121,31 @@ impl Parser {
     }
 
     pub fn parse_expression(&mut self) -> io::Result<Expression> {
-        self.parse_addition()
+        self.parse_logic_or()
+    }
+
+    fn parse_logic_or(&mut self) -> io::Result<Expression> {
+        let mut expression = self.parse_logic_and()?;
+        
+        while self.match_token(&Token::PipePipe) {
+            let right = self.parse_logic_and()?;
+
+            expression = Expression::BinaryOp { left: Box::new(expression), operator: Operator::Or, right: Box::new(right) }
+        }
+        
+        Ok(expression)
     }
 
     fn parse_logic_and(&mut self) -> io::Result<Expression> {
         let mut expression = self.parse_comparison()?;
 
-        todo!()
+        while self.match_token(&Token::AmpersandAmpersand) {
+            let right = self.parse_comparison()?;
+
+            expression = Expression::BinaryOp { left: Box::new(expression), operator: Operator::And, right: Box::new(right) }
+        }
+
+        Ok(expression)
     }
 
     fn parse_comparison(&mut self) -> io::Result<Expression> {
@@ -136,7 +154,7 @@ impl Parser {
         while self.match_token(&Token::EqualEqual) || self.match_token(&Token::TildeEqual) {
             let operator = match self.previous() {
                 Token::EqualEqual => Operator::EqualEqual,
-                Token::TildeEqual => Operator::TildeEqual,
+                Token::TildeEqual => Operator::NotEqual,
                 _ => unreachable!()
             };
 

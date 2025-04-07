@@ -6,7 +6,7 @@ pub enum Operator {
     Divide,
     Power,
     EqualEqual,
-    TildeEqual,
+    NotEqual,
     And,
     Or
 }

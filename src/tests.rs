@@ -1,4 +1,5 @@
 use crate::parser::expression::Expression;
+use crate::parser::operator;
 use crate::parser::statement::Statement;
 
 use super::*;
@@ -160,12 +161,6 @@ fn test_parser_parameter() {
 
     let mut lexer = Lexer::new(source.to_string());
     lexer.lexer().unwrap();
-
-    for token in lexer.get_tokens().iter() {
-        println!("Token: {}", token);
-    }
-
-    println!("====================");
 
     let mut parser = Parser::new(lexer.get_tokens().clone());
     let function = parser.parse_function().unwrap();
@@ -446,4 +441,58 @@ fn test_variable_declaration_statement() {
     let statement = parser.parse_statement().unwrap();
 
     assert_eq!(statement, test_statement);
+}
+
+#[test]
+fn test_expression_boolean_parse() {
+    // a == 22 + 33 && b == 23 || c ~= 123
+
+    let test_expression = Expression::BinaryOp {
+        left: Box::new(Expression::BinaryOp {
+            left: Box::new(Expression::BinaryOp {
+                left: Box::new(Expression::Identifier(String::from("a"))),
+                operator: Operator::EqualEqual,
+                right: Box::new(Expression::BinaryOp {
+                    left: Box::new(Expression::IntegerLiteral(22)),
+                    operator: Operator::Plus,
+                    right: Box::new(Expression::IntegerLiteral(33))
+                })
+            }),
+            operator: Operator::And,
+            right: Box::new(Expression::BinaryOp {
+                left: Box::new(Expression::Identifier(String::from("b"))),
+                operator: Operator::EqualEqual,
+                right: Box::new(Expression::IntegerLiteral(23))
+            })
+        }),
+        operator: Operator::Or,
+        right: Box::new(Expression::BinaryOp {
+            left: Box::new(Expression::Identifier(String::from("c"))),
+            operator: Operator::NotEqual,
+            right: Box::new(Expression::IntegerLiteral(123))
+        })
+    };
+
+    let tokens = vec![
+        Token::Identifier(String::from("a")),
+        Token::EqualEqual,
+        Token::IntegerLiteral(22),
+        Token::Plus,
+        Token::IntegerLiteral(33),
+        Token::AmpersandAmpersand,
+        Token::Identifier(String::from("b")),
+        Token::EqualEqual,
+        Token::IntegerLiteral(23),
+        Token::PipePipe,
+        Token::Identifier(String::from("c")),
+        Token::TildeEqual,
+        Token::IntegerLiteral(123)
+    ];
+
+
+    let mut parser = Parser::new(tokens);
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+
 }
