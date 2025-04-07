@@ -1,11 +1,11 @@
 use crate::lexer::token::Token;
 
-use super::operator::{self, Operator};
+use super::operator::Operator;
 use super::data_type::DataType;
 use super::expression::{self, Expression};
 use super::function::Function;
 use super::parameter::Parameter;
-use super::statement::{self, Statement};
+use super::statement::Statement;
 
 use std::io;
 
@@ -40,12 +40,14 @@ impl Parser {
             DataType::Void
         };
 
+        let block = self.parse_statement()?;
+
         Ok(
             Function {
                 name: function_name,
                 return_type: function_type,
                 parameters: parameters,
-                body: Vec::new()
+                body: block
             }
         )
     }
@@ -80,11 +82,14 @@ impl Parser {
         Ok(parameter)
     }
 
+    /// Todo: Fix softlock
     pub fn parse_statement(&mut self) -> io::Result<Vec<Statement>> {
         let mut statements: Vec<Statement> = Vec::new();
         
         while !self.match_token(&Token::Semicolon) {
-            statements.push(self.determine_statement()?);
+            if let Ok(statement) = self.determine_statement() {
+                statements.push(statement);
+            }
         }
 
         Ok(statements)
@@ -97,8 +102,10 @@ impl Parser {
             self.parse_return_statement()
         } else if self.match_keyword("if") {
             self.parse_if_statement()
+        } else if self.match_keyword("while") {
+            self.parse_while_statement()
         } else {
-            todo!()
+            Err(io::Error::new(io::ErrorKind::InvalidData, "What are you doing here?"))
         }
     }
 
@@ -141,24 +148,36 @@ impl Parser {
 
         self.consume_token(Token::LeftBrace)?;
         let if_body = self.parse_statement()?;
-        
-        self.consume_token(Token::RightBrace)?;
 
-        let else_body = if self.match_keyword("else") {
+        let else_block= if self.match_keyword("else") {
             self.consume_token(Token::LeftBrace)?;
 
-            Some(self.parse_expression()?)
+            Some(self.parse_statement()?)
         } else {
             None
         };
-        
 
-
-        todo!()
+        Ok(
+            Statement::IfStatement {
+                condition: expression,
+                body: if_body,
+                else_body: else_block
+            }
+        )
     }
 
     fn parse_while_statement(&mut self) -> io::Result<Statement> {
-        todo!()
+        let expression = self.parse_expression()?;
+        self.consume_token(Token::LeftBrace)?;
+
+        let block = self.parse_statement()?;
+
+        Ok(
+            Statement::WhileStatement {
+                condition: expression,
+                body: block
+            }
+        )
     }
 
     pub fn parse_expression(&mut self) -> io::Result<Expression> {
@@ -254,9 +273,7 @@ impl Parser {
                 }
             )
         } else {
-            let expression = self.parse_primary();
-
-            expression
+            self.parse_primary()
         }
     }
 
