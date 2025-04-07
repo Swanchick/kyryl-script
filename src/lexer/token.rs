@@ -1,6 +1,6 @@
 use std::fmt;
 
-const SYMBOLS: &str = "()[]{};:=+-*/<>~,^";
+const SYMBOLS: &str = "()[]{}<>;:=+-*/~,^&|/";
 
 pub fn is_keyword(text: &str) -> bool {
     match text {
@@ -50,21 +50,16 @@ pub fn get_symbol(c: &str) -> Option<Token> {
         "^" => Some(Token::Power),
         "==" => Some(Token::EqualEqual),
         "~=" => Some(Token::TildeEqual),
+        "<=" => Some(Token::LessEqual),
+        ">=" => Some(Token::GreaterEqual),
+        "&&" => Some(Token::AmpersandAmpersand),
+        "||" => Some(Token::PipePipe),
         _ => None
     }
 }
 
 pub fn is_symbol(c: char) -> bool {
     SYMBOLS.contains(c)
-}
-
-pub fn double_symbol(c: &str) -> Option<(Token, Token)> {
-    match c {
-        "()" => Some((Token::LeftParenthesis, Token::RightParenthesis)),
-        "{}" => Some((Token::LeftBrace, Token::RightBrace)),
-        "[]" => Some((Token::LeftSquareBracket, Token::RightSquareBracket)),
-        _ => None
-    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -94,6 +89,10 @@ pub enum Token {
     Power, // ^
     EqualEqual, // ==
     TildeEqual, // ~=
+    LessEqual, // <=
+    GreaterEqual, // >=
+    AmpersandAmpersand, // &&
+    PipePipe, // ||
 }
 
 impl fmt::Display for Token {
@@ -123,7 +122,11 @@ impl fmt::Display for Token {
             Token::Tilde => write!(f, "tilde"),
             Token::Power => write!(f, "power"),
             Token::EqualEqual => write!(f, "equal equal"),
-            Token::TildeEqual => write!(f, "tilde equal")
+            Token::TildeEqual => write!(f, "tilde equal"),
+            Token::LessEqual => write!(f, "less equal"),
+            Token::GreaterEqual => write!(f, "greater equal"),
+            Token::AmpersandAmpersand => write!(f, "ampersand ampersand"),
+            Token::PipePipe => write!(f, "pipe pipe"),
         }
     }
 }

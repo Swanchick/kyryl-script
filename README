@@ -1,2 +1,6 @@
 # Kyryl Script
 
+Kyryl script is a simple programming language compatable with rust. It was made in academic purposes as course work, for Modern and Emerging Programming Languages in Aalto university. 
+
+Kyryl script is a structured staticly typed programming language, which functionality could be enhanced with rust code, and could be considered as a languaged to be written fast.
+

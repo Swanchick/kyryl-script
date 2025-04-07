@@ -2,7 +2,7 @@ use std::fs::read_to_string;
 use std::io;
 
 use super::token::Token;
-use super::token::{is_keyword, get_symbol, is_symbol, double_symbol};
+use super::token::{is_keyword, get_symbol, is_symbol};
 
 use super::lexer_state::LexerState;
 
@@ -43,6 +43,7 @@ impl Lexer {
     pub fn lex_line(&mut self, line: &str) -> io::Result<Vec<Token>> { 
         // Todo:
         // Remove this thing
+        // I mean, lexer won't work without it, but it could be done better
         let mut line = line.to_string();
         line.push(' ');
 
@@ -126,10 +127,15 @@ impl Lexer {
                     if is_symbol(current_char) && cur != line.len() {
                         buffer.push(current_char);
                     } else {
+                        // Checking if the symbol is a comment and if it is indeed then break the loop to proceed to the next line
+                        // easy 
+                        if buffer.contains("--") {
+                            break;
+                        }
+
                         let mut symbols = self.get_symbols(&buffer);
 
                         tokens.append(&mut symbols);
-
                         buffer.clear();
                         state = LexerState::None;
                         
@@ -147,10 +153,7 @@ impl Lexer {
     fn get_symbols(&self, buffer: &str) -> Vec<Token> {
         let mut tokens: Vec<Token> = Vec::new();
         
-        if let Some((left, right)) = double_symbol(&buffer) {
-            tokens.push(left);
-            tokens.push(right);
-        } else if let Some(symbol) = get_symbol(&buffer) {
+        if let Some(symbol) = get_symbol(&buffer) {
             tokens.push(symbol);
         } else if buffer.len() == 2 {
             for c in buffer.chars() {

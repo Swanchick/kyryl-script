@@ -1,8 +1,8 @@
 use crate::lexer::token::Token;
 
-use super::operator::Operator;
+use super::operator::{self, Operator};
 use super::data_type::DataType;
-use super::expression::Expression;
+use super::expression::{self, Expression};
 use super::function::Function;
 use super::parameter::Parameter;
 use super::statement::Statement;
@@ -124,8 +124,32 @@ impl Parser {
         self.parse_addition()
     }
 
+    fn parse_logic_and(&mut self) -> io::Result<Expression> {
+        let mut expression = self.parse_comparison()?;
+
+        todo!()
+    }
+
+    fn parse_comparison(&mut self) -> io::Result<Expression> {
+        let mut expression = self.parse_addition()?;
+
+        while self.match_token(&Token::EqualEqual) || self.match_token(&Token::TildeEqual) {
+            let operator = match self.previous() {
+                Token::EqualEqual => Operator::EqualEqual,
+                Token::TildeEqual => Operator::TildeEqual,
+                _ => unreachable!()
+            };
+
+            let right = self.parse_addition()?;
+
+            expression = Expression::BinaryOp { left: Box::new(expression), operator: operator, right: Box::new(right) }
+        }
+
+        Ok(expression)
+    }
+
     fn parse_addition(&mut self) -> io::Result<Expression> {
-        let mut expression = self.parse_multipilcation()?;
+        let mut expression = self.parse_multiplication()?;
         
         while self.match_token(&Token::Plus) || self.match_token(&Token::Minus) {
             let operator = match self.previous() {
@@ -134,7 +158,7 @@ impl Parser {
                 _ => unreachable!()
             };
 
-            let right = self.parse_multipilcation()?;
+            let right = self.parse_multiplication()?;
 
             expression = Expression::BinaryOp { left: Box::new(expression), operator: operator, right: Box::new(right) };
         }
@@ -142,7 +166,7 @@ impl Parser {
         Ok(expression)
     }
 
-    fn parse_multipilcation(&mut self) -> io::Result<Expression> {
+    fn parse_multiplication(&mut self) -> io::Result<Expression> {
         let mut expression = self.parse_unary()?;
 
         while self.match_token(&Token::Multiply) || self.match_token(&Token::Divide) {
