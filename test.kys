@@ -1,8 +1,8 @@
---
--- This code has been written completely by scratch
--- by Swanchick!
--- Hell yeah
---
+---
+--- This code has been written completely by scratch
+--- by Swanchick!
+--- Hell yeah
+---
 
 
 function add(a: int, b: int): int {

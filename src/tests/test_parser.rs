@@ -1,8 +1,4 @@
-use crate::parser::expression::Expression;
-use crate::parser::operator;
-use crate::parser::statement::Statement;
-
-use super::*;
+use crate::*;
 use lexer::lexer::Lexer;
 use lexer::token::Token;
 use parser::parser::Parser;
@@ -10,103 +6,8 @@ use parser::function::Function;
 use parser::data_type::DataType;
 use parser::parameter::Parameter;
 use parser::operator::Operator;
-
-#[test]
-fn test_lexer_easy() {
-    let source = concat!(
-        "function main() {\n",
-        "}\n"
-    );
-
-    let mut lexer = Lexer::new(source.to_string());
-    lexer.lexer().unwrap();
-
-    let expected_tokens: Vec<Token> = vec![
-        Token::Keyword("function".to_string()),
-        Token::Identifier("main".to_string()),
-        Token::LeftParenthesis,
-        Token::RightParenthesis,
-        Token::LeftBrace,
-        Token::RightBrace
-    ];
-
-    let tokens = lexer.get_tokens();
-
-    assert_eq!(tokens, &expected_tokens);
-}
-
-
-#[test]
-fn test_lexer_from_file() {
-    let source = concat!(
-        "function main() {\n",
-        "    let value: float = 10.2f;\n",
-        "    let value2: int = 10;\n",
-        "    print(\"Hello World\");\n",
-        "}\n"
-    );
-
-    let mut lexer = Lexer::new(source.to_string());
-    lexer.lexer().unwrap();
-
-    let expected_tokens: Vec<Token> = vec![
-        Token::Keyword("function".to_string()),
-        Token::Identifier("main".to_string()),
-        Token::LeftParenthesis,
-        Token::RightParenthesis,
-        Token::LeftBrace,
-        Token::Keyword("let".to_string()),
-        Token::Identifier("value".to_string()),
-        Token::Colon,
-        Token::Keyword("float".to_string()),
-        Token::Equal,
-        Token::FloatLiteral(10.2),
-        Token::Semicolon,
-        Token::Keyword("let".to_string()),
-        Token::Identifier("value2".to_string()),
-        Token::Colon,
-        Token::Keyword("int".to_string()),
-        Token::Equal,
-        Token::IntegerLiteral(10),
-        Token::Semicolon,
-        Token::Identifier("print".to_string()),
-        Token::LeftParenthesis,
-        Token::StringLiteral("Hello World".to_string()),
-        Token::RightParenthesis,
-        Token::Semicolon,
-        Token::RightBrace
-    ];
-
-    let tokens = lexer.get_tokens();
-
-    assert_eq!(tokens, &expected_tokens);
-}
-
-
-#[test]
-fn test_lexer_identefier_underscore() {
-    let source = concat!(
-        "function test_function() {\n",
-        "}\n"
-    );
-
-    let mut lexer = Lexer::new(source.to_string());
-    lexer.lexer().unwrap();
-
-    let expected_tokens: Vec<Token> = vec![
-        Token::Keyword("function".to_string()),
-        Token::Identifier("test_function".to_string()),
-        Token::LeftParenthesis,
-        Token::RightParenthesis,
-        Token::LeftBrace,
-        Token::RightBrace
-    ];
-
-    let tokens = lexer.get_tokens();
-
-    assert_eq!(tokens, &expected_tokens);
-}
-
+use parser::expression::Expression;
+use parser::statement::Statement;
 
 #[test]
 fn test_function_parse_name() {
@@ -438,7 +339,7 @@ fn test_variable_declaration_statement() {
     };
 
     let mut parser = Parser::new(tokens);
-    let statement = parser.parse_statement().unwrap();
+    let statement = parser.determine_statement().unwrap();
 
     assert_eq!(statement, test_statement);
 }
@@ -496,3 +397,26 @@ fn test_expression_boolean_parse() {
     assert_eq!(expression, test_expression);
 
 }
+
+#[test]
+fn test_expression_in_parenthesis() {
+    let test_expression = Expression::BinaryOp {
+        left: Box::new(Expression::IntegerLiteral(2)),
+        operator: Operator::Plus,
+        right: Box::new(Expression::IntegerLiteral(2))
+    };
+
+    let tokens = vec![
+        Token::LeftParenthesis,
+        Token::IntegerLiteral(2),
+        Token::Plus,
+        Token::IntegerLiteral(2),
+        Token::RightParenthesis
+    ];
+
+    let mut parser = Parser::new(tokens);
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+}
+

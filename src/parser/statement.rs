@@ -14,12 +14,6 @@ pub enum Statement {
         name: String,
         value: Expression
     },
-    FunctionDeclaration {
-        name: String,
-        parameters: Vec<Parameter>,
-        return_type: Option<DataType>,
-        body: Vec<Statement>
-    },
     ReturnStatement {
         value: Option<Expression>
     },

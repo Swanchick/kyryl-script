@@ -5,7 +5,7 @@ use super::data_type::DataType;
 use super::expression::{self, Expression};
 use super::function::Function;
 use super::parameter::Parameter;
-use super::statement::Statement;
+use super::statement::{self, Statement};
 
 use std::io;
 
@@ -34,11 +34,11 @@ impl Parser {
         println!("{}", self.current_token);
         let parameters = self.parse_parameters()?;
 
-        let mut function_type = DataType::Void;
-
-        if self.match_token(&Token::Colon) {
-            function_type = self.consume_data_type()?;
-        }
+        let function_type = if self.match_token(&Token::Colon) {
+            self.consume_data_type()?
+        } else {
+            DataType::Void
+        };
 
         Ok(
             Function {
@@ -80,11 +80,23 @@ impl Parser {
         Ok(parameter)
     }
 
-    pub fn parse_statement(&mut self) -> io::Result<Statement> {
+    pub fn parse_statement(&mut self) -> io::Result<Vec<Statement>> {
+        let mut statements: Vec<Statement> = Vec::new();
+        
+        while !self.match_token(&Token::Semicolon) {
+            statements.push(self.determine_statement()?);
+        }
+
+        Ok(statements)
+    }
+
+    pub fn determine_statement(&mut self) -> io::Result<Statement> {
         if self.match_keyword("let") {
             self.parse_variable_declaration_statement()
         } else if self.match_keyword("return") {
             self.parse_return_statement()
+        } else if self.match_keyword("if") {
+            self.parse_if_statement()
         } else {
             todo!()
         }
@@ -118,6 +130,35 @@ impl Parser {
                 value: Some(expression)
             }
         )
+    }
+
+    fn parse_assigment_statement(&mut self) -> io::Result<Statement> {
+        todo!()
+    }
+
+    fn parse_if_statement(&mut self) -> io::Result<Statement> {
+        let expression = self.parse_expression()?;
+
+        self.consume_token(Token::LeftBrace)?;
+        let if_body = self.parse_statement()?;
+        
+        self.consume_token(Token::RightBrace)?;
+
+        let else_body = if self.match_keyword("else") {
+            self.consume_token(Token::LeftBrace)?;
+
+            Some(self.parse_expression()?)
+        } else {
+            None
+        };
+        
+
+
+        todo!()
+    }
+
+    fn parse_while_statement(&mut self) -> io::Result<Statement> {
+        todo!()
     }
 
     pub fn parse_expression(&mut self) -> io::Result<Expression> {
@@ -378,6 +419,15 @@ impl Parser {
         }
 
         false
+    }
+
+    fn next(&self) -> Option<&Token> {
+        if self.current_token + 1 >= self.tokens.len() {
+            None
+        } else {
+            Some(&self.tokens[self.current_token + 1])
+        }
+
     }
 
     fn previous(&self) -> &Token {
