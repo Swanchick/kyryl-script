@@ -3,7 +3,7 @@ use super::parameter::Parameter;
 use super::statement::Statement;
 
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Function {
     pub name: String,
     pub return_type: DataType,

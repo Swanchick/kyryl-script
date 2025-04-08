@@ -1,9 +1,8 @@
 use super::data_type::DataType;
 use super::expression::Expression;
-use super::parameter::Parameter;
 
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Statement {
     VarableDeclaration {
         name: String,
