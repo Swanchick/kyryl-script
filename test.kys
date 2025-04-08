@@ -4,15 +4,9 @@
 --- Hell yeah
 ---
 
-
 function add(a: int, b: int): int {
-    if (a == b) {
-        print("Hello World"); -- This is a comment
-    }
-
     print("Hello World");
-
-    let c = 2 + 500 / 2;
-
-    return a + b;
+    let c = 2;
+    c = 6;
+    return c;
 }

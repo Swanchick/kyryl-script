@@ -2,7 +2,7 @@ use crate::lexer::token::Token;
 
 use super::operator::Operator;
 use super::data_type::DataType;
-use super::expression::{self, Expression};
+use super::expression::Expression;
 use super::function::Function;
 use super::parameter::Parameter;
 use super::statement::Statement;
@@ -40,6 +40,7 @@ impl Parser {
             DataType::Void
         };
 
+        self.consume_token(Token::LeftBrace)?;
         let block = self.parse_statement()?;
 
         Ok(
@@ -82,14 +83,13 @@ impl Parser {
         Ok(parameter)
     }
 
-    /// Todo: Fix softlock
     pub fn parse_statement(&mut self) -> io::Result<Vec<Statement>> {
         let mut statements: Vec<Statement> = Vec::new();
         
-        while !(self.match_token(&Token::Semicolon) || self.is_end()) {
-            if let Ok(statement) = self.determine_statement() {
-                statements.push(statement);
-            }
+        while !(self.match_token(&Token::RightBrace) || self.is_end()) {
+            let statement = self.determine_statement()?;
+            
+            statements.push(statement);
         }
 
         Ok(statements)
@@ -104,9 +104,22 @@ impl Parser {
             self.parse_if_statement()
         } else if self.match_keyword("while") {
             self.parse_while_statement()
+        } else if let Token::Identifier(name) = self.peek().to_owned() { 
+            self.advance();
+
+            if self.match_token(&Token::Equal) {
+                self.parse_assigment_statement(name)
+            } else if self.match_token(&Token::LeftParenthesis) {
+                self.parse_function_call_statement(name)
+            } else {
+                self.advance();
+                
+                Err(io::Error::new(io::ErrorKind::InvalidData, "Unknown statement with identefier"))
+            }
         } else {
             self.advance();
-            Err(io::Error::new(io::ErrorKind::InvalidData, "What are you doing here?"))
+
+            Err(io::Error::new(io::ErrorKind::InvalidData, format!("Invalid statement {}", self.previous())))
         }
     }
 
@@ -140,8 +153,39 @@ impl Parser {
         )
     }
 
-    fn parse_assigment_statement(&mut self) -> io::Result<Statement> {
-        todo!()
+    fn parse_assigment_statement(&mut self, name: String) -> io::Result<Statement> {
+        let expression = self.parse_expression()?;
+        self.consume_token(Token::Semicolon)?;
+
+        Ok(Statement::Assigment { name: name, value: expression })
+    }
+
+    fn parse_function_call_statement(&mut self, name: String) -> io::Result<Statement> {
+        let parameters = self.parse_function_call_parameters()?;
+        
+        println!("{:?}", parameters);
+
+        println!("============================== 1");
+        self.consume_token(Token::RightParenthesis)?;
+        println!("============================== 2");
+        self.consume_token(Token::Semicolon)?;
+        
+        Ok(Statement::FunctionCall { name: name, parameters: parameters })
+    }
+
+    fn parse_function_call_parameters(&mut self) -> io::Result<Vec<Expression>> {
+        let mut parameters: Vec<Expression> = Vec::new();
+        
+        loop {
+            let expression = self.parse_expression()?;
+            parameters.push(expression);
+
+            if !self.match_token(&Token::Comma) {
+                break;
+            }
+        }
+
+        Ok(parameters)
     }
 
     fn parse_if_statement(&mut self) -> io::Result<Statement> {
@@ -246,7 +290,7 @@ impl Parser {
     }
 
     fn parse_multiplication(&mut self) -> io::Result<Expression> {
-        let mut expression = self.parse_unary()?;
+        let mut expression = self.parse_power()?;
 
         while self.match_token(&Token::Multiply) || self.match_token(&Token::Divide) {
             let operator = match self.previous() {
@@ -255,7 +299,7 @@ impl Parser {
                 _ => unreachable!()
             };
 
-            let right = self.parse_unary()?;
+            let right = self.parse_power()?;
 
             expression = Expression::BinaryOp { left: Box::new(expression), operator: operator, right: Box::new(right) };
         }
@@ -263,14 +307,32 @@ impl Parser {
         Ok(expression)
     }
 
+    fn parse_power(&mut self) -> io::Result<Expression> {
+        let mut expression = self.parse_unary()?;
+
+        while self.match_token(&Token::Power) {
+            let right = self.parse_unary()?;
+
+            expression = Expression::BinaryOp { left: Box::new(expression), operator: Operator::Power, right: Box::new(right) }
+        }
+
+        Ok(expression)
+    }
+
     fn parse_unary(&mut self) -> io::Result<Expression> {
-        if self.match_token(&Token::Minus) {
+        if self.match_token(&Token::Minus) || self.match_token(&Token::Tilde) {
+            let operator = match self.previous() {
+                Token::Minus => Operator::Minus,
+                Token::Tilde => Operator::Tilde,
+                _ => unreachable!()
+            };
+            
             let expression = self.parse_primary()?;
             
             Ok(
                 Expression::UnaryOp {
                     expression: Box::new(expression),
-                    operator: Operator::Minus
+                    operator: operator
                 }
             )
         } else {
@@ -328,10 +390,17 @@ impl Parser {
             },
             Token::Identifier(name) => {
                 let name = name.to_owned();
-                let expression = Expression::Identifier(name);
                 self.advance();
-                
-                Ok(expression)
+                if self.match_token(&Token::LeftParenthesis) {
+                    let parameters = self.parse_function_call_parameters()?;
+                    self.consume_token(Token::RightParenthesis)?;
+
+                    Ok(Expression::FunctionCall(name, parameters))
+                } else {
+                    let expression = Expression::Identifier(name);
+                    
+                    Ok(expression)
+                }
             },
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Expected expression")) 
         }

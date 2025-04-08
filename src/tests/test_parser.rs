@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::*;
 use lexer::lexer::Lexer;
 use lexer::token::Token;
@@ -395,7 +397,6 @@ fn test_expression_boolean_parse() {
     let expression = parser.parse_expression().unwrap();
 
     assert_eq!(expression, test_expression);
-
 }
 
 #[test]
@@ -420,3 +421,44 @@ fn test_expression_in_parenthesis() {
     assert_eq!(expression, test_expression);
 }
 
+
+#[test]
+fn test_assigment_statement() {
+    let source = "a = \"Hello World\";";
+
+    let test_statement = Statement::Assigment {
+        name: String::from("a"),
+        value: Expression::StringLiteral(String::from("Hello World"))
+    };
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let statement = parser.determine_statement().unwrap();
+
+
+    assert_eq!(statement, test_statement);
+}
+
+#[test]
+fn test_function_call_statement() {
+    let source = "print(add(20, 10), 20);";
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let test_statement = Statement::FunctionCall {
+        name: String::from("print"),
+        parameters: vec![
+            Expression::FunctionCall(String::from("add"), vec![Expression::IntegerLiteral(20), Expression::IntegerLiteral(10)]),
+            Expression::IntegerLiteral(20)
+        ]
+    };
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let statement = parser.determine_statement().unwrap();
+
+    assert_eq!(statement, test_statement);
+
+}

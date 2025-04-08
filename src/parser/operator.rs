@@ -8,5 +8,6 @@ pub enum Operator {
     EqualEqual,
     NotEqual,
     And,
-    Or
+    Or,
+    Tilde
 }

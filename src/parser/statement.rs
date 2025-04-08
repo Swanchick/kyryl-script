@@ -14,6 +14,10 @@ pub enum Statement {
         name: String,
         value: Expression
     },
+    FunctionCall {
+        name: String,
+        parameters: Vec<Expression>
+    },
     ReturnStatement {
         value: Option<Expression>
     },
