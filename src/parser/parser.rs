@@ -86,7 +86,7 @@ impl Parser {
     pub fn parse_statement(&mut self) -> io::Result<Vec<Statement>> {
         let mut statements: Vec<Statement> = Vec::new();
         
-        while !self.match_token(&Token::Semicolon) {
+        while !(self.match_token(&Token::Semicolon) || self.is_end()) {
             if let Ok(statement) = self.determine_statement() {
                 statements.push(statement);
             }
@@ -105,6 +105,7 @@ impl Parser {
         } else if self.match_keyword("while") {
             self.parse_while_statement()
         } else {
+            self.advance();
             Err(io::Error::new(io::ErrorKind::InvalidData, "What are you doing here?"))
         }
     }
