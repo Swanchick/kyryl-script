@@ -6,30 +6,30 @@ use std::cell::RefCell;
 
 use super::value::Value;
 
-pub struct Enviroment {
-    parent: Option<Rc<RefCell<Enviroment>>>,
+#[derive(Debug, Clone)]
+pub struct Environment {
+    parent: Option<Rc<RefCell<Environment>>>,
     values: HashMap<String, Value>
 }
 
-impl Enviroment {
-    pub fn new() -> Enviroment {
-        Enviroment {
+impl Environment {
+    pub fn new() -> Environment {
+        Environment {
             parent: None,
             values: HashMap::new()
         }
     }
 
-    pub fn with_parent(parent: Rc<RefCell<Enviroment>>) -> Enviroment {
-        Enviroment {
+    pub fn with_parent(parent: Rc<RefCell<Environment>>) -> Environment {
+        Environment {
             parent: Some(parent),
             values: HashMap::new()
         }
     }
 
-    pub fn define_variable(&mut self, name: &str, value: Value) {
+    pub fn define_variable(&mut self, name: String, value: Value) {
         self.values.insert(name.to_string(), value);
     }
-
 
     ///
     /// SO MUCH RECURSION (:O)-<--<
