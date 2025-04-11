@@ -1,9 +1,10 @@
+use std::mem::discriminant;
 use std::rc::Rc;
 use std::cell::RefCell;
 
 use crate::parser::function::Function;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Integer(i32),
     Float(f64),
@@ -11,4 +12,10 @@ pub enum Value {
     Boolean(bool),
     Function(Rc<RefCell<Function>>),
     Void
+}
+
+impl Value {
+    pub fn check(&self, other: &Value) -> bool {
+        discriminant(self) == discriminant(other)
+    }
 }
