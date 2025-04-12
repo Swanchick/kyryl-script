@@ -13,9 +13,3 @@ pub enum Value {
     Function(Rc<RefCell<Function>>),
     Void
 }
-
-impl Value {
-    pub fn check(&self, other: &Value) -> bool {
-        discriminant(self) == discriminant(other)
-    }
-}

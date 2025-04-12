@@ -2,7 +2,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
 
-use crate::lexer::token::Token;
 use crate::parser::expression::Expression;
 use crate::parser::function::Function;
 use crate::parser::operator::Operator;
@@ -91,6 +90,11 @@ impl Interpreter {
 
                 self.interpret_binary_operation(left_value, right_value, operator)
             },
+            Expression::UnaryOp { expression, operator } => {
+                let value = self.interpret_expression(*expression)?;
+
+                self.interpret_unary_operation(value, operator)
+            },
             Expression::IntegerLiteral(value) => {
                 Ok(Value::Integer(value.clone()))
             },
@@ -109,6 +113,10 @@ impl Interpreter {
         }
     }
 
+    /// Todo:
+    /// 1. Add Unary Operator
+    /// 2. Multiply
+    /// 3. Devide
     fn interpret_binary_operation(&self, left: Value, right: Value, operator: Operator) -> io::Result<Value> {
         match operator {
             Operator::Plus => {
@@ -118,14 +126,41 @@ impl Interpreter {
                 self.interpret_minus(left, right)
             },
             Operator::Multiply => {
-                todo!()
+                self.interpret_multiply(left, right)
             },
             Operator::Divide => {
-                todo!()
+                self.interpret_divide(left, right)
             },
             _ => {
                 Err(io::Error::new(io::ErrorKind::InvalidData, "Unsupported operator!"))
             }
+        }
+    }
+
+    fn interpret_unary_operation(&self, value: Value, operator: Operator) -> io::Result<Value> {
+        match operator {
+            Operator::Minus => {
+                self.interpret_negation(value)
+            },
+
+            Operator::Tilde => {
+                self.interpret_not(value)
+            },
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Unknown unary operator!"))
+        }
+    }
+
+    fn interpret_not(&self, value: Value) -> io::Result<Value> {
+        match value {
+            Value::Boolean(value) => Ok(Value::Boolean(!value)),
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong type for not inverting"))
+        }
+    }
+
+    fn interpret_negation(&self, value: Value) -> io::Result<Value> {
+        match value {
+            Value::Integer(value) => Ok(Value::Integer(-value)),
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong type for not inverting"))
         }
     }
 
@@ -185,5 +220,73 @@ impl Interpreter {
             },
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Different or unsupported data types!"))
         }
-    } 
+    }
+
+    fn interpret_multiply(&self, left: Value, right: Value) -> io::Result<Value> {
+        match (left, right) {
+            (Value::Integer(n1), Value::Integer(n2)) => {
+                let value = Value::Integer(n1 * n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Float(n2)) => {
+                let value = Value::Float(n1 * n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Integer(n2)) => {
+                let value = Value::Float(n1 * (n2 as f64));
+
+                Ok(value)
+            },
+            (Value::Integer(n1), Value::Float(n2)) => {
+                let value = Value::Float((n1 as f64) * n2);
+
+                Ok(value)
+            },
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Different or unsupported data types!"))
+        }
+    }
+
+    fn interpret_divide(&self, left: Value, right: Value) -> io::Result<Value> {
+        match (left, right) {
+            (Value::Integer(n1), Value::Integer(n2)) => {
+                if n2 == 0 {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Division by zero!"))
+                }
+                
+                let value = Value::Float(n1 as f64 / n2 as f64);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Float(n2)) => {
+                if n2 == 0.0 {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Division by zero!"))
+                }
+
+                let value = Value::Float(n1 / n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Integer(n2)) => {
+                if n2 == 0 {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Division by zero!"))
+                }
+
+                let value = Value::Float(n1 / (n2 as f64));
+
+                Ok(value)
+            },
+            (Value::Integer(n1), Value::Float(n2)) => {
+                if n2 == 0.0 {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Division by zero!"))
+                }
+
+                let value = Value::Float((n1 as f64) / n2);
+
+                Ok(value)
+            },
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Different or unsupported data types!"))
+        }
+    }
 }
