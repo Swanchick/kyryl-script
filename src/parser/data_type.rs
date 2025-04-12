@@ -8,5 +8,6 @@ pub enum DataType {
     Struct,
     Enum,
     List,
-    Tuple
+    Tuple,
+    Function
 }

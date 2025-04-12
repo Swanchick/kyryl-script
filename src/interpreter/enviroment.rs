@@ -27,6 +27,10 @@ impl Environment {
         }
     }
 
+    pub fn get_values(&self) -> &HashMap<String, Value> {
+        &self.values
+    }
+
     pub fn define_variable(&mut self, name: String, value: Value) {
         self.values.insert(name.to_string(), value);
     }

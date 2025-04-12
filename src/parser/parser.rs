@@ -41,7 +41,7 @@ impl Parser {
         };
 
         self.consume_token(Token::LeftBrace)?;
-        let block = self.parse_statement()?;
+        let block = self.parse_block_statement()?;
 
         Ok(
             Function {
@@ -83,11 +83,11 @@ impl Parser {
         Ok(parameter)
     }
 
-    pub fn parse_statement(&mut self) -> io::Result<Vec<Statement>> {
+    pub fn parse_block_statement(&mut self) -> io::Result<Vec<Statement>> {
         let mut statements: Vec<Statement> = Vec::new();
         
         while !(self.match_token(&Token::RightBrace) || self.is_end()) {
-            let statement = self.determine_statement()?;
+            let statement = self.parse_statement()?;
             
             statements.push(statement);
         }
@@ -95,7 +95,7 @@ impl Parser {
         Ok(statements)
     }
 
-    pub fn determine_statement(&mut self) -> io::Result<Statement> {
+    pub fn parse_statement(&mut self) -> io::Result<Statement> {
         if self.match_keyword("let") {
             self.parse_variable_declaration_statement()
         } else if self.match_keyword("return") {
@@ -126,9 +126,12 @@ impl Parser {
     fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> {
         let name = self.consume_identefier()?;
         
-        self.consume_token(Token::Colon)?;
+        let data_type = if self.match_token(&Token::Colon) {
+            Some(self.consume_data_type()?)
+        } else {
+            None
+        };
         
-        let data_type = self.consume_data_type()?;
         self.consume_token(Token::Equal)?;
         let expression = self.parse_expression()?;
         
@@ -137,7 +140,7 @@ impl Parser {
         Ok(
             Statement::VarableDeclaration {
                 name: name,
-                data_type: Some(data_type),
+                data_type: data_type,
                 value: Some(expression)
             }
         )
@@ -165,9 +168,7 @@ impl Parser {
         
         println!("{:?}", parameters);
 
-        println!("============================== 1");
         self.consume_token(Token::RightParenthesis)?;
-        println!("============================== 2");
         self.consume_token(Token::Semicolon)?;
         
         Ok(Statement::FunctionCall { name: name, parameters: parameters })
@@ -192,12 +193,12 @@ impl Parser {
         let expression = self.parse_expression()?;
 
         self.consume_token(Token::LeftBrace)?;
-        let if_body = self.parse_statement()?;
+        let if_body = self.parse_block_statement()?;
 
         let else_block= if self.match_keyword("else") {
             self.consume_token(Token::LeftBrace)?;
 
-            Some(self.parse_statement()?)
+            Some(self.parse_block_statement()?)
         } else {
             None
         };
@@ -215,7 +216,7 @@ impl Parser {
         let expression = self.parse_expression()?;
         self.consume_token(Token::LeftBrace)?;
 
-        let block = self.parse_statement()?;
+        let block = self.parse_block_statement()?;
 
         Ok(
             Statement::WhileStatement {

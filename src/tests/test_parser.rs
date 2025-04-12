@@ -341,7 +341,7 @@ fn test_variable_declaration_statement() {
     };
 
     let mut parser = Parser::new(tokens);
-    let statement = parser.determine_statement().unwrap();
+    let statement = parser.parse_statement().unwrap();
 
     assert_eq!(statement, test_statement);
 }
@@ -435,7 +435,7 @@ fn test_assigment_statement() {
     lexer.lexer().unwrap();
 
     let mut parser = Parser::new(lexer.get_tokens().clone());
-    let statement = parser.determine_statement().unwrap();
+    let statement = parser.parse_statement().unwrap();
 
 
     assert_eq!(statement, test_statement);
@@ -457,7 +457,7 @@ fn test_function_call_statement() {
     };
 
     let mut parser = Parser::new(lexer.get_tokens().clone());
-    let statement = parser.determine_statement().unwrap();
+    let statement = parser.parse_statement().unwrap();
 
     assert_eq!(statement, test_statement);
 
