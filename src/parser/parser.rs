@@ -268,10 +268,20 @@ impl Parser {
     fn parse_comparison(&mut self) -> io::Result<Expression> {
         let mut expression = self.parse_addition()?;
 
-        while self.match_token(&Token::EqualEqual) || self.match_token(&Token::TildeEqual) {
+        while self.match_token(&Token::EqualEqual)      ||
+                self.match_token(&Token::TildeEqual)    ||
+                self.match_token(&Token::GreaterEqual)  ||
+                self.match_token(&Token::LessEqual)     ||
+                self.match_token(&Token::GreaterThan)   ||
+                self.match_token(&Token::LessThan)
+        {    
             let operator = match self.previous() {
                 Token::EqualEqual => Operator::EqualEqual,
                 Token::TildeEqual => Operator::NotEqual,
+                Token::GreaterEqual => Operator::GreaterEqual,
+                Token::GreaterThan => Operator::Greater,
+                Token::LessEqual => Operator::LessEqual,
+                Token::LessThan => Operator::Less,
                 _ => unreachable!()
             };
 

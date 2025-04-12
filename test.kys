@@ -4,15 +4,12 @@
 --- Hell yeah
 ---
 
-function recursion_test(iter: int) {
-    unprint(iter);
-
-    if iter ~= 10 {
-        recursion_test(iter + 1);
-    }
-}
-
 function main() {
-    recursion_test(0);
+    let a = 0;
+    
+    while a < 10 {
+        print(a);
+        a = a + 1;
+    }
 }
 

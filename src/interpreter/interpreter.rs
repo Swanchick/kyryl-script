@@ -264,6 +264,10 @@ impl Interpreter {
             Operator::Multiply => self.interpret_multiply(left, right),
             Operator::Divide => self.interpret_divide(left, right),
             Operator::EqualEqual => self.interpret_equal_equal(left, right),
+            Operator::GreaterEqual => self.interpret_greater_equal(left, right),
+            Operator::Greater => self.interpret_greater(left, right),
+            Operator::LessEqual => self.interpret_less_equal(left, right),
+            Operator::Less => self.interpret_less(left, right),
             Operator::NotEqual => self.interpret_tilde_equal(left, right),
             Operator::And => self.interpret_and(left, right),
             Operator::Or => self.interpret_or(left, right),
@@ -295,6 +299,110 @@ impl Interpreter {
             },
             (Value::String(str1), Value::String(str2)) => {
                 let value = Value::Boolean(str1 == str2);
+
+                Ok(value)
+            },
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Different or unsupported data types!"))
+        }
+    }
+
+    fn interpret_greater_equal(&self, left: Value, right: Value) -> io::Result<Value> {
+        match (left, right) {
+            (Value::Integer(n1), Value::Integer(n2)) => {
+                let value = Value::Boolean(n1 >= n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Float(n2)) => {
+                let value = Value::Boolean(n1 >= n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Integer(n2)) => {
+                let value = Value::Boolean(n1 >= (n2 as f64));
+
+                Ok(value)
+            },
+            (Value::Integer(n1), Value::Float(n2)) => {
+                let value = Value::Boolean((n1 as f64) >= n2);
+
+                Ok(value)
+            },
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Different or unsupported data types!"))
+        }
+    }
+
+    fn interpret_greater(&self, left: Value, right: Value) -> io::Result<Value> {
+        match (left, right) {
+            (Value::Integer(n1), Value::Integer(n2)) => {
+                let value = Value::Boolean(n1 > n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Float(n2)) => {
+                let value = Value::Boolean(n1 > n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Integer(n2)) => {
+                let value = Value::Boolean(n1 > (n2 as f64));
+
+                Ok(value)
+            },
+            (Value::Integer(n1), Value::Float(n2)) => {
+                let value = Value::Boolean((n1 as f64) > n2);
+
+                Ok(value)
+            },
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Different or unsupported data types!"))
+        }
+    }
+
+    fn interpret_less_equal(&self, left: Value, right: Value) -> io::Result<Value> {
+        match (left, right) {
+            (Value::Integer(n1), Value::Integer(n2)) => {
+                let value = Value::Boolean(n1 <= n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Float(n2)) => {
+                let value = Value::Boolean(n1 <= n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Integer(n2)) => {
+                let value = Value::Boolean(n1 <= (n2 as f64));
+
+                Ok(value)
+            },
+            (Value::Integer(n1), Value::Float(n2)) => {
+                let value = Value::Boolean((n1 as f64) <= n2);
+
+                Ok(value)
+            },
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Different or unsupported data types!"))
+        }
+    }
+
+    fn interpret_less(&self, left: Value, right: Value) -> io::Result<Value> {
+        match (left, right) {
+            (Value::Integer(n1), Value::Integer(n2)) => {
+                let value = Value::Boolean(n1 < n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Float(n2)) => {
+                let value = Value::Boolean(n1 < n2);
+
+                Ok(value)
+            },
+            (Value::Float(n1), Value::Integer(n2)) => {
+                let value = Value::Boolean(n1 < (n2 as f64));
+
+                Ok(value)
+            },
+            (Value::Integer(n1), Value::Float(n2)) => {
+                let value = Value::Boolean((n1 as f64) < n2);
 
                 Ok(value)
             },
