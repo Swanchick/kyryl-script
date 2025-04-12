@@ -1,0 +1,13 @@
+--
+-- Example of loops
+--
+
+function main() {
+    let current = 0;
+
+    while current < 100 {
+        current = current + 1;
+
+        println("Current number is ", current);
+    }
+}

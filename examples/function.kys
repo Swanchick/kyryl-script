@@ -1,0 +1,26 @@
+function add(a: int, b: int): int {
+    return a + b;
+}
+
+function sub(a: int, b: int): int {
+    return a - b;
+}
+
+function mult(a: int, b: int): int {
+    return a * b;
+}
+
+function divide(a: int, b: int): float {
+    return a / b;
+}
+
+function main() {
+    let r1 = add(10, 20);
+    println("Add: ", r1);
+    let r2 = sub(10, 20);
+    println("Subtract: ", r2);
+    let r3 = mult(10, 20);
+    println("Multiply: ", r3);
+    let r4 = divide(10, 20);
+    println("Divide: ", r4);
+}
