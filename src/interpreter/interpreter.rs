@@ -2,8 +2,8 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
 
-use crate::parser::expression::{self, Expression};
-use crate::parser::function::Function;
+use crate::parser::expression::Expression;
+use crate::parser::function::{self, Function};
 use crate::parser::operator::Operator;
 use crate::parser::statement::Statement;
 
@@ -41,12 +41,28 @@ impl Interpreter {
 
         match main {
             Ok(Value::Function(_)) => self.call_function("main", Vec::new()),
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Entry point not fond!"))
-        }
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Entry point not found!"))
+        }?;
+
+        Ok(())
     }
 
-    fn call_function(&mut self, name: &str, args: Vec<Value>) -> io::Result<()> {
+    pub fn register_rust_function(&mut self, name: &str, function: fn(args: Vec<Value>) -> io::Result<Value>) {
+        let value = Value::RustFunction(function);
+
+        self.global.borrow_mut().define_variable(name.to_string(), value);
+    }
+
+    fn call_function(&mut self, name: &str, args: Vec<Value>) -> io::Result<Value> {
         let function_value = self.global.borrow().get_variable(name)?;
+
+        if let Value::RustFunction(function) = function_value {
+            let return_value = function(args)?;
+
+            return Ok(return_value);
+        }
+
+        let mut return_value = Value::Void;
 
         if let Value::Function(function) = function_value {
             let previous_enviroment = self.local.clone();
@@ -61,27 +77,35 @@ impl Interpreter {
             }
 
             for (parameter, arg) in function.borrow().parameters.iter().zip(args) {
+                let arg_type = arg.get_data_type();
+                
+                if arg_type != parameter.data_type {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("Expected argument type {}, instead got {}", parameter.data_type, arg_type)
+                    ));
+                }
+                
                 self.local.borrow_mut().define_variable(parameter.name.clone(), arg);
             }
-
-            let mut return_value = Value::Void;
 
             for statement in function.borrow().body.iter() {
                 match self.interpret_statement(statement.clone()) {
                     Ok(Some(value)) => {
-                        
-                    }
+                        return_value = value;
 
+                        break;
+                    },
                     Err(e) => return Err(e),
                     _ => {}
                 } 
             }
         }
         
-        Ok(())
+        Ok(return_value)
     }
 
-    pub fn interpret_statement(&self, statement: Statement) -> io::Result<Option<Value>> {
+    pub fn interpret_statement(&mut self, statement: Statement) -> io::Result<Option<Value>> {
         match statement {
             Statement::VarableDeclaration { name, data_type, value } => {
                 let value = if let Some(expression) = value {
@@ -108,7 +132,17 @@ impl Interpreter {
                 Ok(None)
             },
             Statement::FunctionCall { name, parameters } => {
-                todo!()
+                let mut args: Vec<Value> = Vec::new();
+
+                for parameter in parameters {
+                    let value = self.interpret_expression(parameter)?;
+
+                    args.push(value);
+                }
+
+                self.call_function(&name, args)?;
+
+                Ok(None)
             },
             Statement::ReturnStatement { value } => {
                 if let Some(expression) = value {
@@ -118,7 +152,28 @@ impl Interpreter {
                 }
             },
             Statement::IfStatement { condition, body, else_body } => {
-                todo!()
+                let value = self.interpret_expression(condition)?;
+
+                if let Value::Boolean(condition) = value {
+                    if condition {
+                        let value = self.interpret_block(body)?;
+                        if let Some(value) = value {
+                            return Ok(Some(value));
+                        }
+                    } else {
+                        if let Some(body) = else_body {
+                            let value = self.interpret_block(body)?;
+
+                            if let Some(value) = value {
+                                return Ok(Some(value));
+                            }
+                        }
+                    }
+                    
+                    Ok(None)
+                } else {
+                    Err(io::Error::new(io::ErrorKind::InvalidData, "Not boolean type in if condition"))
+                }
             },
             Statement::WhileStatement { condition, body } => {
                 todo!()
@@ -126,7 +181,19 @@ impl Interpreter {
         } 
     }
 
-    pub fn interpret_expression(&self, expression: Expression) -> io::Result<Value> {
+    fn interpret_block(&mut self, body: Vec<Statement>) -> io::Result<Option<Value>> {
+        for statement in body {
+            let value = self.interpret_statement(statement)?;
+
+            if let Some(value) = value {
+                return Ok(Some(value));
+            }
+        }
+
+        Ok(None)
+    }
+
+    pub fn interpret_expression(&mut self, expression: Expression) -> io::Result<Value> {
         match expression {
             Expression::BinaryOp { left, operator, right } => {
                 let left_value = self.interpret_expression(*left)?;
@@ -139,6 +206,16 @@ impl Interpreter {
 
                 self.interpret_unary_operation(value, operator)
             },
+            Expression::FunctionCall(name, parameters) => {
+                let mut args: Vec<Value> = Vec::new();
+
+                for parameter in parameters {
+                    let value = self.interpret_expression(parameter)?;
+                    args.push(value);
+                }
+
+                self.call_function(&name, args)
+            },
             Expression::IntegerLiteral(value) => {
                 Ok(Value::Integer(value.clone()))
             },
@@ -150,6 +227,9 @@ impl Interpreter {
             },
             Expression::StringLiteral(value) => {
                 Ok(Value::String(value.clone()))
+            },
+            Expression::Identifier(name) => {
+                self.local.borrow().get_variable(&name)
             },
             _ => {
                 Err(io::Error::new(io::ErrorKind::InvalidData, "Unknown data in expression"))
@@ -278,7 +358,7 @@ impl Interpreter {
     fn interpret_negation(&self, value: Value) -> io::Result<Value> {
         match value {
             Value::Integer(value) => Ok(Value::Integer(-value)),
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong type for not inverting"))
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong type for not negation"))
         }
     }
 

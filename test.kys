@@ -5,8 +5,19 @@
 ---
 
 function add(a: int, b: int): int {
-    print("Hello World");
-    let c = 2;
-    c = 6;
-    return c;
+    return a + b;
+}
+
+function sub(a: int, b: int): int {
+    return a - b;
+}
+
+function main() {
+    let sum_result = add(20, 30);
+    print("Sum: ");
+    print(sum_result);
+
+    let sub_result = sub(40, -9);
+    print("Sub: ");
+    print(sub_result);
 }

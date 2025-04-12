@@ -167,7 +167,6 @@ impl Lexer {
     }
 
     pub fn lexer(&mut self) -> io::Result<()> {
-        
         for line in self.source_lines.clone() {
             let tokens = self.lex_line(&line)?;
             self.tokens.extend(tokens);

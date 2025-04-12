@@ -1,6 +1,7 @@
 use std::mem::discriminant;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::io;
 
 use crate::parser::data_type::DataType;
 use crate::parser::function::Function;
@@ -12,7 +13,8 @@ pub enum Value {
     String(String),
     Boolean(bool),
     Function(Rc<RefCell<Function>>),
-    Void
+    RustFunction(fn(args: Vec<Value>) -> io::Result<Value>),
+    Void,
 }
 
 
@@ -24,6 +26,7 @@ impl Value {
             Value::String(_) => DataType::String,
             Value::Boolean(_) => DataType::Bool,
             Value::Function(_) => DataType::Function,
+            Value::RustFunction(_) => DataType::Function,
             Value::Void => DataType::Void,
         }
     }

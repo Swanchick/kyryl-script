@@ -462,3 +462,23 @@ fn test_function_call_statement() {
     assert_eq!(statement, test_statement);
 
 }
+
+
+#[test]
+fn test_parse_all_functions() {
+    let source = concat!(
+        "function add(a: int, b: int): int {\n",
+        "   return a + b;\n",
+        "}\n",
+        "function main() {\n",
+        "}\n"
+    );
+
+    let mut lexer = Lexer::new(String::from(source));
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let functions = parser.parse_functions().unwrap();
+
+    assert_eq!(functions.len(), 2);
+}

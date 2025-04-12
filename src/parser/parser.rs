@@ -22,16 +22,24 @@ impl Parser {
         }
     }
 
+    pub fn parse_functions(&mut self) -> io::Result<Vec<Function>> {
+        let mut functions: Vec<Function> = Vec::new();
+        
+        while !self.is_end() {
+            let function = self.parse_function()?;
+            functions.push(function);
+        }
+
+        Ok(functions)
+    }
+
     pub fn parse_function(&mut self) -> io::Result<Function> {
         self.consume_keyword("function")?;
-        println!("{}", self.current_token);
 
         let function_name = self.consume_identefier()?;
-        println!("{}", self.current_token);
 
-        println!("Curearear a: {}", self.tokens[self.current_token]);
         self.consume_token(Token::LeftParenthesis)?;
-        println!("{}", self.current_token);
+
         let parameters = self.parse_parameters()?;
 
         let function_type = if self.match_token(&Token::Colon) {
@@ -54,8 +62,12 @@ impl Parser {
     }
 
     fn parse_parameters(&mut self) -> io::Result<Vec<Parameter>> {
+        if self.match_token(&Token::RightParenthesis) {
+            return Ok(Vec::new());
+        }
+        
         let mut parameters: Vec<Parameter> = Vec::new();
-
+        
         loop {
             let parameter = self.parse_parameter()?;
             parameters.push(parameter);
@@ -148,6 +160,7 @@ impl Parser {
 
     fn parse_return_statement(&mut self) -> io::Result<Statement> {
         let expression = self.parse_expression()?;
+        self.consume_token(Token::Semicolon)?;
         
         Ok(
             Statement::ReturnStatement {
@@ -165,8 +178,6 @@ impl Parser {
 
     fn parse_function_call_statement(&mut self, name: String) -> io::Result<Statement> {
         let parameters = self.parse_function_call_parameters()?;
-        
-        println!("{:?}", parameters);
 
         self.consume_token(Token::RightParenthesis)?;
         self.consume_token(Token::Semicolon)?;
@@ -408,6 +419,10 @@ impl Parser {
     }
 
     fn check(&self, token: &Token) -> bool {
+        if self.is_end() {
+            return false;
+        }
+        
         self.peek() == token
     }
 
@@ -435,7 +450,6 @@ impl Parser {
         } else {
             Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected token: {:?} got {:?}", token, self.peek())))
         }
-
     }
 
     fn consume_identefier(&mut self) -> io::Result<String> {
@@ -459,6 +473,10 @@ impl Parser {
     }
 
     fn advance(&mut self) -> Option<Token> {
+        if self.is_end() {
+            return None;
+        }
+
         if self.current_token < self.tokens.len() {
             let token = self.peek().clone();
             self.current_token += 1;

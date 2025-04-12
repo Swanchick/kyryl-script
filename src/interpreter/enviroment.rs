@@ -55,7 +55,10 @@ impl Environment {
         } else if let Some(parent) = &self.parent {
             parent.borrow().get_variable(name)
         } else {
-            todo!()
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData, 
+                format!("Value \"{name}\" does not exist!")
+            ))
         }
     }
 }
