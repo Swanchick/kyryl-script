@@ -1,0 +1,7 @@
+--
+-- Print example
+--
+
+function main() {
+    println("Hello, World!");
+}
