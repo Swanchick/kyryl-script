@@ -1,4 +1,4 @@
-# KyrylScript v1.0
+# KyrylScript v0.1
 
 KyrylScript is a statically-typed scripting language built in Rust. It features first-class functions, a minimal standard library, and a simple yet expressive syntax. Designed with clarity, type safety, and extensibility in mind, it is suitable both for language design learning and lightweight scripting tasks.
 
