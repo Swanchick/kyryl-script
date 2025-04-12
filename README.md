@@ -54,3 +54,11 @@ KyrylScript uses the following token types:
 
 <type> ::= "int" | "float" | "string" | "bool" | "void"
 ```
+
+## 3. Example of running
+
+#### Windows
+`.\kyryl-script.exe <path-to-file>`
+
+#### Linux
+`Does not have support :(`
