@@ -37,6 +37,26 @@ fn main() {
         Ok(Value::Void)
     });
 
+    interpreter.register_rust_function("unprint", |args: Vec<Value>| {
+        let arg = args.get(0);
+
+        if let Some(arg) = arg {
+            match arg {
+                Value::Integer(var) => println!("Delete {}", var),
+                Value::Float(var) => println!("Delete {}", var),
+                Value::Boolean(var) => println!("Delete {}", var),
+                Value::String(var) => println!("Delete {}", var),
+                Value::Void => println!("void :)"),
+                _ => return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("Unsupported value to print: {}", arg.get_data_type())
+                ))
+            }
+        }
+
+        Ok(Value::Void)
+    });
+
     interpreter.interpret_program(functions).unwrap();
 }
 

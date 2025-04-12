@@ -4,20 +4,15 @@
 --- Hell yeah
 ---
 
-function add(a: int, b: int): int {
-    return a + b;
-}
+function recursion_test(iter: int) {
+    unprint(iter);
 
-function sub(a: int, b: int): int {
-    return a - b;
+    if iter ~= 10 {
+        recursion_test(iter + 1);
+    }
 }
 
 function main() {
-    let sum_result = add(20, 30);
-    print("Sum: ");
-    print(sum_result);
-
-    let sub_result = sub(40, -9);
-    print("Sub: ");
-    print(sub_result);
+    recursion_test(0);
 }
+

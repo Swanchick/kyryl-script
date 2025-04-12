@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::io;
 
 use crate::parser::expression::Expression;
-use crate::parser::function::{self, Function};
+use crate::parser::function::Function;
 use crate::parser::operator::Operator;
 use crate::parser::statement::Statement;
 
@@ -100,6 +100,8 @@ impl Interpreter {
                     _ => {}
                 } 
             }
+
+            self.local = previous_enviroment.clone();
         }
         
         Ok(return_value)
@@ -176,7 +178,25 @@ impl Interpreter {
                 }
             },
             Statement::WhileStatement { condition, body } => {
-                todo!()
+                let value = self.interpret_expression(condition.clone())?;
+
+                if let Value::Boolean(boolean) = value {
+                    let mut boolean = boolean;
+                    
+                    while boolean {
+                        let return_value = self.interpret_block(body.clone())?;
+                        if let Some(return_value) = return_value {
+                            return Ok(Some(return_value));
+                        }
+
+                        let value = self.interpret_expression(condition.clone())?;
+                        if let Value::Boolean(new_boolean) = value {
+                            boolean = new_boolean;
+                        }
+                    }
+                }
+
+                Ok(None)
             }
         } 
     }
