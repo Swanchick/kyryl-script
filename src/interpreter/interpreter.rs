@@ -101,6 +101,16 @@ impl Interpreter {
                 } 
             }
 
+            let return_data_type = return_value.get_data_type();
+            let expected_data_type = function.borrow().return_type.clone();
+
+            if return_data_type != expected_data_type {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("Expected to return {}, but instead got {}", return_data_type, expected_data_type)
+                ));
+            }
+
             self.local = previous_enviroment.clone();
         }
         
@@ -250,9 +260,6 @@ impl Interpreter {
             },
             Expression::Identifier(name) => {
                 self.local.borrow().get_variable(&name)
-            },
-            _ => {
-                Err(io::Error::new(io::ErrorKind::InvalidData, "Unknown data in expression"))
             }
         }
     }
