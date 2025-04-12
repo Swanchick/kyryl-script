@@ -4,17 +4,17 @@ KyrylScript is a statically-typed scripting language built in Rust. It features 
 
 ---
 
-## 1. Language Introduction (100 pts)
+## 1. Language Introduction
 
 KyrylScript is a scripting language implemented from scratch. It aims to provide a clean syntax, strict typing, and dynamic evaluation — all driven by an interpreter written in Rust. The project demonstrates how a real language can be designed, parsed, interpreted, and extended.
 
 ---
 
-## 2. Specification (600 pts)
+## 2. Specification
 
-### 2.1 Syntax (250 pts)
+### 2.1 Syntax
 
-#### 2.1.1 Language Tokens (50 pts)
+#### 2.1.1 Language Tokens
 
 KyrylScript uses the following token types:
 
@@ -23,7 +23,7 @@ KyrylScript uses the following token types:
 - **Operators**: `+`, `-`, `*`, `/`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`, `~`, `^`
 - **Delimiters**: `(`, `)`, `{`, `}`, `[`, `]`, `:`, `;`, `,`
 
-#### 2.1.2 Syntax in BNF Format (100 pts)
+#### 2.1.2 Syntax in BNF Format
 
 ```bnf
 <program> ::= { <function> }
