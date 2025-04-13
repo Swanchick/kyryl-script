@@ -121,18 +121,39 @@ impl Parser {
 
             if self.match_token(&Token::Equal) {
                 self.parse_assigment_statement(name)
-            } else if self.match_token(&Token::LeftParenthesis) {
-                self.parse_function_call_statement(name)
+            } else if self.match_token(&Token::PlusEqual) {
+                self.parse_add_value_statment(name)
+            } else if self.match_token(&Token::MinusEqual) {
+                self.parse_remove_value_statement(name)
             } else {
-                self.advance();
-                
-                Err(io::Error::new(io::ErrorKind::InvalidData, "Unknown statement with identefier"))
+                self.back();
+                self.parse_expression_statement()
             }
         } else {
-            self.advance();
-
-            Err(io::Error::new(io::ErrorKind::InvalidData, format!("Invalid statement {}", self.previous())))
+            self.back();
+            self.parse_expression_statement()
         }
+    }
+
+    fn parse_expression_statement(&mut self) -> io::Result<Statement> {
+        let expression = self.parse_expression()?;
+        self.consume_token(Token::Semicolon)?;
+
+        Ok(Statement::Expression { value: expression })
+    }
+
+    fn parse_add_value_statment(&mut self, name: String) -> io::Result<Statement> {
+        let expression = self.parse_expression()?;
+        self.consume_token(Token::Semicolon)?;
+
+        Ok(Statement::AddValue { name: name, value: expression })
+    }
+
+    fn parse_remove_value_statement(&mut self, name: String) -> io::Result<Statement> {
+        let expression = self.parse_expression()?;
+        self.consume_token(Token::Semicolon)?;
+
+        Ok(Statement::RemoveValue { name: name, value: expression })
     }
 
     fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> {
@@ -174,15 +195,6 @@ impl Parser {
         self.consume_token(Token::Semicolon)?;
 
         Ok(Statement::Assigment { name: name, value: expression })
-    }
-
-    fn parse_function_call_statement(&mut self, name: String) -> io::Result<Statement> {
-        let parameters = self.parse_function_call_parameters()?;
-
-        self.consume_token(Token::RightParenthesis)?;
-        self.consume_token(Token::Semicolon)?;
-        
-        Ok(Statement::FunctionCall { name: name, parameters: parameters })
     }
 
     fn parse_function_call_parameters(&mut self) -> io::Result<Vec<Expression>> {
@@ -349,10 +361,32 @@ impl Parser {
                 _ => unreachable!()
             };
             
-            let expression = self.parse_primary()?;
+            let expression = self.parse_front_unary()?;
             
             Ok(
                 Expression::UnaryOp {
+                    expression: Box::new(expression),
+                    operator: operator
+                }
+            )
+        } else {
+            self.parse_front_unary()
+        }
+    }
+
+    fn parse_front_unary(&mut self) -> io::Result<Expression> {
+        if self.match_next_token(&Token::PlusPlus) || self.match_next_token(&Token::MinusMinus) {
+            let operator = match self.next() {
+                Some(Token::PlusPlus) => Operator::PlusPlus,
+                Some(Token::MinusMinus) => Operator::MinusMinus,
+                _ => unreachable!()
+            };
+            
+            let expression = self.parse_primary()?;
+            self.advance();
+            
+            Ok(
+                Expression::FrontUnaryOp {
                     expression: Box::new(expression),
                     operator: operator
                 }
@@ -424,7 +458,7 @@ impl Parser {
                     Ok(expression)
                 }
             },
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Expected expression")) 
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected expression got {}", self.peek()))) 
         }
     }
 
@@ -496,6 +530,10 @@ impl Parser {
         }
     }
 
+    fn back(&mut self) {
+        self.current_token -= 1;
+    }
+
     fn is_end(&self) -> bool {
         self.current_token >= self.tokens.len()
     }
@@ -516,6 +554,14 @@ impl Parser {
         if self.check(token) {
             self.advance();
             true
+        } else {
+            false
+        }
+    }
+
+    fn match_next_token(&mut self, token: &Token) -> bool {
+        if let Some(next_token) = self.next() {
+            next_token == token
         } else {
             false
         }

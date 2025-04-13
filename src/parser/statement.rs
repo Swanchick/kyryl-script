@@ -13,10 +13,18 @@ pub enum Statement {
         name: String,
         value: Expression
     },
-    FunctionCall {
+    AddValue {
         name: String,
-        parameters: Vec<Expression>
+        value: Expression
     },
+    RemoveValue {
+        name: String,
+        value: Expression
+    },
+    // FunctionCall {
+    //     name: String,
+    //     parameters: Vec<Expression>
+    // },
     ReturnStatement {
         value: Option<Expression>
     },
@@ -28,5 +36,8 @@ pub enum Statement {
     WhileStatement {
         condition: Expression,
         body: Vec<Statement>
+    },
+    Expression {
+        value: Expression
     }
 }

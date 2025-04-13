@@ -143,16 +143,16 @@ impl Interpreter {
 
                 Ok(None)
             },
-            Statement::FunctionCall { name, parameters } => {
-                let mut args: Vec<Value> = Vec::new();
 
-                for parameter in parameters {
-                    let value = self.interpret_expression(parameter)?;
+            Statement::AddValue { name, value } => {
+                let value = self.interpret_expression(value)?;
+                self.interpret_add_equal(&name, value)?;
 
-                    args.push(value);
-                }
-
-                self.call_function(&name, args)?;
+                Ok(None)
+            },
+            Statement::RemoveValue { name, value } => {
+                let value = self.interpret_expression(value)?;
+                self.interpret_minus_equal(&name, value)?;
 
                 Ok(None)
             },
@@ -207,8 +207,79 @@ impl Interpreter {
                 }
 
                 Ok(None)
+            },
+            Statement::Expression { value } => {
+                self.interpret_expression(value)?;
+
+                Ok(None)
             }
         } 
+    }
+
+    fn interpret_add_equal(&mut self, name: &str, value: Value) -> io::Result<()> {
+        let original_value = self.local.borrow().get_variable(&name)?;
+
+        match (original_value, value) {
+            (Value::Integer(n1), Value::Integer(n2)) => {
+                let value = Value::Integer(n1 + n2);
+
+                self.local.borrow_mut().assign_variable(name, value)?;
+            },
+            (Value::Float(n1), Value::Integer(n2)) => {
+                let value = Value::Float(n1 + (n2 as f64));
+
+                self.local.borrow_mut().assign_variable(name, value)?;
+            },
+            (Value::Integer(n1), Value::Float(n2)) => {
+                let value = Value::Float((n1 as f64) + n2);
+
+                self.local.borrow_mut().assign_variable(name, value)?;
+            },
+            (Value::Float(n1), Value::Float(n2)) => {
+                let value = Value::Float(n1 + n2);
+
+                self.local.borrow_mut().assign_variable(name, value)?;
+            },
+            (Value::String(mut str1), Value::String(str2)) => {
+                str1.push_str(&str2);
+                let value = Value::String(str1);
+
+                self.local.borrow_mut().assign_variable(name, value)?;
+            },
+            _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "Different or unsupported data types!"))
+        }
+
+        Ok(())
+    }
+
+    fn interpret_minus_equal(&mut self, name: &str, value: Value) -> io::Result<()> {
+        let original_value = self.local.borrow().get_variable(&name)?;
+
+        match (original_value, value) {
+            (Value::Integer(n1), Value::Integer(n2)) => {
+                let value = Value::Integer(n1 - n2);
+
+                self.local.borrow_mut().assign_variable(name, value)?;
+            },
+            (Value::Float(n1), Value::Integer(n2)) => {
+                let value = Value::Float(n1 - (n2 as f64));
+
+                self.local.borrow_mut().assign_variable(name, value)?;
+            },
+            (Value::Integer(n1), Value::Float(n2)) => {
+                let value = Value::Float((n1 as f64) - n2);
+
+                self.local.borrow_mut().assign_variable(name, value)?;
+            },
+            (Value::Float(n1), Value::Float(n2)) => {
+                let value = Value::Float(n1 - n2);
+
+                self.local.borrow_mut().assign_variable(name, value)?;
+            },
+            _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "Different or unsupported data types!"))
+        }
+
+        Ok(())
     }
 
     fn interpret_block(&mut self, body: Vec<Statement>) -> io::Result<Option<Value>> {
@@ -236,6 +307,16 @@ impl Interpreter {
 
                 self.interpret_unary_operation(value, operator)
             },
+            Expression::FrontUnaryOp { expression, operator } => {
+                if let Expression::Identifier(name) = *expression {
+                    self.interpret_front_unary_operation(&name, operator)
+                } else {
+                    Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("Operator \"{:?}\" is used only with variable!", operator)
+                    ))
+                }
+            },
             Expression::FunctionCall(name, parameters) => {
                 let mut args: Vec<Value> = Vec::new();
 
@@ -261,6 +342,63 @@ impl Interpreter {
             Expression::Identifier(name) => {
                 self.local.borrow().get_variable(&name)
             }
+        }
+    }
+
+    fn interpret_front_unary_operation(&mut self, name: &str, operator: Operator) -> io::Result<Value> {
+        match operator {
+            Operator::PlusPlus => self.interpret_plus_plus(name),
+            Operator::MinusMinus => self.interpret_minus_minus(name),
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Front Unary Operation Error"))
+        }
+    }
+
+    fn interpret_plus_plus(&mut self, name: &str) -> io::Result<Value> {
+        let value = self.local.borrow().get_variable(name)?;
+
+        match value {
+            Value::Integer(number) => {
+                let value = Value::Integer(number + 1);
+
+                self.local.borrow_mut().assign_variable(name, value.clone())?;
+
+                Ok(value)
+            }
+            Value::Float(number) => {
+                let value = Value::Float(number + 1.0);
+                self.local.borrow_mut().assign_variable(name, value.clone())?;
+
+                Ok(value)
+            }
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Type \"{}\" is not supported by this operator!", value.get_data_type())
+            ))
+        }
+    }
+
+    fn interpret_minus_minus(&mut self, name: &str) -> io::Result<Value> {
+        let value = self.local.borrow().get_variable(name)?;
+
+        match value {
+            Value::Integer(number) => {
+                let value = Value::Integer(number - 1);
+
+                self.local.borrow_mut().assign_variable(name, value.clone())?;
+
+                Ok(value)
+            }
+            Value::Float(number) => {
+                let value = Value::Float(number - 1.0);
+                
+                self.local.borrow_mut().assign_variable(name, value.clone())?;
+
+                Ok(value)
+            }
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Type \"{}\" is not supported by this operator!", value.get_data_type())
+            ))
         }
     }
 
@@ -493,6 +631,7 @@ impl Interpreter {
     fn interpret_negation(&self, value: Value) -> io::Result<Value> {
         match value {
             Value::Integer(value) => Ok(Value::Integer(-value)),
+            Value::Float(value) => Ok(Value::Float(-value)),
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong type for not negation"))
         }
     }

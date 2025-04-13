@@ -151,18 +151,34 @@ impl Lexer {
     }
 
     fn get_symbols(&self, buffer: &str) -> Vec<Token> {
-        let mut tokens: Vec<Token> = Vec::new();
-        
-        if let Some(symbol) = get_symbol(&buffer) {
-            tokens.push(symbol);
-        } else if buffer.len() == 2 {
-            for c in buffer.chars() {
-                if let Some(symbol) = get_symbol(&c.to_string()) {
-                    tokens.push(symbol);
+        let mut tokens = Vec::new();
+        let chars: Vec<char> = buffer.chars().collect();
+        let mut i = 0;
+    
+        while i < chars.len() {
+            let mut matched = false;
+
+            for j in (i + 1..=chars.len()).rev() {
+                let slice: String = chars[i..j].iter().collect();
+    
+                if let Some(token) = get_symbol(&slice) {
+                    tokens.push(token);
+                    i = j;
+                    matched = true;
+                    break;
                 }
             }
-        }
 
+            if !matched {
+                let single = chars[i].to_string();
+                if let Some(token) = get_symbol(&single) {
+                    tokens.push(token);
+                }
+    
+                i += 1;
+            }
+        }
+    
         tokens
     }
 

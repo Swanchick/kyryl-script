@@ -6,7 +6,7 @@ function main() {
     let current = 0;
 
     while current < 100 {
-        current = current + 1;
+        current += 10;
 
         println("Current number is ", current);
     }

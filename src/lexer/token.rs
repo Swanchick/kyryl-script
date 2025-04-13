@@ -40,7 +40,11 @@ pub fn get_symbol(c: &str) -> Option<Token> {
         ":" => Some(Token::Colon),
         "=" => Some(Token::Equal),
         "+" => Some(Token::Plus),
+        "+=" => Some(Token::PlusEqual),
+        "++" => Some(Token::PlusPlus),
         "-" => Some(Token::Minus),
+        "-=" => Some(Token::MinusEqual),
+        "--" => Some(Token::MinusMinus),
         "*" => Some(Token::Multiply),
         "/" => Some(Token::Divide),
         "<" => Some(Token::LessThan),
@@ -80,7 +84,11 @@ pub enum Token {
     Comma, // ,
     Equal, // =
     Plus, // +
+    PlusEqual, // +=
+    PlusPlus, // ++
     Minus, // -
+    MinusEqual, // -=
+    MinusMinus, // --
     Multiply, // *
     Divide, // /
     LessThan, // <
@@ -114,7 +122,11 @@ impl fmt::Display for Token {
             Token::Comma => write!(f, "comma"),
             Token::Equal => write!(f, "equal"),
             Token::Plus => write!(f, "plus"),
+            Token::PlusEqual => write!(f, "plus equal"),
+            Token::PlusPlus => write!(f, "plus plus"),
             Token::Minus => write!(f, "minus"),
+            Token::MinusEqual => write!(f, "minus equal"),
+            Token::MinusMinus => write!(f, "minus minus"),
             Token::Multiply => write!(f, "multiply"),
             Token::Divide => write!(f, "divide"),
             Token::LessThan => write!(f, "less than"),

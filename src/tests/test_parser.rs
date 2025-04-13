@@ -448,19 +448,15 @@ fn test_function_call_statement() {
     let mut lexer = Lexer::new(source.to_string());
     lexer.lexer().unwrap();
 
-    let test_statement = Statement::FunctionCall {
-        name: String::from("print"),
-        parameters: vec![
-            Expression::FunctionCall(String::from("add"), vec![Expression::IntegerLiteral(20), Expression::IntegerLiteral(10)]),
-            Expression::IntegerLiteral(20)
-        ]
-    };
+    let test_expression = Expression::FunctionCall(String::from("print"), vec![
+        Expression::FunctionCall(String::from("add"), vec![Expression::IntegerLiteral(20), Expression::IntegerLiteral(10)]),
+        Expression::IntegerLiteral(20)
+    ]);
 
     let mut parser = Parser::new(lexer.get_tokens().clone());
-    let statement = parser.parse_statement().unwrap();
+    let expression = parser.parse_expression().unwrap();
 
-    assert_eq!(statement, test_statement);
-
+    assert_eq!(expression, test_expression);
 }
 
 
@@ -481,4 +477,24 @@ fn test_parse_all_functions() {
     let functions = parser.parse_functions().unwrap();
 
     assert_eq!(functions.len(), 2);
+}
+
+#[test]
+fn test_parser_front_unary_op() {
+    let mut lexer = Lexer::new(String::from("100 - i++"));
+    lexer.lexer().unwrap();
+
+    let test_expression = Expression::BinaryOp {
+        left: Box::new(Expression::IntegerLiteral(100)),
+        operator: Operator::Minus,
+        right: Box::new(Expression::FrontUnaryOp {
+            expression: Box::new(Expression::Identifier(String::from("i"))),
+            operator: Operator::PlusPlus
+        })
+    };
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
 }

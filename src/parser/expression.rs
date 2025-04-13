@@ -18,5 +18,9 @@ pub enum Expression {
     UnaryOp {
         expression: Box<Expression>,
         operator: Operator
-    }
+    },
+    FrontUnaryOp {
+        expression: Box<Expression>,
+        operator: Operator
+    },
 }

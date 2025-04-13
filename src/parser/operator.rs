@@ -13,5 +13,7 @@ pub enum Operator {
     NotEqual,
     And,
     Or,
-    Tilde
+    Tilde,
+    PlusPlus,
+    MinusMinus
 }
