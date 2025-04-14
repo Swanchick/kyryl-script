@@ -334,7 +334,7 @@ fn test_variable_declaration_statement() {
         Token::Semicolon
     ];
 
-    let test_statement = Statement::VarableDeclaration {
+    let test_statement = Statement::VariableDeclaration {
         name: String::from("a"),
         data_type: Some(DataType::Int),
         value: Some(Expression::IntegerLiteral(10))
@@ -491,6 +491,108 @@ fn test_parser_front_unary_op() {
             expression: Box::new(Expression::Identifier(String::from("i"))),
             operator: Operator::PlusPlus
         })
+    };
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+}
+
+#[test]
+fn test_parser_list_expression() {
+    let mut lexer = Lexer::new(String::from("[100 + 20, \"Hello\", 230]"));
+    lexer.lexer().unwrap();
+
+    let test_expression = Expression::ListLiteral(vec![
+        Expression::BinaryOp { left: Box::new(Expression::IntegerLiteral(100)), operator: Operator::Plus, right: Box::new(Expression::IntegerLiteral(20)) },
+        Expression::StringLiteral(String::from("Hello")),
+        Expression::IntegerLiteral(230)
+    ]);
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+}
+
+
+#[test]
+fn test_parser_list_index_1() {
+    let mut lexer = Lexer::new(String::from("some_list[10]"));
+    lexer.lexer().unwrap();
+
+    let test_expression = Expression::IdentifierIndex {
+        left: Box::new(Expression::Identifier(String::from("some_list"))),
+        index: Box::new(Expression::IntegerLiteral(10))
+    };
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+}
+
+#[test]
+fn test_parser_list_index_2() {
+    let mut lexer = Lexer::new(String::from("[10, 10, 10, 20, 40, 50, 40][2]"));
+    lexer.lexer().unwrap();
+
+    let test_expression = Expression::IdentifierIndex {
+        left: Box::new(Expression::ListLiteral(vec![
+            Expression::IntegerLiteral(10),
+            Expression::IntegerLiteral(10),
+            Expression::IntegerLiteral(10),
+            Expression::IntegerLiteral(20),
+            Expression::IntegerLiteral(40),
+            Expression::IntegerLiteral(50),
+            Expression::IntegerLiteral(40),
+        ])),
+        index: Box::new(Expression::IntegerLiteral(2))
+    };
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+}
+
+#[test]
+fn test_parser_list_index_3() {
+    let mut lexer = Lexer::new(String::from("[[10, 20], [20, 10]][1][0]"));
+    lexer.lexer().unwrap();
+
+    let test_expression = Expression::IdentifierIndex {
+        left: Box::new(Expression::IdentifierIndex {
+            left: Box::new(Expression::ListLiteral(vec![
+                Expression::ListLiteral(vec![
+                    Expression::IntegerLiteral(10),
+                    Expression::IntegerLiteral(20),
+                ]),
+                Expression::ListLiteral(vec![
+                    Expression::IntegerLiteral(20),
+                    Expression::IntegerLiteral(10),
+                ]),
+            ])),
+            index: Box::new(Expression::IntegerLiteral(1))
+        }),
+        index: Box::new(Expression::IntegerLiteral(0))
+    };
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression);
+}
+
+#[test]
+fn test_parser_string_index_1() {
+    let mut lexer = Lexer::new(String::from("\"Hello worlda asdasd asd\"[10]"));
+    lexer.lexer().unwrap();
+
+    let test_expression = Expression::IdentifierIndex {
+        left: Box::new(Expression::StringLiteral(String::from("Hello worlda asdasd asd"))),
+        index: Box::new(Expression::IntegerLiteral(10))
     };
 
     let mut parser = Parser::new(lexer.get_tokens().clone());

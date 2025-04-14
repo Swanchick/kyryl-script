@@ -4,13 +4,18 @@ use super::expression::Expression;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Statement {
-    VarableDeclaration {
+    VariableDeclaration {
         name: String,
         data_type: Option<DataType>,
         value: Option<Expression>
     },
     Assigment {
         name: String,
+        value: Expression
+    },
+    AssigmentIndex {
+        name: String,
+        index: Expression,
         value: Expression
     },
     AddValue {
@@ -21,10 +26,6 @@ pub enum Statement {
         name: String,
         value: Expression
     },
-    // FunctionCall {
-    //     name: String,
-    //     parameters: Vec<Expression>
-    // },
     ReturnStatement {
         value: Option<Expression>
     },

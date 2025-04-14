@@ -8,7 +8,7 @@ pub enum DataType {
     String,
     Bool,
     Void,
-    List,
+    List(Box<DataType>),
     Function
 }
 
@@ -21,7 +21,7 @@ impl Display for DataType {
             DataType::String => write!(f, "string"),
             DataType::Bool => write!(f, "boolean"),
             DataType::Void => write!(f, "void"),
-            DataType::List => write!(f, "list"),
+            DataType::List(data_type) => write!(f, "list {}", *data_type),
             DataType::Function => write!(f, "function")
         }
     }

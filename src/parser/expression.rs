@@ -8,6 +8,12 @@ pub enum Expression {
     BooleanLiteral(bool),
     Identifier(String),
     FunctionCall(String, Vec<Expression>),
+    ListLiteral(Vec<Expression>),
+
+    IdentifierIndex {
+        left: Box<Expression>,
+        index: Box<Expression>
+    },
     
     BinaryOp {
         left: Box<Expression>,

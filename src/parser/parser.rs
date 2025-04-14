@@ -36,7 +36,7 @@ impl Parser {
     pub fn parse_function(&mut self) -> io::Result<Function> {
         self.consume_keyword("function")?;
 
-        let function_name = self.consume_identefier()?;
+        let function_name = self.consume_identifier()?;
 
         self.consume_token(Token::LeftParenthesis)?;
 
@@ -83,7 +83,7 @@ impl Parser {
     }
 
     fn parse_parameter(&mut self) -> io::Result<Parameter> { 
-        let name = self.consume_identefier()?;
+        let name = self.consume_identifier()?;
         self.consume_token(Token::Colon)?;
         let data_type = self.consume_data_type()?;
 
@@ -120,7 +120,7 @@ impl Parser {
             self.advance();
 
             if self.match_token(&Token::Equal) {
-                self.parse_assigment_statement(name)
+                self.parse_assignment_statement(name)
             } else if self.match_token(&Token::PlusEqual) {
                 self.parse_add_value_statment(name)
             } else if self.match_token(&Token::MinusEqual) {
@@ -157,7 +157,7 @@ impl Parser {
     }
 
     fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> {
-        let name = self.consume_identefier()?;
+        let name = self.consume_identifier()?;
         
         let data_type = if self.match_token(&Token::Colon) {
             Some(self.consume_data_type()?)
@@ -171,7 +171,7 @@ impl Parser {
         self.consume_token(Token::Semicolon)?;
 
         Ok(
-            Statement::VarableDeclaration {
+            Statement::VariableDeclaration {
                 name: name,
                 data_type: data_type,
                 value: Some(expression)
@@ -190,7 +190,7 @@ impl Parser {
         )
     }
 
-    fn parse_assigment_statement(&mut self, name: String) -> io::Result<Statement> {
+    fn parse_assignment_statement(&mut self, name: String) -> io::Result<Statement> {
         let expression = self.parse_expression()?;
         self.consume_token(Token::Semicolon)?;
 
@@ -382,7 +382,7 @@ impl Parser {
                 _ => unreachable!()
             };
             
-            let expression = self.parse_primary()?;
+            let expression = self.parse_identifier_index()?;
             self.advance();
             
             Ok(
@@ -392,7 +392,35 @@ impl Parser {
                 }
             )
         } else {
-            self.parse_primary()
+            self.parse_identifier_index()
+        }
+    }
+
+    fn parse_identifier_index(&mut self) -> io::Result<Expression> {
+        let left = self.parse_primary()?;
+        
+        if self.match_token(&Token::LeftSquareBracket) {
+            let mut index: Option<Expression> = None;
+            
+            loop {
+                let value = self.parse_expression()?;
+                
+                if let Some(i) = index {
+                    index = Some(Expression::IdentifierIndex { left: Box::new(i), index: Box::new(value) }); 
+                } else {
+                    index = Some(Expression::IdentifierIndex { left: Box::new(left.clone()), index: Box::new(value)});
+                }
+                
+                self.consume_token(Token::RightSquareBracket)?;
+                
+                if !self.match_token(&Token::LeftSquareBracket) {
+                    break;
+                }
+            }
+
+            Ok(index.unwrap())
+        } else {
+            Ok(left)
         }
     }
 
@@ -407,6 +435,23 @@ impl Parser {
                 } else {
                     Ok(expression)
                 }
+            },
+            Token::LeftSquareBracket => {
+                self.advance();
+                let mut expressions: Vec<Expression> = Vec::new();
+
+                loop {
+                    let expression = self.parse_expression()?;
+                    expressions.push(expression);
+
+                    if !self.match_token(&Token::Comma) {
+                        break;
+                    }
+                }
+
+                self.consume_token(Token::RightSquareBracket)?;
+
+                Ok(Expression::ListLiteral(expressions))
             },
             Token::IntegerLiteral(value) => {
                 let value = value.to_owned();
@@ -473,18 +518,27 @@ impl Parser {
     fn consume_data_type(&mut self) -> io::Result<DataType> {
         let token = self.advance().unwrap();
         
-        if let Token::Keyword(data_type_str) = token {
-            let data_type_str = data_type_str.as_str();
+        match token {
+            Token::Keyword(data_type_str) => {
+                let data_type_str = data_type_str.as_str();
 
-            match data_type_str {
-                "int" => Ok(DataType::Int),
-                "float" => Ok(DataType::Float),
-                "string" => Ok(DataType::String),
-                "bool" => Ok(DataType::Bool),
-                _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected type got {}", data_type_str)))
-            }
-        } else {
-            Err(io::Error::new(io::ErrorKind::InvalidData, "Expected keyword!"))
+                match data_type_str {
+                    "int" => Ok(DataType::Int),
+                    "float" => Ok(DataType::Float),
+                    "string" => Ok(DataType::String),
+                    "bool" => Ok(DataType::Bool),
+                    _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected type got {}", data_type_str)))
+                }
+            },
+            Token::LeftSquareBracket => { // Parsing a list data type
+                self.advance();
+
+                let data_type = self.consume_data_type()?;
+                self.consume_token(Token::RightSquareBracket)?;
+
+                Ok(DataType::List(Box::new(data_type)))
+            },
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Expected keyword!"))
         }
     }
 
@@ -496,7 +550,7 @@ impl Parser {
         }
     }
 
-    fn consume_identefier(&mut self) -> io::Result<String> {
+    fn consume_identifier(&mut self) -> io::Result<String> {
         let token= self.peek().clone();
 
         if let Token::Identifier(name) = token {
@@ -536,14 +590,6 @@ impl Parser {
 
     fn is_end(&self) -> bool {
         self.current_token >= self.tokens.len()
-    }
-
-    fn current_token(&self) -> Option<&Token> {
-        if self.current_token < self.tokens.len() {
-            Some(&self.tokens[self.current_token])
-        } else {
-            None
-        }
     }
 
     fn match_token(&mut self, token: &Token) -> bool {

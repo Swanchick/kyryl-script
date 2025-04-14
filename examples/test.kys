@@ -1,0 +1,7 @@
+function main() {
+    let a = [[10, 20], [30, 5], [50, 1]];
+    let b = a[1][0];
+
+    println(a);
+    println(b);
+}

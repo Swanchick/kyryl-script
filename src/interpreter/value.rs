@@ -13,6 +13,7 @@ pub enum Value {
     Boolean(bool),
     Function(Rc<RefCell<Function>>),
     RustFunction(fn(args: Vec<Value>) -> io::Result<Value>),
+    List(Vec<Value>),
     Void,
 }
 
@@ -26,6 +27,13 @@ impl Value {
             Value::Boolean(_) => DataType::Bool,
             Value::Function(_) => DataType::Function,
             Value::RustFunction(_) => DataType::Function,
+            Value::List(list) => {
+                if list.len() != 0 {
+                    DataType::List(Box::new(list[0].get_data_type()))
+                } else {
+                    DataType::List(Box::new(DataType::Void))
+                }
+            }
             Value::Void => DataType::Void,
         }
     }

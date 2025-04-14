@@ -2,6 +2,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
 
+use crate::parser::data_type::DataType;
 use crate::parser::expression::Expression;
 use crate::parser::function::Function;
 use crate::parser::operator::Operator;
@@ -119,7 +120,7 @@ impl Interpreter {
 
     pub fn interpret_statement(&mut self, statement: Statement) -> io::Result<Option<Value>> {
         match statement {
-            Statement::VarableDeclaration { name, data_type, value } => {
+            Statement::VariableDeclaration { name, data_type, value } => {
                 let value = if let Some(expression) = value {
                     self.interpret_expression(expression)?
                 } else {
@@ -143,7 +144,9 @@ impl Interpreter {
 
                 Ok(None)
             },
-
+            Statement::AssigmentIndex { name, index, value } => {
+                todo!()
+            }
             Statement::AddValue { name, value } => {
                 let value = self.interpret_expression(value)?;
                 self.interpret_add_equal(&name, value)?;
@@ -327,6 +330,32 @@ impl Interpreter {
 
                 self.call_function(&name, args)
             },
+            Expression::ListLiteral(expressions) => {
+                let mut values: Vec<Value> = Vec::new();
+                let mut data_type: Option<DataType> = None;
+
+                for expression in expressions {
+                    let value = self.interpret_expression(expression)?;
+
+                    if let Some(t) = &data_type {
+                        if &value.get_data_type() != t {
+                            return Err(io::Error::new(io::ErrorKind::InvalidData, "List has different values. List should consist only of one type!"));
+                        }
+                    } else {
+                        data_type = Some(value.get_data_type().clone())
+                    }
+
+                    values.push(value);
+                }
+
+                Ok(Value::List(values))
+            },
+            Expression::IdentifierIndex{ left, index } => {
+                let left = self.interpret_expression(*left)?;
+                let index = self.interpret_expression(*index)?;
+
+                self.interpret_identifier_index(left, index)
+            }
             Expression::IntegerLiteral(value) => {
                 Ok(Value::Integer(value.clone()))
             },
@@ -343,6 +372,44 @@ impl Interpreter {
                 self.local.borrow().get_variable(&name)
             }
         }
+    }
+
+    fn interpret_identifier_index(&self, left: Value, index: Value) -> io::Result<Value> {
+        if let Value::Integer(index) = index {
+            match left {
+                Value::String(str) => {
+                    let character = str.chars().nth(index as usize);
+                    if let Some(character) = character {
+                        let value = Value::String(character.to_string());
+    
+                        Ok(value)
+                    } else {
+                        Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds in string."))
+                    }
+                },
+    
+                Value::List(values) => {
+                    let child_value = values.iter().nth(index as usize);
+                    if let Some(child_value) = child_value {
+                        Ok(child_value.clone())
+                    } else {
+                        Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds in string."))
+                    }
+                },
+    
+                _ => Err(io::Error::new(
+                    io::ErrorKind::InvalidData, 
+                    format!("Index operation requires lists or strings to get specific value from it! Instead got {}.", left.get_data_type())
+                ))
+            }
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Index in list or string requires integer type! Instead got {}.", index.get_data_type()) 
+            ))
+        }
+
+        
     }
 
     fn interpret_front_unary_operation(&mut self, name: &str, operator: Operator) -> io::Result<Value> {
