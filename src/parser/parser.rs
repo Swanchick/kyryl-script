@@ -116,6 +116,8 @@ impl Parser {
             return self.parse_if_statement();
         } else if self.match_keyword("while") {
             return self.parse_while_statement();
+        } else if self.match_keyword("for") {
+            return self.parse_for_statement();
         } else if let Token::Identifier(name) = self.peek().to_owned() { 
             self.advance();
 
@@ -145,13 +147,23 @@ impl Parser {
 
                     return Ok(Statement::AssigmentIndex { name: name, index: indexes, value: value });
                 }
-
-                
             } 
         }
 
         self.back();
         self.parse_expression_statement()
+    }
+
+    fn parse_for_statement(&mut self) -> io::Result<Statement> {
+        let name = self.consume_identifier()?;
+
+        self.consume_keyword("in")?;
+        let expression = self.parse_expression()?;
+
+        self.consume_token(Token::LeftBrace)?;
+        let body = self.parse_block_statement()?;
+        
+        Ok(Statement::ForLoopStatement { name: name, list: expression, body: body })
     }
 
     fn parse_expression_statement(&mut self) -> io::Result<Statement> {
@@ -550,8 +562,6 @@ impl Parser {
                 }
             },
             Token::LeftSquareBracket => { // Parsing a list data type
-                self.advance();
-
                 let data_type = self.consume_data_type()?;
                 self.consume_token(Token::RightSquareBracket)?;
 

@@ -1,6 +1,5 @@
 use std::vec;
 
-use crate::parser::statement;
 use crate::*;
 use lexer::lexer::Lexer;
 use lexer::token::Token;
@@ -618,3 +617,4 @@ fn test_parser_index_assingment_statment() {
 
     assert_eq!(statement, test_statement);
 }
+

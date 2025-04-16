@@ -38,6 +38,11 @@ pub enum Statement {
         condition: Expression,
         body: Vec<Statement>
     },
+    ForLoopStatement {
+        name: String,
+        list: Expression,
+        body: Vec<Statement>
+    },
     Expression {
         value: Expression
     }

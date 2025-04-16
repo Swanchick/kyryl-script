@@ -1,11 +1,7 @@
-use std::collections::HashMap;
-use std::hash::Hash;
-use std::ops::Index;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
 
-use crate::interpreter;
 use crate::parser::data_type::DataType;
 use crate::parser::expression::Expression;
 use crate::parser::function::Function;
@@ -170,7 +166,7 @@ impl Interpreter {
                     Value::String(mut str) => {
                         self.interpret_assign_string_index(&name, &mut str, indeces, value_to_assign)?;
                     }
-                    _ => todo!()
+                    _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid data type!"))
                 }
 
                 Ok(None)
@@ -239,12 +235,44 @@ impl Interpreter {
 
                 Ok(None)
             },
+
+            Statement::ForLoopStatement { name, list, body } => {
+                let list = self.interpret_expression(list)?;
+                
+                self.interpret_for_loop(name, list, body)?;
+                
+                Ok(None)
+            }
             Statement::Expression { value } => {
                 self.interpret_expression(value)?;
 
                 Ok(None)
             }
         } 
+    }
+
+    fn interpret_for_loop(&mut self, name: String, list_value: Value, body: Vec<Statement>) -> io::Result<()> {
+        match list_value {
+            Value::String(str) => {
+                for char in str.chars() {
+                    self.local.borrow_mut().define_variable(name.to_string(), Value::String(char.to_string()));
+
+                    self.interpret_block(body.clone())?;
+                }
+                
+                Ok(())
+            },
+            Value::List(list) => {
+                for value in list {
+                    self.local.borrow_mut().define_variable(name.to_string(), value);
+
+                    self.interpret_block(body.clone())?;
+                }
+
+                Ok(())
+            },
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Unsupported type for loop!"))
+        }
     }
 
     fn interpret_assign_string_index(&mut self, name: &str, str: &mut String, indeces: Vec<Value>, value_to_assign: Value) -> io::Result<()> {

@@ -23,6 +23,7 @@ pub fn is_keyword(text: &str) -> bool {
         "enum" => true,
         "list" => true,
         "tuple" => true,
+        "in" => true,
         _ => false
         
     }
