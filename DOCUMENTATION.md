@@ -205,7 +205,7 @@ function to_meters(inches: float): float {
 ---
 
 ## License
-This language was created as part of a university programming languages course project.
+This language was created as part of a Aalto University's Modern And Emerging Programming Languages course project.
 
 ---
 
