@@ -1,7 +1,11 @@
+use std::collections::HashMap;
+use std::hash::Hash;
+use std::ops::Index;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
 
+use crate::interpreter;
 use crate::parser::data_type::DataType;
 use crate::parser::expression::Expression;
 use crate::parser::function::Function;
@@ -145,7 +149,31 @@ impl Interpreter {
                 Ok(None)
             },
             Statement::AssigmentIndex { name, index, value } => {
-                todo!()
+                let list_value = self.local.borrow().get_variable(&name)?;
+                let value_to_assign = self.interpret_expression(value)?;
+
+                let mut indeces: Vec<Value> = Vec::new();
+
+                for i in index {
+                    let value = self.interpret_expression(i)?;
+                    if value.get_data_type() != DataType::Int {
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong type"));
+                    }
+        
+                    indeces.push(value);
+                }
+
+                match list_value {
+                    Value::List(_) => {
+                        self.interpret_assign_list_index(&name, list_value, indeces, value_to_assign)?;
+                    }
+                    Value::String(mut str) => {
+                        self.interpret_assign_string_index(&name, &mut str, indeces, value_to_assign)?;
+                    }
+                    _ => todo!()
+                }
+
+                Ok(None)
             }
             Statement::AddValue { name, value } => {
                 let value = self.interpret_expression(value)?;
@@ -217,6 +245,88 @@ impl Interpreter {
                 Ok(None)
             }
         } 
+    }
+
+    fn interpret_assign_string_index(&mut self, name: &str, str: &mut String, indeces: Vec<Value>, value_to_assign: Value) -> io::Result<()> {
+        if indeces.len() > 1 {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "Required only one index in string!"));
+        }
+
+        if let Value::String(c) = value_to_assign {
+            if c.len() != 1 {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "Required only char but not a string to change a char in a string!"));
+            }
+            
+            let index = &indeces[0];
+            if let Value::Integer(index) = index {
+                if *index < 0 || *index > (str.len() - 1) as i32 {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds!"))
+                }
+
+                let index = *index as usize;
+                
+                str.replace_range(index..(index+1), &c);
+
+                self.local.borrow_mut().assign_variable(&name, Value::String(str.to_owned()))?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn interpret_assign_list_index(&mut self, name: &str, list_value: Value, indeces: Vec<Value>, value_to_assign: Value) -> io::Result<()> {        
+        let mut results: Vec<Value> = Vec::new();
+
+        for i in 0..indeces.len() {
+            let index = indeces[i].clone();
+            if results.len() != 0 {
+                results.push(self.interpret_identifier_index(results.last().unwrap().clone(), index.clone())?);
+            } else {
+                results.push(self.interpret_identifier_index(list_value.clone(), index.clone())?);
+            }
+        }
+
+        let mut final_results = vec![list_value.clone()];
+        final_results.append(&mut results);
+        
+        let mut result: Option<Value> = None;
+        let mut last_index = final_results.len() - 2;
+
+        for fi in 0..(final_results.len() - 1) {
+            let value = &final_results[final_results.len() - 1 - fi];
+            
+            match result.clone() {
+                Some(v) => {
+                    let current_index = indeces[last_index as usize].clone();
+                    if let Value::Integer(n) = current_index {
+                        if let Value::List(mut list) = value.clone() {
+                            if n < 0 || n > (list.len() - 1) as i32 {
+                                return Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds!"));
+                            }
+                            
+                            list[n as usize] = v.clone();
+                            last_index = last_index - 1;
+                            result = Some(Value::List(list));
+                        }
+                    }
+                },
+                _ => {
+                    result = Some(value_to_assign.clone());
+                }
+            }
+        }
+
+        if let Value::List(mut list) = list_value {
+            let index = indeces[0].clone();
+            
+            if let Value::Integer(index) = index {
+                list[index as usize] = result.unwrap();
+
+                self.local.borrow_mut().assign_variable(name, Value::List(list))?;
+            }
+        }
+
+        Ok(())
     }
 
     fn interpret_add_equal(&mut self, name: &str, value: Value) -> io::Result<()> {
@@ -355,7 +465,7 @@ impl Interpreter {
                 let index = self.interpret_expression(*index)?;
 
                 self.interpret_identifier_index(left, index)
-            }
+            },
             Expression::IntegerLiteral(value) => {
                 Ok(Value::Integer(value.clone()))
             },
@@ -393,7 +503,7 @@ impl Interpreter {
                     if let Some(child_value) = child_value {
                         Ok(child_value.clone())
                     } else {
-                        Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds in string."))
+                        Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds!"))
                     }
                 },
     

@@ -15,7 +15,7 @@ pub enum Statement {
     },
     AssigmentIndex {
         name: String,
-        index: Expression,
+        index: Vec<Expression>,
         value: Expression
     },
     AddValue {

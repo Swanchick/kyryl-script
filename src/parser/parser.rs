@@ -109,30 +109,49 @@ impl Parser {
 
     pub fn parse_statement(&mut self) -> io::Result<Statement> {
         if self.match_keyword("let") {
-            self.parse_variable_declaration_statement()
+            return self.parse_variable_declaration_statement();
         } else if self.match_keyword("return") {
-            self.parse_return_statement()
+            return self.parse_return_statement();
         } else if self.match_keyword("if") {
-            self.parse_if_statement()
+            return self.parse_if_statement();
         } else if self.match_keyword("while") {
-            self.parse_while_statement()
+            return self.parse_while_statement();
         } else if let Token::Identifier(name) = self.peek().to_owned() { 
             self.advance();
 
             if self.match_token(&Token::Equal) {
-                self.parse_assignment_statement(name)
+                return self.parse_assignment_statement(name);
             } else if self.match_token(&Token::PlusEqual) {
-                self.parse_add_value_statment(name)
+                return self.parse_add_value_statment(name);
             } else if self.match_token(&Token::MinusEqual) {
-                self.parse_remove_value_statement(name)
-            } else {
-                self.back();
-                self.parse_expression_statement()
-            }
-        } else {
-            self.back();
-            self.parse_expression_statement()
+                return self.parse_remove_value_statement(name);
+            } else if self.match_token(&Token::LeftSquareBracket) {
+                let mut indexes: Vec<Expression> = Vec::new();
+                
+                loop {
+                    let index = self.parse_expression()?;
+                    self.consume_token(Token::RightSquareBracket)?;
+
+                    indexes.push(index);
+
+                    if !self.match_token(&Token::LeftSquareBracket) {
+                        break;
+                    }
+                }
+                
+                if self.match_token(&Token::Equal) {
+                    let value  = self.parse_expression()?;
+                    self.consume_token(Token::Semicolon)?;
+
+                    return Ok(Statement::AssigmentIndex { name: name, index: indexes, value: value });
+                }
+
+                
+            } 
         }
+
+        self.back();
+        self.parse_expression_statement()
     }
 
     fn parse_expression_statement(&mut self) -> io::Result<Statement> {

@@ -1,5 +1,6 @@
 use std::vec;
 
+use crate::parser::statement;
 use crate::*;
 use lexer::lexer::Lexer;
 use lexer::token::Token;
@@ -599,4 +600,21 @@ fn test_parser_string_index_1() {
     let expression = parser.parse_expression().unwrap();
 
     assert_eq!(expression, test_expression);
+}
+
+#[test]
+fn test_parser_index_assingment_statment() {
+    let mut lexer = Lexer::new(String::from("some_list[10][20] = 20;"));
+    lexer.lexer().unwrap();
+
+    let test_statement = Statement::AssigmentIndex { 
+        name: String::from("some_list"), 
+        index: vec![Expression::IntegerLiteral(10)],
+        value: Expression::IntegerLiteral(20)
+    };
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let statement = parser.parse_statement().unwrap();
+
+    assert_eq!(statement, test_statement);
 }
