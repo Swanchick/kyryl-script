@@ -10,4 +10,8 @@ function main() {
 
         println("Current number is ", current);
     }
+
+    for i in range(100) {
+        println("For loop iteration: ", i);
+    }
 }
