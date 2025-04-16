@@ -6,7 +6,7 @@ mod kys_std;
 use std::io;
 use std::env;
 
-use interpreter::{interpreter::Interpreter, value::Value};
+use interpreter::interpreter::Interpreter;
 use lexer::lexer::Lexer;
 use parser::parser::Parser;
 use kys_std::register_standart_library;
