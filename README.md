@@ -2,11 +2,18 @@
 
 KyrylScript is a statically-typed scripting language built in Rust. It features first-class functions, a minimal standard library, and a simple yet expressive syntax. Designed with clarity, type safety, and extensibility in mind, it is suitable both for language design learning and lightweight scripting tasks.
 
-There is an official ultimate/quick tutorial on youtube: [Video](https://www.youtube.com/watch?v=yhA9WHg7BcM)
-And also there is a documentation: [Documentation](https://github.com/Swanchick/kyryl-script/blob/main/DOCUMENTATION.md)
+[Video](https://www.youtube.com/watch?v=yhA9WHg7BcM)
+[Documentation](https://github.com/Swanchick/kyryl-script/blob/main/DOCUMENTATION.md)
+[Checklist](https://github.com/Swanchick/kyryl-script/blob/main/CHECKLIST.md)
 
+## Structure of the project
 
-
+1. /src - Implementation of the programming language in rust.
+2. /src/interpreter - Implementation of Interpreter
+3. /src/lexer - Implementation of Lexer
+4. /src/parser - Implementation of Parser
+5. /src/tests - Unit tests for checking stability of features of programming language.
+6. /examples/ - Example code in KyrylScript
 
 ---
 
@@ -65,7 +72,6 @@ KyrylScript uses the following token types:
 
 ## 3. Example of running
 
-
 #### Cargo
 `cargo run -- <path-to-file>`
 
@@ -74,4 +80,3 @@ KyrylScript uses the following token types:
 
 #### Linux
 `Does not have support :(`
-
