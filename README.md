@@ -2,6 +2,10 @@
 
 KyrylScript is a statically-typed scripting language built in Rust. It features first-class functions, a minimal standard library, and a simple yet expressive syntax. Designed with clarity, type safety, and extensibility in mind, it is suitable both for language design learning and lightweight scripting tasks.
 
+There is an official ultimate/quick tutorial on youtube: [Video](https://www.youtube.com/watch?v=yhA9WHg7BcM)
+
+And also there is a documentation: [Documentation](https://github.com/Swanchick/kyryl-script/blob/main/DOCUMENTATION.md)
+
 ---
 
 ## 1. Language Introduction
@@ -18,8 +22,8 @@ KyrylScript is a scripting language implemented from scratch. It aims to provide
 
 KyrylScript uses the following token types:
 
-- **Literals**: `Integer`, `Float`, `String`, `Boolean`
-- **Keywords**: `function`, `return`, `let`, `if`, `else`, `while`, `true`, `false`
+- **Literals**: `int`, `float`, `string`, `bool`, 
+- **Keywords**: `function`, `return`, `let`, `if`, `else`, `while`, `true`, `false`, `in`
 - **Operators**: `+`, `-`, `*`, `/`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`, `~`, `^`
 - **Delimiters**: `(`, `)`, `{`, `}`, `[`, `]`, `:`, `;`, `,`
 
@@ -52,7 +56,9 @@ KyrylScript uses the following token types:
 
 <unary_op> ::= "-" | "~"
 
-<type> ::= "int" | "float" | "string" | "bool" | "void"
+<front_unary_op> ::= "++" | "--"
+
+<type> ::= "int" | "float" | "string" | "bool" | "void" | "[<type>]"
 ```
 
 ## 3. Example of running

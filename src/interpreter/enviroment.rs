@@ -39,6 +39,12 @@ impl Environment {
     /// SO MUCH RECURSION (:O)-<--<
     ///                    ^- literally me right now
     pub fn assign_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
+        let original_value = self.get_variable(name)?;
+        if original_value.get_data_type() != value.get_data_type() {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid type for reassignment!"))
+        }
+
+
         if self.values.contains_key(name) {
             self.values.insert(name.to_string(), value);
             Ok(())
