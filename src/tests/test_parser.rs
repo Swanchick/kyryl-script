@@ -608,7 +608,7 @@ fn test_parser_index_assingment_statment() {
 
     let test_statement = Statement::AssigmentIndex { 
         name: String::from("some_list"), 
-        index: vec![Expression::IntegerLiteral(10)],
+        index: vec![Expression::IntegerLiteral(10), Expression::IntegerLiteral(20)],
         value: Expression::IntegerLiteral(20)
     };
 
