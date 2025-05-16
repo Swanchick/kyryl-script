@@ -1,18 +1,22 @@
 
 use std::io;
-use crate::interpreter::{interpreter::Interpreter, value::Value};
+use crate::interpreter::interpreter::Interpreter;
+
+use crate::interpreter::value::{Value, ValueType};
 
 fn kys_print(args: Vec<Value>) -> io::Result<Value> {
     for arg in args {
-        match arg {
-            Value::Integer(var) => print!("{}", var),
-            Value::Float(var) => print!("{}", var),
-            Value::Boolean(var) => print!("{}", var),
-            Value::String(var) => print!("{}", var),
-            Value::List(vars) => {
+        let value_type = arg.get_type().clone();
+
+        match value_type {
+            ValueType::Integer(var) => print!("{}", var),
+            ValueType::Float(var) => print!("{}", var),
+            ValueType::Boolean(var) => print!("{}", var),
+            ValueType::String(var) => print!("{}", var),
+            ValueType::List(vars) => {
                 print!("[");
                 for (i, var) in vars.iter().enumerate() {
-                    kys_print(vec![var.clone()])?;
+                    kys_print(vec![Value::new(None, var.clone().get_type().clone())])?;
 
                     if i != vars.len() - 1 {
                         print!(", ")
@@ -20,22 +24,22 @@ fn kys_print(args: Vec<Value>) -> io::Result<Value> {
                 }
                 print!("]")
             }
-            Value::Void => print!("void :)"),
+            ValueType::Void => print!("void :)"),
             _ => return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("Unsupported value to print: {}", arg.get_data_type())
+                format!("Unsupported value to print: {}", value_type.get_data_type())
             ))
         }
     }
     
-    Ok(Value::Void)
+    Ok(Value::new(None, ValueType::Void))
 }
 
-fn kys_println(args: Vec<Value>) -> io::Result<Value> {
+fn kys_println(args: Vec<Value>) -> io::Result<Value> {    
     kys_print(args)?;
     println!("");
     
-    Ok(Value::Void)
+    Ok(Value::new(None, ValueType::Void))
 }
 
 fn kys_len(args: Vec<Value>) -> io::Result<Value> {
@@ -43,12 +47,12 @@ fn kys_len(args: Vec<Value>) -> io::Result<Value> {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
     }
     
-    match &args[0] {
-        Value::String(str) => {
-            Ok(Value::Integer(str.len() as i32))
+    match args[0].get_type() {
+        ValueType::String(str) => {
+            Ok(Value::new(None, ValueType::Integer(str.len() as i32)))
         },
-        Value::List(list) => {
-            Ok(Value::Integer(list.len() as i32))
+        ValueType::List(list) => {
+            Ok(Value::new(None, ValueType::Integer(list.len() as i32)))
         },
         _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid Type!"))
     }
@@ -59,14 +63,14 @@ fn kys_range(args: Vec<Value>) -> io::Result<Value> {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
     }
 
-    if let Value::Integer(n) = &args[0] {
+    if let ValueType::Integer(n) = args[0].get_type() {
         let mut out: Vec<Value> = Vec::new();
 
         for i in 0..*n {
-            out.push(Value::Integer(i));
+            out.push(Value::new(None, ValueType::Integer(i)));
         }
 
-        Ok(Value::List(out))
+        Ok(Value::new(None, ValueType::List(out)))
     } else {
         Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong argument type!"))
     }

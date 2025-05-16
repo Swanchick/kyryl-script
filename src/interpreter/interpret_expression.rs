@@ -4,7 +4,8 @@ use crate::parser::expression::Expression;
 use crate::parser::operator::Operator;
 use crate::parser::data_type::DataType;
 
-use super::{interpreter::Interpreter, value::Value};
+use super::interpreter::Interpreter;
+use super::value::{Value, ValueType};
 
 pub struct InterpretExpression<'a> {
     interpreter: &'a mut Interpreter
@@ -16,24 +17,33 @@ impl<'a> InterpretExpression<'a> {
         InterpretExpression { interpreter: interpreter }
     }
 
-    pub fn interpret_expression(&mut self, expression: Expression) -> io::Result<Value> {
-        let local = self.interpreter.get_local();
-        
+    pub fn interpret_expression(&mut self, expression: Expression) -> io::Result<Value> {        
         match expression {
             Expression::BinaryOp { left, operator, right } => {
                 let left_value = self.interpret_expression(*left)?;
+                let left_value = left_value.get_type().clone();
                 let right_value  = self.interpret_expression(*right)?;
+                let right_value = right_value.get_type().clone();
 
-                self.interpret_binary_operation(left_value, right_value, operator)
+                let value_type = self.interpret_binary_operation(left_value, right_value, operator)?;
+                let value = Value::new(None, value_type);
+
+                Ok(value)
             },
             Expression::UnaryOp { expression, operator } => {
                 let value = self.interpret_expression(*expression)?;
+                let value_type = value.get_type();
 
-                self.interpret_unary_operation(value, operator)
+                let value_type = self.interpret_unary_operation(value_type.clone(), operator)?;
+                let value = Value::new(None, value_type);
+
+                Ok(value)
             },
             Expression::FrontUnaryOp { expression, operator } => {
                 if let Expression::Identifier(name) = *expression {
-                    self.interpret_front_unary_operation(&name, operator)
+                    self.interpret_front_unary_operation(&name, operator)?;
+
+                    Ok(Value::new(None, ValueType::Void))
                 } else {
                     Err(io::Error::new(
                         io::ErrorKind::InvalidData,
@@ -57,53 +67,62 @@ impl<'a> InterpretExpression<'a> {
 
                 for expression in expressions {
                     let value = self.interpret_expression(expression)?;
+                    let value_type = value.get_type();
 
                     if let Some(t) = &data_type {
-                        if &value.get_data_type() != t {
+                        if &value.get_type().get_data_type() != t {
                             return Err(io::Error::new(io::ErrorKind::InvalidData, "List has different values. List should consist only of one type!"));
                         }
                     } else {
-                        data_type = Some(value.get_data_type().clone())
+                        data_type = Some(value_type.get_data_type().clone())
                     }
 
-                    values.push(value);
+                    values.push(value.clone());
                 }
 
-                Ok(Value::List(values))
+                Ok(Value::new(None, ValueType::List(values)))
             },
             Expression::IdentifierIndex{ left, index } => {
                 let left = self.interpret_expression(*left)?;
                 let index = self.interpret_expression(*index)?;
 
-                self.interpret_identifier_index(left, index)
+                let value_type = self.interpret_identifier_index(left.get_type().clone(), index.get_type().clone())?;
+                let value = Value::new(None, value_type);
+                Ok(value)
             },
             Expression::IntegerLiteral(value) => {
-                Ok(Value::Integer(value.clone()))
+                let value = Value::new(None, ValueType::Integer(value));
+
+                Ok(value)
             },
             Expression::FloatLiteral(value) => {
-                Ok(Value::Float(value.clone()))
+                let value = Value::new(None, ValueType::Float(value));
+
+                Ok(value)
             },
             Expression::BooleanLiteral(value) => {
-                Ok(Value::Boolean(value.clone()))
+                let value = Value::new(None, ValueType::Boolean(value));
+
+                Ok(value)
             },
             Expression::StringLiteral(value) => {
-                Ok(Value::String(value.clone()))
+                let value = Value::new(None, ValueType::String(value));
+                
+                Ok(value)
             },
             Expression::Identifier(name) => {
-                
-
-                local.borrow().get_variable(&name)
+                self.interpreter.get_variable(name.as_str())
             }
         }
     }    
 
-    pub fn interpret_identifier_index(&self, left: Value, index: Value) -> io::Result<Value> {
-        if let Value::Integer(index) = index {
+    pub fn interpret_identifier_index(&self, left: ValueType, index: ValueType) -> io::Result<ValueType> {
+        if let ValueType::Integer(index) = index {
             match left {
-                Value::String(str) => {
+                ValueType::String(str) => {
                     let character = str.chars().nth(index as usize);
                     if let Some(character) = character {
-                        let value = Value::String(character.to_string());
+                        let value = ValueType::String(character.to_string());
     
                         Ok(value)
                     } else {
@@ -111,10 +130,10 @@ impl<'a> InterpretExpression<'a> {
                     }
                 },
     
-                Value::List(values) => {
+                ValueType::List(values) => {
                     let child_value = values.iter().nth(index as usize);
                     if let Some(child_value) = child_value {
-                        Ok(child_value.clone())
+                        Ok(child_value.get_type().clone())
                     } else {
                         Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds!"))
                     }
@@ -133,7 +152,7 @@ impl<'a> InterpretExpression<'a> {
         }        
     }
 
-    fn interpret_front_unary_operation(&mut self, name: &str, operator: Operator) -> io::Result<Value> {
+    fn interpret_front_unary_operation(&mut self, name: &str, operator: Operator) -> io::Result<ValueType> {
         match operator {
             Operator::PlusPlus => self.interpret_plus_plus(name),
             Operator::MinusMinus => self.interpret_minus_minus(name),
@@ -141,60 +160,57 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_plus_plus(&mut self, name: &str) -> io::Result<Value> {
-        let local = self.interpreter.get_local();
+    fn interpret_plus_plus(&mut self, name: &str) -> io::Result<ValueType> {
+        let value_type = {
+            let value = self.interpreter.get_variable(name)?;
+            let value_type = value.get_type();
 
-        let value = local.borrow().get_variable(name)?;
+            let new_value_type = match value_type {
+                ValueType::Integer(number) => ValueType::Integer(number + 1),
+                ValueType::Float(number) => ValueType::Float(number + 1.0),
+                _ => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("Type \"{}\" is not supported by this operator!", value_type.get_data_type()),
+                    ));
+                }
+            };
 
-        match value {
-            Value::Integer(number) => {
-                let value = Value::Integer(number + 1);
+            let new_value = Value::new(value.get_reference(), new_value_type.clone());
+            self.interpreter.assign_variable(name, new_value)?;
 
-                local.borrow_mut().assign_variable(name, value.clone())?;
+            new_value_type
+        };
 
-                Ok(value)
-            }
-            Value::Float(number) => {
-                let value = Value::Float(number + 1.0);
-                local.borrow_mut().assign_variable(name, value.clone())?;
-
-                Ok(value)
-            }
-            _ => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Type \"{}\" is not supported by this operator!", value.get_data_type())
-            ))
-        }
+        Ok(value_type)
     }
 
-    fn interpret_minus_minus(&mut self, name: &str) -> io::Result<Value> {
-        let local = self.interpreter.get_local();
+    fn interpret_minus_minus(&mut self, name: &str) -> io::Result<ValueType> {
+        let value_type = {
+            let value = self.interpreter.get_variable(name)?;
+            let value_type = value.get_type();
 
-        let value = local.borrow().get_variable(name)?;
+            let new_value_type = match value_type {
+                ValueType::Integer(number) => ValueType::Integer(number - 1),
+                ValueType::Float(number) => ValueType::Float(number - 1.0),
+                _ => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("Type \"{}\" is not supported by this operator!", value_type.get_data_type()),
+                    ));
+                }
+            };
 
-        match value {
-            Value::Integer(number) => {
-                let value = Value::Integer(number - 1);
+            let new_value = Value::new(value.get_reference(), new_value_type.clone());
+            self.interpreter.assign_variable(name, new_value)?;
 
-                local.borrow_mut().assign_variable(name, value.clone())?;
+            new_value_type
+        };
 
-                Ok(value)
-            }
-            Value::Float(number) => {
-                let value = Value::Float(number - 1.0);
-                
-                local.borrow_mut().assign_variable(name, value.clone())?;
-
-                Ok(value)
-            }
-            _ => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Type \"{}\" is not supported by this operator!", value.get_data_type())
-            ))
-        }
+        Ok(value_type)
     }
 
-    fn interpret_binary_operation(&self, left: Value, right: Value, operator: Operator) -> io::Result<Value> {
+    fn interpret_binary_operation(&self, left: ValueType, right: ValueType, operator: Operator) -> io::Result<ValueType> {
         match operator {
             Operator::Plus => self.interpret_plus(left, right),
             Operator::Minus => self.interpret_minus(left, right),
@@ -212,30 +228,30 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_equal_equal(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_equal_equal(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Integer(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 == n2);
+            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 == n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Float(n2)) => {
-                let value = Value::Boolean(n1 == n2);
+            (ValueType::Float(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean(n1 == n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 == (n2 as f64));
+            (ValueType::Float(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 == (n2 as f64));
 
                 Ok(value)
             },
-            (Value::Integer(n1), Value::Float(n2)) => {
-                let value = Value::Boolean((n1 as f64) == n2);
+            (ValueType::Integer(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean((n1 as f64) == n2);
 
                 Ok(value)
             },
-            (Value::String(str1), Value::String(str2)) => {
-                let value = Value::Boolean(str1 == str2);
+            (ValueType::String(str1), ValueType::String(str2)) => {
+                let value = ValueType::Boolean(str1 == str2);
 
                 Ok(value)
             },
@@ -243,25 +259,25 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_greater_equal(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_greater_equal(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Integer(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 >= n2);
+            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 >= n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Float(n2)) => {
-                let value = Value::Boolean(n1 >= n2);
+            (ValueType::Float(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean(n1 >= n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 >= (n2 as f64));
+            (ValueType::Float(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 >= (n2 as f64));
 
                 Ok(value)
             },
-            (Value::Integer(n1), Value::Float(n2)) => {
-                let value = Value::Boolean((n1 as f64) >= n2);
+            (ValueType::Integer(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean((n1 as f64) >= n2);
 
                 Ok(value)
             },
@@ -269,25 +285,25 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_greater(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_greater(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Integer(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 > n2);
+            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 > n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Float(n2)) => {
-                let value = Value::Boolean(n1 > n2);
+            (ValueType::Float(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean(n1 > n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 > (n2 as f64));
+            (ValueType::Float(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 > (n2 as f64));
 
                 Ok(value)
             },
-            (Value::Integer(n1), Value::Float(n2)) => {
-                let value = Value::Boolean((n1 as f64) > n2);
+            (ValueType::Integer(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean((n1 as f64) > n2);
 
                 Ok(value)
             },
@@ -295,25 +311,25 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_less_equal(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_less_equal(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Integer(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 <= n2);
+            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 <= n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Float(n2)) => {
-                let value = Value::Boolean(n1 <= n2);
+            (ValueType::Float(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean(n1 <= n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 <= (n2 as f64));
+            (ValueType::Float(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 <= (n2 as f64));
 
                 Ok(value)
             },
-            (Value::Integer(n1), Value::Float(n2)) => {
-                let value = Value::Boolean((n1 as f64) <= n2);
+            (ValueType::Integer(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean((n1 as f64) <= n2);
 
                 Ok(value)
             },
@@ -321,25 +337,25 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_less(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_less(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Integer(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 < n2);
+            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 < n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Float(n2)) => {
-                let value = Value::Boolean(n1 < n2);
+            (ValueType::Float(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean(n1 < n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 < (n2 as f64));
+            (ValueType::Float(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 < (n2 as f64));
 
                 Ok(value)
             },
-            (Value::Integer(n1), Value::Float(n2)) => {
-                let value = Value::Boolean((n1 as f64) < n2);
+            (ValueType::Integer(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean((n1 as f64) < n2);
 
                 Ok(value)
             },
@@ -347,30 +363,30 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_tilde_equal(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_tilde_equal(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Integer(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 != n2);
+            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 != n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Float(n2)) => {
-                let value = Value::Boolean(n1 != n2);
+            (ValueType::Float(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean(n1 != n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Integer(n2)) => {
-                let value = Value::Boolean(n1 != (n2 as f64));
+            (ValueType::Float(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Boolean(n1 != (n2 as f64));
 
                 Ok(value)
             },
-            (Value::Integer(n1), Value::Float(n2)) => {
-                let value = Value::Boolean((n1 as f64) != n2);
+            (ValueType::Integer(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Boolean((n1 as f64) != n2);
 
                 Ok(value)
             },
-            (Value::String(str1), Value::String(str2)) => {
-                let value = Value::Boolean(str1 != str2);
+            (ValueType::String(str1), ValueType::String(str2)) => {
+                let value = ValueType::Boolean(str1 != str2);
 
                 Ok(value)
             },
@@ -378,10 +394,10 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_and(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_and(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Boolean(bool1), Value::Boolean(bool2)) => {
-                let value = Value::Boolean(bool1 && bool2);
+            (ValueType::Boolean(bool1), ValueType::Boolean(bool2)) => {
+                let value = ValueType::Boolean(bool1 && bool2);
 
                 Ok(value)
             },
@@ -389,10 +405,10 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_or(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_or(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Boolean(bool1), Value::Boolean(bool2)) => {
-                let value = Value::Boolean(bool1 || bool2);
+            (ValueType::Boolean(bool1), ValueType::Boolean(bool2)) => {
+                let value = ValueType::Boolean(bool1 || bool2);
 
                 Ok(value)
             },
@@ -400,7 +416,7 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_unary_operation(&self, value: Value, operator: Operator) -> io::Result<Value> {
+    fn interpret_unary_operation(&self, value: ValueType, operator: Operator) -> io::Result<ValueType> {
         match operator {
             Operator::Minus => {
                 self.interpret_negation(value)
@@ -413,46 +429,46 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_not(&self, value: Value) -> io::Result<Value> {
+    fn interpret_not(&self, value: ValueType) -> io::Result<ValueType> {
         match value {
-            Value::Boolean(value) => Ok(Value::Boolean(!value)),
+            ValueType::Boolean(value) => Ok(ValueType::Boolean(!value)),
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong type for not inverting"))
         }
     }
 
-    fn interpret_negation(&self, value: Value) -> io::Result<Value> {
+    fn interpret_negation(&self, value: ValueType) -> io::Result<ValueType> {
         match value {
-            Value::Integer(value) => Ok(Value::Integer(-value)),
-            Value::Float(value) => Ok(Value::Float(-value)),
+            ValueType::Integer(value) => Ok(ValueType::Integer(-value)),
+            ValueType::Float(value) => Ok(ValueType::Float(-value)),
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong type for not negation"))
         }
     }
 
-    fn interpret_plus(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_plus(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Integer(n1), Value::Integer(n2)) => {
-                let value = Value::Integer(n1 + n2);
+            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Integer(n1 + n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Float(n2)) => {
-                let value = Value::Float(n1 + n2);
+            (ValueType::Float(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Float(n1 + n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Integer(n2)) => {
-                let value = Value::Float(n1 + (n2 as f64));
+            (ValueType::Float(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Float(n1 + (n2 as f64));
 
                 Ok(value)
             },
-            (Value::Integer(n1), Value::Float(n2)) => {
-                let value = Value::Float((n1 as f64) + n2);
+            (ValueType::Integer(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Float((n1 as f64) + n2);
 
                 Ok(value)
             },
-            (Value::String(mut str1), Value::String(str2)) => {
+            (ValueType::String(mut str1), ValueType::String(str2)) => {
                 str1.push_str(&str2);
-                let value = Value::String(str1);
+                let value = ValueType::String(str1);
 
                 Ok(value)
             },
@@ -460,25 +476,25 @@ impl<'a> InterpretExpression<'a> {
         }
     } 
 
-    fn interpret_minus(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_minus(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Integer(n1), Value::Integer(n2)) => {
-                let value = Value::Integer(n1 - n2);
+            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Integer(n1 - n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Float(n2)) => {
-                let value = Value::Float(n1 - n2);
+            (ValueType::Float(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Float(n1 - n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Integer(n2)) => {
-                let value = Value::Float(n1 - (n2 as f64));
+            (ValueType::Float(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Float(n1 - (n2 as f64));
 
                 Ok(value)
             },
-            (Value::Integer(n1), Value::Float(n2)) => {
-                let value = Value::Float((n1 as f64) - n2);
+            (ValueType::Integer(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Float((n1 as f64) - n2);
 
                 Ok(value)
             },
@@ -486,25 +502,25 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_multiply(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_multiply(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Integer(n1), Value::Integer(n2)) => {
-                let value = Value::Integer(n1 * n2);
+            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Integer(n1 * n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Float(n2)) => {
-                let value = Value::Float(n1 * n2);
+            (ValueType::Float(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Float(n1 * n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Integer(n2)) => {
-                let value = Value::Float(n1 * (n2 as f64));
+            (ValueType::Float(n1), ValueType::Integer(n2)) => {
+                let value = ValueType::Float(n1 * (n2 as f64));
 
                 Ok(value)
             },
-            (Value::Integer(n1), Value::Float(n2)) => {
-                let value = Value::Float((n1 as f64) * n2);
+            (ValueType::Integer(n1), ValueType::Float(n2)) => {
+                let value = ValueType::Float((n1 as f64) * n2);
 
                 Ok(value)
             },
@@ -512,41 +528,41 @@ impl<'a> InterpretExpression<'a> {
         }
     }
 
-    fn interpret_divide(&self, left: Value, right: Value) -> io::Result<Value> {
+    fn interpret_divide(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
         match (left, right) {
-            (Value::Integer(n1), Value::Integer(n2)) => {
+            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
                 if n2 == 0 {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "Division by zero!"))
                 }
                 
-                let value = Value::Float(n1 as f64 / n2 as f64);
+                let value = ValueType::Float(n1 as f64 / n2 as f64);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Float(n2)) => {
+            (ValueType::Float(n1), ValueType::Float(n2)) => {
                 if n2 == 0.0 {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "Division by zero!"))
                 }
 
-                let value = Value::Float(n1 / n2);
+                let value = ValueType::Float(n1 / n2);
 
                 Ok(value)
             },
-            (Value::Float(n1), Value::Integer(n2)) => {
+            (ValueType::Float(n1), ValueType::Integer(n2)) => {
                 if n2 == 0 {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "Division by zero!"))
                 }
 
-                let value = Value::Float(n1 / (n2 as f64));
+                let value = ValueType::Float(n1 / (n2 as f64));
 
                 Ok(value)
             },
-            (Value::Integer(n1), Value::Float(n2)) => {
+            (ValueType::Integer(n1), ValueType::Float(n2)) => {
                 if n2 == 0.0 {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "Division by zero!"))
                 }
 
-                let value = Value::Float((n1 as f64) / n2);
+                let value = ValueType::Float((n1 as f64) / n2);
 
                 Ok(value)
             },

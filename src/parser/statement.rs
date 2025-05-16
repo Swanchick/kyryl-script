@@ -1,5 +1,6 @@
 use super::data_type::DataType;
 use super::expression::Expression;
+use super::parameter::Parameter;
 
 
 #[derive(PartialEq, Debug, Clone)]
@@ -45,5 +46,11 @@ pub enum Statement {
     },
     Expression {
         value: Expression
+    },
+    Function {
+        name: String,
+        return_type: DataType,
+        parameters: Vec<Parameter>,
+        body: Vec<Statement>
     }
 }

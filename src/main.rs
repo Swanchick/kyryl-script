@@ -18,12 +18,12 @@ fn run_script(script_path: &str) -> io::Result<()> {
     lexer.lexer()?;
 
     let mut parser = Parser::new(lexer.get_tokens().clone());
-    let functions = parser.parse_functions()?;
+    let statements = parser.parse_block_statement()?;
 
     let mut interpreter = Interpreter::new();
     register_standart_library(&mut interpreter);
 
-    interpreter.interpret_program(functions)?;
+    interpreter.interpret_statements(statements)?;
 
     Ok(())
 }

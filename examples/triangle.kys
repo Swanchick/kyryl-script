@@ -29,6 +29,4 @@ function draw_triangle(size: int) {
     }
 }
 
-function main() {
-    draw_triangle(7);
-}
+draw_triangle(7);

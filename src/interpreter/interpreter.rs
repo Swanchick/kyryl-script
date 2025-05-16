@@ -1,16 +1,15 @@
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::io;
 
-use crate::parser::data_type::DataType;
 use crate::parser::expression::Expression;
-use crate::parser::function::Function;
 use crate::parser::statement::Statement;
 
 use super::enviroment::Environment;
 use super::interpret_expression::InterpretExpression;
 use super::interpret_statement::InterpretStatement;
-use super::value::Value;
+use super::return_value::Return;
+use super::value::{self, Value, ValueType};
 
 pub struct Interpreter {
     global: Rc<RefCell<Environment>>,
@@ -27,103 +26,43 @@ impl Interpreter {
         }
     }
 
-    pub fn get_global(&self) -> Rc<RefCell<Environment>> {
-        self.global.clone()
-    }
-
-    pub fn get_local(&self) -> Rc<RefCell<Environment>> {
-        self.local.clone()
-    }
-
-    pub fn interpret_program(&mut self, functions: Vec<Function>) -> io::Result<()> {
-        for function in &functions {
-            self.global.borrow_mut().define_variable(
-                function.name.clone(),
-                Value::Function(Rc::new(RefCell::new(function.clone())))
-            );
-        }
+    pub fn get_variable(&self, name: &str) -> io::Result<Value> {
+        let local = self.local.borrow();
         
-        let main = self.global.borrow().get_variable("main");
+        let value = local.get_variable(name)?;
 
-        match main {
-            Ok(Value::Function(_)) => self.call_function("main", Vec::new()),
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Entry point not found!"))
-        }?;
+        Ok(value.clone())
+    }
 
+    pub fn define_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
+        let mut local = self.local.borrow_mut();
+
+        local.define_variable(name.to_string(), value)?;
+        
         Ok(())
     }
 
-    pub fn register_rust_function(&mut self, name: &str, function: fn(args: Vec<Value>) -> io::Result<Value>) {
-        let value = Value::RustFunction(function);
+    pub fn assign_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
+        let mut local = self.local.borrow_mut();
 
-        self.global.borrow_mut().define_variable(name.to_string(), value);
-    }
-
-    pub fn call_function(&mut self, name: &str, args: Vec<Value>) -> io::Result<Value> {
-        let function_value = self.global.borrow().get_variable(name)?;
-
-        if let Value::RustFunction(function) = function_value {
-            let return_value = function(args)?;
-
-            return Ok(return_value);
-        }
-
-        let mut return_value = Value::Void;
-
-        if let Value::Function(function) = function_value {
-            let previous_enviroment = self.local.clone();
-            self.local = Rc::new(RefCell::new(Environment::with_parent(self.global.clone())));
-
-            if function.borrow().parameters.len() != args.len() {
-                return Err(
-                    io::Error::new(
-                        io::ErrorKind::InvalidInput, 
-                        format!("Expected {} amount of parameters, got {}", function.borrow().parameters.len(), args.len()))
-                );
-            }
-
-            for (parameter, arg) in function.borrow().parameters.iter().zip(args) {
-                let arg_type = arg.get_data_type();
-                
-                if arg_type != parameter.data_type {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        format!("Expected argument type {}, instead got {}", parameter.data_type, arg_type)
-                    ));
-                }
-                
-                self.local.borrow_mut().define_variable(parameter.name.clone(), arg);
-            }
-
-            for statement in function.borrow().body.iter() {
-                match self.interpret_statement(statement.clone()) {
-                    Ok(Some(value)) => {
-                        return_value = value;
-
-                        break;
-                    },
-                    Err(e) => return Err(e),
-                    _ => {}
-                } 
-            }
-
-            let return_data_type = return_value.get_data_type();
-            let expected_data_type = function.borrow().return_type.clone();
-
-            if return_data_type != expected_data_type {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!("Expected to return {}, but instead got {}", return_data_type, expected_data_type)
-                ));
-            }
-
-            self.local = previous_enviroment.clone();
-        }
+        local.assign_variable(name, value)?;
         
-        Ok(return_value)
+        Ok(())
     }
 
-    pub fn interpret_statement(&mut self, statement: Statement) -> io::Result<Option<Value>> {
+    pub fn interpret_statements(&mut self, statements: Vec<Statement>) -> io::Result<Return> {
+        for statement in statements {
+            let result = self.interpret_statement(statement)?;
+
+            if let Return::Success(_) = &result {
+                return Ok(result);
+            }
+        }
+
+        Ok(Return::Nothing)
+    }
+
+    pub fn interpret_statement(&mut self, statement: Statement) -> io::Result<Return> {
         let mut interpret_statement = InterpretStatement::new(self);
 
         interpret_statement.interpret_statement(statement)
@@ -132,6 +71,51 @@ impl Interpreter {
     pub fn interpret_expression(&mut self, expression: Expression) -> io::Result<Value> {
         let mut interpret_expression = InterpretExpression::new(self);
 
-        return interpret_expression.interpret_expression(expression);
+        interpret_expression.interpret_expression(expression)
+    }
+
+    pub fn register_rust_function(&mut self, name: &str, function: fn(args: Vec<Value>) -> io::Result<Value>) {
+        let value_type = ValueType::RustFunction(function);
+        let value = Value::new(None, value_type);
+
+        let _ = self.global.borrow_mut().define_variable(name.to_string(), value);
+    }
+
+    pub fn call_function(&mut self, name: &str, args: Vec<Value>) -> io::Result<Value> {        
+        let value = self.get_variable(name)?;
+
+        match value.get_type() {
+            ValueType::RustFunction(function) => {
+                function(args)
+            },
+
+            ValueType::Function { name, return_type, parameters, body } => {
+                if args.len() != parameters.len() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
+                }
+
+                let previous = self.local.clone();
+                self.local = Rc::new(RefCell::new(Environment::with_parent(previous.clone())));
+
+                for (arg, parameter) in args.iter().zip(parameters) {
+                    if arg.get_type().get_data_type() != parameter.data_type {
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
+                    }
+
+                    self.define_variable(parameter.name.as_str(), arg.clone())?;
+                }
+
+                let result = self.interpret_statements(body.to_vec())?;
+
+                self.local = previous.clone();
+
+                match result {
+                    Return::Success(value) => Ok(value),
+                    Return::Nothing => Ok(Value::new(None, ValueType::Void))
+                }
+            }
+
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} is not a function!", name)))
+        }
     }
 }

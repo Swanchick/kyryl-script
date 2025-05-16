@@ -22,45 +22,6 @@ impl Parser {
         }
     }
 
-    pub fn parse_functions(&mut self) -> io::Result<Vec<Function>> {
-        let mut functions: Vec<Function> = Vec::new();
-        
-        while !self.is_end() {
-            let function = self.parse_function()?;
-            functions.push(function);
-        }
-
-        Ok(functions)
-    }
-
-    pub fn parse_function(&mut self) -> io::Result<Function> {
-        self.consume_keyword("function")?;
-
-        let function_name = self.consume_identifier()?;
-
-        self.consume_token(Token::LeftParenthesis)?;
-
-        let parameters = self.parse_parameters()?;
-
-        let function_type = if self.match_token(&Token::Colon) {
-            self.consume_data_type()?
-        } else {
-            DataType::Void
-        };
-
-        self.consume_token(Token::LeftBrace)?;
-        let block = self.parse_block_statement()?;
-
-        Ok(
-            Function {
-                name: function_name,
-                return_type: function_type,
-                parameters: parameters,
-                body: block
-            }
-        )
-    }
-
     fn parse_parameters(&mut self) -> io::Result<Vec<Parameter>> {
         if self.match_token(&Token::RightParenthesis) {
             return Ok(Vec::new());
@@ -118,6 +79,8 @@ impl Parser {
             return self.parse_while_statement();
         } else if self.match_keyword("for") {
             return self.parse_for_statement();
+        } else if self.match_keyword("function") {
+            return self.parse_function();
         } else if let Token::Identifier(name) = self.peek().to_owned() { 
             self.advance();
 
@@ -152,6 +115,32 @@ impl Parser {
 
         self.back();
         self.parse_expression_statement()
+    }
+
+    pub fn parse_function(&mut self) -> io::Result<Statement> {
+        let function_name = self.consume_identifier()?;
+
+        self.consume_token(Token::LeftParenthesis)?;
+
+        let parameters = self.parse_parameters()?;
+
+        let function_type = if self.match_token(&Token::Colon) {
+            self.consume_data_type()?
+        } else {
+            DataType::Void
+        };
+
+        self.consume_token(Token::LeftBrace)?;
+        let block = self.parse_block_statement()?;
+
+        Ok(
+            Statement::Function { 
+                name: function_name, 
+                return_type: function_type, 
+                parameters: parameters, 
+                body: block 
+            }
+        )
     }
 
     fn parse_for_statement(&mut self) -> io::Result<Statement> {

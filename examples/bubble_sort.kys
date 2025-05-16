@@ -1,24 +1,14 @@
-function bubble_sort(numbers: [int]): [int] {
-    for j in range(len(numbers)) {
-        for i in range(len(numbers) - j - 1) {
-            let n1 = numbers[i];
-            let n2 = numbers[i + 1];
+function test(message: string) {
+    println(message);
+    println(message);
+    println(message);
+    println(message);
+    println(message);
 
-            if n1 > n2 {
-                numbers[i] = n2;
-                numbers[i + 1] = n1;
-            }
-        }
-    }
-
-    return numbers;
+    message = "asdasdasd";
 }
 
+let text = "Hello!";
+test(text);
 
-function main() {
-    let numbers = [40, 2, 4, 7, 4, 34, 68, 12];
-
-    println(numbers);
-    numbers = bubble_sort(numbers);
-    println(numbers);
-}
+println(text);
