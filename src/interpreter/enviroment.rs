@@ -5,12 +5,13 @@ use std::cell::RefCell;
 
 
 use super::value::Value;
+use super::variable_slot::VariableSlot;
 
 #[derive(Debug, Clone)]
 pub struct Environment {
     parent: Option<Rc<RefCell<Environment>>>,
     values: HashMap<String, u128>,
-    references: HashMap<u128, Value>,
+    references: HashMap<u128, VariableSlot>,
     last_reference: u128
 }
 
@@ -37,16 +38,17 @@ impl Environment {
         &self.values
     }
 
-    pub fn get_references(&self) -> &HashMap<u128, Value> {
-        &self.references
+    fn create_value(&mut self, name: String, mut value: Value) {
+        value.set_reference(self.last_reference);
+        self.references.insert(self.last_reference, VariableSlot::Variable(value));
+        self.values.insert(name, self.last_reference);
+
+        self.last_reference += 1;
     }
 
-    fn create_value(&mut self, name: String, value: Value) {
-        let mut value = value;
-        value.set_reference(self.last_reference);
-
-        self.references.insert(self.last_reference, value);
+    pub fn create_value_reference(&mut self, name: String, reference: u128) {
         self.values.insert(name, self.last_reference);
+        self.references.insert(self.last_reference, VariableSlot::Reference(reference));
 
         self.last_reference += 1;
     }
@@ -75,16 +77,6 @@ impl Environment {
         false
     }
 
-    fn check_variable(&self, name: &str, reference: &u128) -> bool {
-        let reference = self.values.iter().find(|(_, &y)| y == reference.clone());
-
-        if let Some((value_name, reference)) = reference {
-            return value_name == name;
-        }
-
-        false
-    }
-
     pub fn define_variable(&mut self, name: String, value: Value) -> io::Result<()> {
         match value.get_reference() {
             Some(reference) => {
@@ -106,53 +98,94 @@ impl Environment {
         Ok(())
     }
 
-    pub fn assign_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
-        let value = value;
-        
-        let original_value = self.get_variable(name)?;
-        if original_value.get_type().get_data_type() != value.get_type().get_data_type() {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid type for assignment!"))
-        }
+    pub fn assign_variable_by_reference(&mut self, reference: u128, mut value: Value) -> io::Result<()> {
+        if let Some(slot) = self.references.get(&reference) {
+            match slot.clone() {
+                VariableSlot::Variable(_) => {                    
+                    value.set_reference(reference);
+                    self.references.insert(reference, VariableSlot::Variable(value.clone()));
+                }
 
-        if let Some(reference) = value.get_reference() {
-            self.references.insert(reference, value);
-            self.values.insert(name.to_string(), reference);
-
-            return Ok(());
-        } 
-        if let Some(&reference) = self.values.get(name) {
-            self.references.insert(reference, value);
-
-            return Ok(());
-        }
-
-        Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {name} does not exists!")))
-    }
-
-    pub fn free(&mut self, name: &str) {
-        if let Some(&reference) = self.values.get(name) {
-            self.values.remove(name);
-
-            if !self.values.values().any(|&x| x == reference) {
-                self.references.remove(&reference);
+                VariableSlot::Reference(parent_reference) => {
+                    self.assign_variable_by_reference(parent_reference, value)?;
+                }
             }
         }
+        
+        
+        Ok(())
+    }
+
+    pub fn assign_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
+        let expected = self.get_variable(name)?;
+
+        if expected.get_type().get_data_type() != value.get_type().get_data_type() {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid type for assignment!"));
+        }
+
+        if let Some(&reference) = self.values.get(name) {
+            if let Some(slot) = self.references.get(&reference) {
+                if let VariableSlot::Reference(parent_reference) = slot {
+                    if let Some(parent) = &self.parent {
+                        return parent.borrow_mut().assign_variable_by_reference(parent_reference.clone(), value);
+                    } else {
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("")))
+                    }
+                }
+            }
+            
+            self.references.insert(reference, VariableSlot::Variable(Value::new(Some(reference), value.get_type().clone())));
+            Ok(())
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {name} does not exist!")))
+        }
+    }
+
+    pub fn get_by_reference(&self, reference: u128) -> io::Result<Value> {
+        if let Some(slot) = self.references.get(&reference) {
+            match slot {
+                VariableSlot::Variable(value) => {
+                    return Ok(value.clone());
+                }
+                VariableSlot::Reference(parent_reference) => {
+                    let parent_reference = parent_reference.clone();
+                    
+                    if let Some(parent) = &self.parent {
+                        return parent.borrow().get_by_reference(parent_reference);
+                    }
+                }
+            }
+        }
+
+        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Reference not found {}!", reference)));
     }
 
     pub fn get_variable(&self, name: &str) -> io::Result<Value> {
         if let Some(reference) = self.values.get(name) {
-            if let Some(value) = self.references.get(reference) {
-                Ok(value.clone())
-            } else if let Some(parent) = &self.parent {
-                parent.borrow_mut().get_variable(name)
-            } else {
-                Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} does not exist!", name)))
+            if let Some(slot) = self.references.get(reference) {
+                match slot {
+                    VariableSlot::Variable(value) => {
+                        return Ok(value.clone());
+                    }
+
+                    VariableSlot::Reference(parent_reference) => {
+                        let parent_reference = parent_reference.clone();
+                        
+                        if let Some(parent) = &self.parent {
+                            return parent.borrow().get_by_reference(parent_reference);
+                        } 
+
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} does not exist!", name)));
+                    }
+                }
             }
-        } else if let Some(parent) = &self.parent {
-            parent.borrow_mut().get_variable(name)
-        } else {
-            Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} does not exist!", name)))
         }
+        
+        if let Some(parent) = &self.parent {
+            return parent.borrow().get_variable(name)
+        }
+
+        Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} does not exist!", name)))
     }
 }
 

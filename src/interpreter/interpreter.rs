@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::io;
 
 use crate::parser::expression::Expression;
@@ -9,7 +9,7 @@ use super::enviroment::Environment;
 use super::interpret_expression::InterpretExpression;
 use super::interpret_statement::InterpretStatement;
 use super::return_value::Return;
-use super::value::{self, Value, ValueType};
+use super::value::{Value, ValueType};
 
 pub struct Interpreter {
     global: Rc<RefCell<Environment>>,
@@ -38,6 +38,16 @@ impl Interpreter {
         let mut local = self.local.borrow_mut();
 
         local.define_variable(name.to_string(), value)?;
+        
+        Ok(())
+    }
+
+    pub fn define_variable_by_reference(&mut self, name: &str, value: &Value) -> io::Result<()> {
+        let mut local = self.local.borrow_mut();
+
+        if let Some(reference) = value.get_reference() {
+            local.create_value_reference(name.to_string(), reference);
+        }
         
         Ok(())
     }
@@ -102,7 +112,11 @@ impl Interpreter {
                         return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
                     }
 
-                    self.define_variable(parameter.name.as_str(), arg.clone())?;
+                    if let Some(_) = arg.get_reference() {
+                        self.define_variable_by_reference(parameter.name.as_str(), arg)?;
+                    } else {
+                        self.define_variable(parameter.name.as_str(), arg.clone())?;
+                    }
                 }
 
                 let result = self.interpret_statements(body.to_vec())?;

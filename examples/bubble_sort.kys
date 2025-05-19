@@ -11,4 +11,6 @@ function test(message: string) {
 let text = "Hello!";
 test(text);
 
+println("===================");
+
 println(text);

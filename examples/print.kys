@@ -2,8 +2,6 @@
 -- Print example
 --
 
-function main() {
-    println("Hello, World!");
-    println("Hello, World!", " asdasdas");
-    println(10121232, " Number!");
-}
+println("Hello, World!");
+println("Hello, World!", " asdasdas");
+println(10121232, " Number!");

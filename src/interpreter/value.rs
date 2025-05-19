@@ -1,9 +1,6 @@
-use std::rc::Rc;
-use std::cell::RefCell;
 use std::io;
 
 use crate::parser::data_type::DataType;
-use crate::parser::function::Function;
 use crate::parser::parameter::Parameter;
 use crate::parser::statement::Statement;
 

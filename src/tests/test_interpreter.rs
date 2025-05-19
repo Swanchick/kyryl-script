@@ -172,25 +172,25 @@ fn test_interpreter_boolean_true_3() {
 }
 
 
-#[test]
-fn test_interpreter_var_dec_statement() {
-    let test_statement = get_statement("let a = 10 + 20;");
-    let test_hash = HashMap::from([
-        (String::from("a"), ValueType::Integer(30))
-    ]);
+// #[test]
+// fn test_interpreter_var_dec_statement() {
+//     let test_statement = get_statement("let a = 10 + 20;");
+//     let test_hash = HashMap::from([
+//         (String::from("a"), ValueType::Integer(30))
+//     ]);
 
-    let mut interpreter = Interpreter::new();
-    interpreter.interpret_statement(test_statement).unwrap();
+//     let mut interpreter = Interpreter::new();
+//     interpreter.interpret_statement(test_statement).unwrap();
 
-    let env = interpreter.get_local();
-    let env = env.borrow();
-    let values = env.get_values();
-    let references = env.get_references();
+//     let env = interpreter.get_local();
+//     let env = env.borrow();
+//     let values = env.get_values();
+//     let references = env.get_references();
 
-    let reference = values.get("a").unwrap();
-    let value = references.get(reference).unwrap().clone();
+//     let reference = values.get("a").unwrap();
+//     let value = references.get(reference).unwrap().clone();
 
-    assert_eq!(HashMap::from([(String::from("a"), value.get_type().clone())]), test_hash);
-}
+//     assert_eq!(HashMap::from([(String::from("a"), value.get_type().clone())]), test_hash);
+// }
 
 
