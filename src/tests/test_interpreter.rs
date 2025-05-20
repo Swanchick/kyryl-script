@@ -1,15 +1,10 @@
-use core::borrow;
-use std::cell::RefCell;
-use std::collections::HashMap;
 use std::io;
-use std::rc::Rc;
 
 use crate::interpreter::interpreter::Interpreter;
 use crate::interpreter::value::ValueType;
 
 use crate::lexer::lexer::Lexer;
 use crate::parser::expression::Expression;
-use crate::parser::function::Function;
 use crate::parser::operator::Operator;
 use crate::parser::parser::Parser;
 use crate::parser::statement::Statement;

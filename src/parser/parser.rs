@@ -3,7 +3,6 @@ use crate::lexer::token::Token;
 use super::operator::Operator;
 use super::data_type::DataType;
 use super::expression::Expression;
-use super::function::Function;
 use super::parameter::Parameter;
 use super::statement::Statement;
 
