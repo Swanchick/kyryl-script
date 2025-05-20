@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-
 use super::value::Value;
 use super::variable_slot::VariableSlot;
 
@@ -32,10 +31,6 @@ impl Environment {
             references: HashMap::new(),
             last_reference: 0
         }
-    }
-
-    pub fn get_values(&self) -> &HashMap<String, u128> {
-        &self.values
     }
 
     fn create_value(&mut self, name: String, mut value: Value) {

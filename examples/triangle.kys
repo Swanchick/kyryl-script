@@ -3,14 +3,6 @@
 -- 
 
 
--- ******
--- *****
--- ****
--- ***
--- **
--- *
-
-
 function draw_triangle(size: int) {
     let column = 0;
 

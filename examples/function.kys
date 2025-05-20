@@ -18,9 +18,7 @@ function divide(a: int, b: int): float {
     return a / b;
 }
 
-function main() {
-    println("Add: ", add(10, 20));
-    println("Subtract: ", sub(10, 20));
-    println("Multiply: ", mult(10, 20));
-    println("Divide: ", divide(10, 20));
-}
+println("Add: ", add(10, 20));
+println("Subtract: ", sub(10, 20));
+println("Multiply: ", mult(10, 20));
+println("Divide: ", divide(10, 20));

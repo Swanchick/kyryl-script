@@ -12,13 +12,11 @@ function fib(n: int): int {
 }
 
 
-function main() {
-    let i = 0;
+let i = 0;
 
-    while i < 10 {
-        let result = fib(i);
-        println(result);
+while i < 10 {
+    let result = fib(i);
+    println(result);
 
-        i = i + 1;
-    }
+    i = i + 1;
 }

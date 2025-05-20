@@ -99,7 +99,7 @@ impl Interpreter {
                 function(args)
             },
 
-            ValueType::Function { name, return_type, parameters, body } => {
+            ValueType::Function { name, return_type: _, parameters, body } => {
                 if args.len() != parameters.len() {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
                 }
