@@ -1,9 +1,11 @@
-function test(value: int) {
-    println(value);
+let variable: int = null; -- Може бути не тільки null
+
+function foo(bar: int) {
+    bar?; -- зробити return замість написання його власноруч.
+    -- Або
+    bar? {
+        -- Зробити щось до повернення
+    };
 }
 
-let a = 20;
-test(a);
-
-
-test(10);
+foo(variable);
