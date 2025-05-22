@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::parser::data_type::DataType;
-use crate::parser::parameter::{self, Parameter};
+use crate::parser::parameter::Parameter;
 use crate::parser::statement::Statement;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -12,7 +12,7 @@ pub enum ValueType {
     Boolean(bool),
     RustFunction(fn(args: Vec<Value>) -> io::Result<Value>),
     List(Vec<Value>),
-    Void,
+    Null,
     Function {
         name: String,
         return_type: DataType,
@@ -73,7 +73,7 @@ impl ValueType {
                     DataType::List(Box::new(DataType::Void))
                 }
             }
-            ValueType::Void => DataType::Void,
+            ValueType::Null => DataType::Void,
         }
     }
 }

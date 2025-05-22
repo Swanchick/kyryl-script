@@ -17,15 +17,14 @@ pub fn is_keyword(text: &str) -> bool {
         "bool" => true,
         "true" => true,
         "false" => true,
-        "using" => true,
         "void" => true,
+        "null" => true,
         "struct" => true,
         "enum" => true,
         "list" => true,
         "tuple" => true,
         "in" => true,
         _ => false
-        
     }
 }
 

@@ -24,7 +24,7 @@ fn kys_print(args: Vec<Value>) -> io::Result<Value> {
                 }
                 print!("]")
             }
-            ValueType::Void => print!("void :)"),
+            ValueType::Null => print!("null"),
             _ => return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 format!("Unsupported value to print: {}", value_type.get_data_type())
@@ -32,14 +32,14 @@ fn kys_print(args: Vec<Value>) -> io::Result<Value> {
         }
     }
     
-    Ok(Value::new(None, ValueType::Void))
+    Ok(Value::new(None, ValueType::Null))
 }
 
 fn kys_println(args: Vec<Value>) -> io::Result<Value> {    
     kys_print(args)?;
     println!("");
     
-    Ok(Value::new(None, ValueType::Void))
+    Ok(Value::new(None, ValueType::Null))
 }
 
 fn kys_len(args: Vec<Value>) -> io::Result<Value> {

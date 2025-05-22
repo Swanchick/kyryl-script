@@ -23,7 +23,7 @@ impl<'a> InterpretStatement<'a> {
                 let value = if let Some(expression) = value {
                     self.interpreter.interpret_expression(expression)?
                 } else {
-                    Value::new(None, ValueType::Void)
+                    Value::new(None, ValueType::Null)
                 };
 
                 if let Some(data_type) = data_type {
@@ -89,7 +89,7 @@ impl<'a> InterpretStatement<'a> {
                 if let Some(expression) = value {
                     Ok(Return::Success(self.interpreter.interpret_expression(expression)?))
                 } else {
-                    Ok(Return::Success(Value::new(None, ValueType::Void)))
+                    Ok(Return::Success(Value::new(None, ValueType::Null)))
                 }
             },
             Statement::IfStatement { condition, body, else_body } => {

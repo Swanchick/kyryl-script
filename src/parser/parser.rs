@@ -1,23 +1,26 @@
 use crate::lexer::token::Token;
 
 use super::operator::Operator;
-use super::data_type::DataType;
+use super::data_type::{self, DataType};
 use super::expression::Expression;
 use super::parameter::Parameter;
+use super::semantic_analyzer::SemanticAnalyzer;
 use super::statement::Statement;
 
 use std::io;
 
 pub struct Parser {
     tokens: Vec<Token>,
-    current_token: usize
+    current_token: usize,
+    semantic_analyzer: SemanticAnalyzer
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Parser {
             tokens,
-            current_token: 0
+            current_token: 0,
+            semantic_analyzer: SemanticAnalyzer::init()
         }
     }
 
@@ -186,7 +189,14 @@ impl Parser {
         
         self.consume_token(Token::Equal)?;
         let expression = self.parse_expression()?;
-        
+        let dt = self.semantic_analyzer.get_data_type(&expression)?;
+        if let Some(data_type_to_check) = &data_type {
+            if dt != data_type_to_check.clone() {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "Differenet data types in expression and actual data type."));
+            } 
+        }
+
+        self.semantic_analyzer.save_variable(name.clone(), dt.clone());
         self.consume_token(Token::Semicolon)?;
 
         Ok(

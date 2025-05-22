@@ -17,9 +17,6 @@ impl SemanticAnalyzer {
         SemanticAnalyzer { variables: HashMap::new() }
     }
 
-    // Todo:
-    // * addition/division/difference/multiplication and etc result datatype
-
     fn plus(&self, left: DataType, right: DataType) -> io::Result<DataType> {
         match (left, right) {
             (DataType::Int, DataType::Int) => Ok(DataType::Int),
@@ -69,7 +66,7 @@ impl SemanticAnalyzer {
         }
     }
     
-    fn binary_operation(&self, operator: Operator, left: DataType, right: DataType) -> io::Result<DataType> {
+    fn binary_operation(&self, operator: &Operator, left: DataType, right: DataType) -> io::Result<DataType> {
         match operator {
             Operator::Plus => self.plus(left, right),
             Operator::Minus => self.arithmetic(left, right),
@@ -87,22 +84,96 @@ impl SemanticAnalyzer {
         }
     }
 
-    pub fn get_data_type(&self, expression: Expression) -> io::Result<DataType> {
-        match expression {
-            Expression::BinaryOp { left, operator, right } => {
-                let left = self.get_data_type(*left)?;
-                let right = self.get_data_type(*right)?;
-
-                self.binary_operation(operator, left, right)
-            }
-
-            _ => {
-                todo!()
-            }
+    fn unary_operation(&self, operator: &Operator, right: DataType) -> io::Result<DataType> {
+        match (operator, right) {
+            (Operator::Minus, DataType::Int) => Ok(DataType::Int),
+            (Operator::Minus, DataType::Float) => Ok(DataType::Float),
+            (Operator::Tilde, DataType::Bool) => Ok(DataType::Bool),
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid operator in unary operation!"))
         }
     }
 
-    pub fn save_variable(&mut self, name: &str, expression: Expression) {
-        todo!()
+    fn front_unary_operation(&self, operator: &Operator, left: DataType) -> io::Result<DataType> {
+        match (operator, left) {
+            (Operator::PlusPlus, DataType::Int) => Ok(DataType::Int),
+            (Operator::PlusPlus, DataType::Float) => Ok(DataType::Float),
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid operator in front unary operation!"))
+        }
+    }
+
+    fn identefier_index(&self, left: DataType, index: DataType) -> io::Result<DataType> {
+        match (left, index) {
+            (DataType::List(children_type), DataType::Int) => Ok(*children_type),
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid data in list indexing operation!"))
+        }
+    }
+
+    pub fn get_data_type(&self, expression: &Expression) -> io::Result<DataType> {
+        match expression {
+            Expression::BinaryOp { left, operator, right } => {
+                let left = self.get_data_type(left)?;
+                let right = self.get_data_type(right)?;
+
+                self.binary_operation(operator, left, right)
+            },
+
+            Expression::UnaryOp { expression, operator } => {
+                let right = self.get_data_type(expression)?;
+                self.unary_operation(operator, right)
+            },
+
+            Expression::FrontUnaryOp { expression, operator } => {
+                let left = self.get_data_type(expression)?;
+                self.front_unary_operation(operator, left)
+            },
+
+            Expression::ListLiteral(children) => {
+                if children.len() == 0 {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "List empty!"));
+                }
+
+                let first = self.get_data_type(&children[0].clone())?;
+
+                for child in children.iter() {
+                    let child = self.get_data_type(&child.clone())?;
+
+                    if first == child {
+                        continue;
+                    }
+
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Children has different types in list!"));
+                }
+
+                Ok(DataType::List(Box::new(first)))
+            },
+            
+            Expression::Identifier(name) => {
+                match self.variables.get(name) {
+                    Some(DataType::Void) => Ok(DataType::Void),
+                    Some(data_type) => Ok(data_type.clone()),
+                    None => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} not found!", name)))
+                }
+            },
+
+            Expression::FunctionCall(name, parameters) => {
+                todo!()
+            },
+
+            Expression::IdentifierIndex { left, index } => {
+                let left = self.get_data_type(left)?;
+                let index = self.get_data_type(index)?;
+                
+                self.identefier_index(left, index)
+            },
+
+            Expression::IntegerLiteral(_) => Ok(DataType::Int),
+            Expression::FloatLiteral(_) => Ok(DataType::Float),
+            Expression::StringLiteral(_) => Ok(DataType::String),
+            Expression::BooleanLiteral(_) => Ok(DataType::Bool)
+        }
+    }
+
+    pub fn save_variable(&mut self, name: String, expression: DataType) {
+        self.variables.insert(name, expression);
     }
 }

@@ -43,7 +43,7 @@ impl<'a> InterpretExpression<'a> {
                 if let Expression::Identifier(name) = *expression {
                     self.interpret_front_unary_operation(&name, operator)?;
 
-                    Ok(Value::new(None, ValueType::Void))
+                    Ok(Value::new(None, ValueType::Null))
                 } else {
                     Err(io::Error::new(
                         io::ErrorKind::InvalidData,

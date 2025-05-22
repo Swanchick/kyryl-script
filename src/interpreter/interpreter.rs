@@ -125,7 +125,7 @@ impl Interpreter {
 
                 match result {
                     Return::Success(value) => Ok(value),
-                    Return::Nothing => Ok(Value::new(None, ValueType::Void))
+                    Return::Nothing => Ok(Value::new(None, ValueType::Null))
                 }
             }
 
