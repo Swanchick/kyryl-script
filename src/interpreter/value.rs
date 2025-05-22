@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::parser::data_type::DataType;
-use crate::parser::parameter::Parameter;
+use crate::parser::parameter::{self, Parameter};
 use crate::parser::statement::Statement;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -56,8 +56,16 @@ impl ValueType {
             ValueType::Float(_) => DataType::Float,
             ValueType::String(_) => DataType::String,
             ValueType::Boolean(_) => DataType::Bool,
-            ValueType::Function{ .. } => DataType::Function,
-            ValueType::RustFunction(_) => DataType::Function,
+            ValueType::Function { name: _, return_type, parameters, body: _ } => {
+                let mut parameter_types: Vec<DataType> = Vec::new();
+
+                for parameter in parameters {
+                    parameter_types.push(parameter.data_type.clone());
+                }
+
+                DataType::Function { parameters: parameter_types, return_type: Box::new(return_type.clone()) }
+            },
+            ValueType::RustFunction(_) => DataType::RustFunction,
             ValueType::List(list) => {
                 if list.len() != 0 {
                     DataType::List(Box::new(list[0].get_type().get_data_type()))

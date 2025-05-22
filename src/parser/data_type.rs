@@ -8,8 +8,12 @@ pub enum DataType {
     String,
     Bool,
     Void,
+    RustFunction,
     List(Box<DataType>),
-    Function
+    Function {
+        parameters: Vec<DataType>,
+        return_type: Box<DataType>
+    }
 }
 
 
@@ -21,8 +25,9 @@ impl Display for DataType {
             DataType::String => write!(f, "string"),
             DataType::Bool => write!(f, "boolean"),
             DataType::Void => write!(f, "void"),
-            DataType::List(data_type) => write!(f, "list {}", *data_type),
-            DataType::Function => write!(f, "function")
+            DataType::RustFunction => write!(f, "rust_function"),
+            DataType::List(data_type) => write!(f, "list {:?}", data_type),
+            DataType::Function{ parameters, return_type } => write!(f, "function({:?}) -> {:?}", parameters, return_type)
         }
     }
 }
