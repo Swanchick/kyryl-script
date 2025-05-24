@@ -77,3 +77,19 @@ fn test_function_enviroment_parameters_out_of_function() {
     let mut parser = Parser::new(lexer.get_tokens().clone());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Variable bar not found!");
 }
+
+#[test]
+fn test_function_enviroment_return_mismatch() {
+    let source = concat!(
+        "function foo(): float {\n",
+        "    return 100;\n",
+        "}\n",
+    );
+
+    let mut lexer = Lexer::new(source.to_string());
+
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Mismatch return and function return types!");
+}

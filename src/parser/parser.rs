@@ -12,7 +12,8 @@ use std::io;
 pub struct Parser {
     tokens: Vec<Token>,
     current_token: usize,
-    semantic_analyzer: SemanticAnalyzer
+    semantic_analyzer: SemanticAnalyzer,
+    function_context: Option<DataType>
 }
 
 impl Parser {
@@ -20,7 +21,8 @@ impl Parser {
         Parser {
             tokens,
             current_token: 0,
-            semantic_analyzer: SemanticAnalyzer::new()
+            semantic_analyzer: SemanticAnalyzer::new(),
+            function_context: None
         }
     }
 
@@ -122,7 +124,7 @@ impl Parser {
         self.parse_expression_statement()
     }
 
-    pub fn parse_function(&mut self) -> io::Result<Statement> {
+    pub fn parse_function(&mut self) -> io::Result<Statement> { // implemented
         let function_name = self.consume_identifier()?;
 
         self.consume_token(Token::LeftParenthesis)?;
@@ -138,17 +140,23 @@ impl Parser {
         };
 
         self.consume_token(Token::LeftBrace)?;
+        
+        let function_data_type = DataType::Function { 
+            parameters: DataType::from_parameters(&parameters), 
+            return_type: Box::new(function_type.clone())
+        };
+
+        self.function_context = Some(function_data_type.clone());
+        
         let block = self.parse_block_statement()?;
+        
+        self.function_context = None;
 
         self.semantic_analyzer.exit_function_enviroment()?;
 
         self.semantic_analyzer.save_variable(
             function_name.clone(), 
-            
-            DataType::Function { 
-                parameters: DataType::from_parameters(&parameters), 
-                return_type: Box::new(function_type.clone())
-            }
+            function_data_type
         );
 
         Ok(
@@ -194,7 +202,7 @@ impl Parser {
         Ok(Statement::RemoveValue { name: name, value: expression })
     }
 
-    fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> { // Semantic Implemented
+    fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> { // Implemented
         let name = self.consume_identifier()?;
         
         let data_type = if self.match_token(&Token::Colon) {
@@ -229,15 +237,26 @@ impl Parser {
         )
     }
 
-    fn parse_return_statement(&mut self) -> io::Result<Statement> {
-        let expression = self.parse_expression()?;
-        self.consume_token(Token::Semicolon)?;
-        
-        Ok(
-            Statement::ReturnStatement {
-                value: Some(expression)
+    /// Todo:
+    /// 1. Make function context in analyzer_enviroment
+    /// 2. With the function context check return and function data_type 
+
+    fn parse_return_statement(&mut self) -> io::Result<Statement> { 
+        if let Some(function_context) = self.function_context.clone() {
+            let expression = self.parse_expression()?;
+            let data_type = self.semantic_analyzer.get_data_type(&expression)?;
+
+            if let DataType::Function { parameters: _, return_type } = function_context {
+                if *return_type != data_type {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Mismatch return and function return types!"));
+                }
+
+                self.consume_token(Token::Semicolon)?;
+                return Ok(Statement::ReturnStatement { value: Some(expression) });
             }
-        )
+        } 
+
+        Err(io::Error::new(io::ErrorKind::InvalidData, "No function context for return!"))
     }
 
     fn parse_assignment_statement(&mut self, name: String) -> io::Result<Statement> {
