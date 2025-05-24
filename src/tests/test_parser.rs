@@ -233,7 +233,10 @@ fn test_expression_in_parenthesis() {
 
 #[test]
 fn test_assigment_statement() {
-    let source = "a = \"Hello World\";";
+    let source = concat!(
+        "let a = \"Hey Hey\";\n",
+        "a = \"Hello World\";\n",
+    );
 
     let test_statement = Statement::Assigment {
         name: String::from("a"),
@@ -244,8 +247,8 @@ fn test_assigment_statement() {
     lexer.lexer().unwrap();
 
     let mut parser = Parser::new(lexer.get_tokens().clone());
-    let statement = parser.parse_statement().unwrap();
-
+    let _ = parser.parse_statement().unwrap(); // Parsing first line
+    let statement = parser.parse_statement().unwrap(); // Then second, to ensure that value type is actually type-correct 
 
     assert_eq!(statement, test_statement);
 }

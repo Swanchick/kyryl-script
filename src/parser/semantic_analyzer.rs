@@ -21,6 +21,18 @@ impl SemanticAnalyzer {
         }
     }
 
+    pub fn get_variable(&self, name: &str) -> io::Result<DataType> {
+        let env = self.enviroment.borrow();
+        env.get_variable_type(name)
+    }
+
+    pub fn check_null(&self, data_type: &DataType) -> io::Result<()> {
+        match data_type {
+            DataType::Void(_) => Err(io::Error::new(io::ErrorKind::InvalidData, "Attempt to perform an operation with a null value")),
+            _ => Ok(())
+        }
+    }
+
     pub fn enter_function_enviroment(&mut self) {
         let parent = self.enviroment.clone();
         self.enviroment = Rc::new(RefCell::new(AnalyzerEnviroment::with_parent(parent.clone())));
@@ -47,6 +59,9 @@ impl SemanticAnalyzer {
     }
 
     fn plus(&self, left: DataType, right: DataType) -> io::Result<DataType> {
+        self.check_null(&left)?;
+        self.check_null(&right)?;
+        
         match (left, right) {
             (DataType::Int, DataType::Int) => Ok(DataType::Int),
             
@@ -60,6 +75,9 @@ impl SemanticAnalyzer {
     }
 
     fn arithmetic(&self, left: DataType, right: DataType) -> io::Result<DataType> {
+        self.check_null(&left)?;
+        self.check_null(&right)?;
+
         match (left, right) {
             (DataType::Int, DataType::Int) => Ok(DataType::Int),
             
@@ -72,6 +90,9 @@ impl SemanticAnalyzer {
     }
 
     fn boolean(&self, left: DataType, right: DataType) -> io::Result<DataType> {
+        self.check_null(&left)?;
+        self.check_null(&right)?;
+
         match (left, right) {
             (DataType::Bool, DataType::Bool) => Ok(DataType::Bool),
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Logic type error!"))
@@ -87,6 +108,9 @@ impl SemanticAnalyzer {
     }
 
     fn logic(&self, left: DataType, right: DataType) -> io::Result<DataType> {
+        self.check_null(&left)?;
+        self.check_null(&right)?;
+
         match (left, right) {
             (DataType::Int, DataType::Int) 
             | (DataType::Float, DataType::Int)
@@ -184,14 +208,14 @@ impl SemanticAnalyzer {
             
             Expression::Identifier(name) => {
                 match self.enviroment.borrow().get_variable_type(name) {
-                    Ok(DataType::Void) => Ok(DataType::Void),
+                    Ok(DataType::Void(_)) => Ok(DataType::void()),
                     Ok(data_type) => Ok(data_type.clone()),
                     Err(_) => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} not found!", name)))
                 }
             },
 
             Expression::FunctionCall(name, parameters) => {
-                Ok(DataType::Void)
+                Ok(DataType::void())
             },
 
             Expression::IdentifierIndex { left, index } => {
@@ -205,7 +229,7 @@ impl SemanticAnalyzer {
             Expression::FloatLiteral(_) => Ok(DataType::Float),
             Expression::StringLiteral(_) => Ok(DataType::String),
             Expression::BooleanLiteral(_) => Ok(DataType::Bool),
-            Expression::NullLiteral => Ok(DataType::Void)
+            Expression::NullLiteral => Ok(DataType::void())
         }
     }
 

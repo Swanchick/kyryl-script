@@ -93,3 +93,105 @@ fn test_function_enviroment_return_mismatch() {
     let mut parser = Parser::new(lexer.get_tokens().clone());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Mismatch return and function return types!");
 }
+
+
+#[test]
+fn test_function_enviroment_if_condition_mismatch() {
+    let source = concat!(
+        "if 20 + 30 {\n",
+        "}\n",
+    );
+
+    let mut lexer = Lexer::new(source.to_string());
+
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "If statment condition mismatch data_type, expected bool!");
+}
+
+
+#[test]
+fn test_function_enviroment_if_enviroment_error() {
+    let source = concat!(
+        "let a = 10;\n",
+        "let b = 20;\n",
+        "if a == b {\n",
+        "   let c = 203;\n",
+        "}\n",
+        "let d = c;\n",
+    );
+
+    let mut lexer = Lexer::new(source.to_string());
+
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Variable c not found!");
+}
+
+
+#[test]
+fn test_function_enviroment_for_type_mismatch() {
+    let source = concat!(
+        "let a = 20;\n",
+        "for i in a {\n",
+        "   let c = i;\n",
+        "}\n",
+    );
+
+    let mut lexer = Lexer::new(source.to_string());
+
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "For loop statement mismatch type!");
+}
+
+#[test]
+fn test_function_enviroment_expression_mismatch() {
+    let source = concat!(
+        "let a = \"Hello\";\n",
+        "let b = 20;\n",
+        "let c = a + b;\n"
+    );
+
+    let mut lexer = Lexer::new(source.to_string());
+
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Arithmetic type error!");
+}
+
+#[test]
+fn test_function_enviroment_null_error() {
+    let source = concat!(
+        "let a: int = null;\n",
+        "let b = a + 10;"
+    );
+
+    let mut lexer = Lexer::new(source.to_string());
+
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Attempt to perform an operation with a null value");
+}
+
+
+
+#[test]
+fn test_function_assigment_error() {
+    let source = concat!(
+        "let a: int = null;\n",
+        "a = \"Hello!\";\n"
+    );
+
+    let mut lexer = Lexer::new(source.to_string());
+
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone());
+    assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Assigment value mismatch!");
+}

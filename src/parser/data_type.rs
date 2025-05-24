@@ -9,7 +9,7 @@ pub enum DataType {
     Float,
     String,
     Bool,
-    Void,
+    Void(Option<Box<DataType>>),
     RustFunction,
     List(Box<DataType>),
     Function {
@@ -26,7 +26,7 @@ impl Display for DataType {
             DataType::Float => write!(f, "float"),
             DataType::String => write!(f, "string"),
             DataType::Bool => write!(f, "boolean"),
-            DataType::Void => write!(f, "void"),
+            DataType::Void(_) => write!(f, "void"),
             DataType::RustFunction => write!(f, "rust_function"),
             DataType::List(data_type) => write!(f, "list {:?}", data_type),
             DataType::Function{ parameters, return_type } => write!(f, "function({:?}) -> {:?}", parameters, return_type)
@@ -43,5 +43,16 @@ impl DataType {
         }
 
         out
+    }
+
+    pub fn void() -> DataType {
+        DataType::Void(None)
+    }
+
+    pub fn is_void(data_type: &DataType) -> bool {
+        match data_type {
+            DataType::Void(_) => true,
+            _ => false
+        }
     }
 }

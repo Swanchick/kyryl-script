@@ -70,10 +70,10 @@ impl ValueType {
                 if list.len() != 0 {
                     DataType::List(Box::new(list[0].get_type().get_data_type()))
                 } else {
-                    DataType::List(Box::new(DataType::Void))
+                    DataType::List(Box::new(DataType::void()))
                 }
             }
-            ValueType::Null => DataType::Void,
+            ValueType::Null => DataType::void(),
         }
     }
 }

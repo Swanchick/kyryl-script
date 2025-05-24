@@ -5,9 +5,10 @@ use super::data_type::DataType;
 use super::expression::Expression;
 use super::parameter::Parameter;
 use super::semantic_analyzer::SemanticAnalyzer;
-use super::statement::Statement;
+use super::statement::{self, Statement};
 
 use std::io;
+use std::ptr::null;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -136,7 +137,7 @@ impl Parser {
         let function_type = if self.match_token(&Token::Colon) {
             self.consume_data_type()?
         } else {
-            DataType::Void
+            DataType::void()
         };
 
         self.consume_token(Token::LeftBrace)?;
@@ -174,15 +175,30 @@ impl Parser {
 
         self.consume_keyword("in")?;
         let expression = self.parse_expression()?;
+        let data_type = self.semantic_analyzer.get_data_type(&expression)?;
+
+        self.semantic_analyzer.enter_function_enviroment();
+
+        println!("For: {:?}", data_type);
+
+        match data_type {
+            DataType::List(child_data_type) => self.semantic_analyzer.save_variable(name.clone(), *child_data_type),
+            DataType::String => self.semantic_analyzer.save_variable(name.clone(), DataType::String),
+            _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "For loop statement mismatch type!"))
+        }
 
         self.consume_token(Token::LeftBrace)?;
         let body = self.parse_block_statement()?;
+
+        self.semantic_analyzer.exit_function_enviroment()?;
         
         Ok(Statement::ForLoopStatement { name: name, list: expression, body: body })
     }
 
     fn parse_expression_statement(&mut self) -> io::Result<Statement> {
         let expression = self.parse_expression()?;
+        self.semantic_analyzer.get_data_type(&expression)?;
+
         self.consume_token(Token::Semicolon)?;
 
         Ok(Statement::Expression { value: expression })
@@ -218,13 +234,12 @@ impl Parser {
         println!("{:?}", dt);
         
         if let Some(data_type_to_check) = &data_type {
-            if dt != data_type_to_check.clone() {
+            if dt != data_type_to_check.clone() && !DataType::is_void(&dt) {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, "Differenet data types in expression and actual data type."));
             } 
         }
 
         self.semantic_analyzer.save_variable(name.clone(), dt.clone());
-
 
         self.consume_token(Token::Semicolon)?;
 
@@ -236,10 +251,6 @@ impl Parser {
             }
         )
     }
-
-    /// Todo:
-    /// 1. Make function context in analyzer_enviroment
-    /// 2. With the function context check return and function data_type 
 
     fn parse_return_statement(&mut self) -> io::Result<Statement> { 
         if let Some(function_context) = self.function_context.clone() {
@@ -261,6 +272,23 @@ impl Parser {
 
     fn parse_assignment_statement(&mut self, name: String) -> io::Result<Statement> {
         let expression = self.parse_expression()?;
+        let data_type = self.semantic_analyzer.get_data_type(&expression)?;
+        let data_type_to_check = self.semantic_analyzer.get_variable(&name)?;
+
+        match data_type_to_check {
+            DataType::Void(Some (null_type)) => {
+                if *null_type != data_type && !DataType::is_void(&data_type) {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Assigment value mismatch!"))
+                }
+            }
+
+            _ => {
+                if data_type_to_check != data_type && !DataType::is_void(&data_type) {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Assigment value mismatch!"))
+                }
+            }
+        }
+
         self.consume_token(Token::Semicolon)?;
 
         Ok(Statement::Assigment { name: name, value: expression })
@@ -281,41 +309,59 @@ impl Parser {
         Ok(parameters)
     }
 
-    fn parse_if_statement(&mut self) -> io::Result<Statement> {
-        let expression = self.parse_expression()?;
+    fn parse_if_statement(&mut self) -> io::Result<Statement> { // implemented
+        let condition = self.parse_expression()?;
+
+        let statment_data_type = self.semantic_analyzer.get_data_type(&condition)?;
+        if statment_data_type != DataType::Bool {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "If statment condition mismatch data_type, expected bool!"));
+        }
 
         self.consume_token(Token::LeftBrace)?;
+
+        self.semantic_analyzer.enter_function_enviroment();
         let if_body = self.parse_block_statement()?;
+        self.semantic_analyzer.exit_function_enviroment()?;
 
         let else_block= if self.match_keyword("else") {
             self.consume_token(Token::LeftBrace)?;
+            
+            self.semantic_analyzer.enter_function_enviroment();
+            let result = self.parse_block_statement()?;
+            self.semantic_analyzer.exit_function_enviroment()?;
 
-            Some(self.parse_block_statement()?)
+            Some(result)
         } else {
             None
         };
 
         Ok(
             Statement::IfStatement {
-                condition: expression,
+                condition: condition,
                 body: if_body,
                 else_body: else_block
             }
         )
     }
 
-    fn parse_while_statement(&mut self) -> io::Result<Statement> {
-        let expression = self.parse_expression()?;
+    fn parse_while_statement(&mut self) -> io::Result<Statement> { // implemented
+        let condition = self.parse_expression()?;
+        
+        let condition_data_type = self.semantic_analyzer.get_data_type(&condition)?;
+        if condition_data_type != DataType::Bool {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "While statment condition mismatch data_type, expected bool!"));
+        }
+
         self.consume_token(Token::LeftBrace)?;
 
+        self.semantic_analyzer.enter_function_enviroment();
         let block = self.parse_block_statement()?;
+        self.semantic_analyzer.exit_function_enviroment()?;
 
-        Ok(
-            Statement::WhileStatement {
-                condition: expression,
+        Ok(Statement::WhileStatement {
+                condition: condition,
                 body: block
-            }
-        )
+        })
     }
 
     pub fn parse_expression(&mut self) -> io::Result<Expression> {
@@ -555,6 +601,10 @@ impl Parser {
                         self.advance();
                         Ok(Expression::BooleanLiteral(true))
                     },
+                    "null" => {
+                        self.advance();
+                        Ok(Expression::NullLiteral)
+                    }
                     _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Unexpected keyword, expected boolean"))
                 }
             },
