@@ -51,4 +51,4 @@ MIT License. See `LICENSE` for details.
 
 ---
 
-// Created by Kyryl Lebedenko
+// Created with love by Kyryl Lebedenko
