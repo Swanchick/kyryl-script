@@ -1,11 +1,4 @@
-let variable: int = null; -- Може бути не тільки null
-
-function foo(bar: int) {
-    bar?; -- зробити return замість написання його власноруч.
-    -- Або
-    bar? {
-        -- Зробити щось до повернення
-    };
-}
-
-foo(variable);
+let a = 10;
+let b = [123, 34];
+let c = b[1];
+println(c);

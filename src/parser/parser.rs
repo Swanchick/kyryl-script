@@ -1,7 +1,7 @@
 use crate::lexer::token::Token;
 
 use super::operator::Operator;
-use super::data_type::{self, DataType};
+use super::data_type::DataType;
 use super::expression::Expression;
 use super::parameter::Parameter;
 use super::semantic_analyzer::SemanticAnalyzer;
@@ -20,7 +20,7 @@ impl Parser {
         Parser {
             tokens,
             current_token: 0,
-            semantic_analyzer: SemanticAnalyzer::init()
+            semantic_analyzer: SemanticAnalyzer::new()
         }
     }
 
@@ -49,11 +49,14 @@ impl Parser {
         let name = self.consume_identifier()?;
         self.consume_token(Token::Colon)?;
         let data_type = self.consume_data_type()?;
+        
+        self.semantic_analyzer.save_variable(name.clone(), data_type.clone());
 
         let parameter = Parameter {
             name: name,
             data_type: data_type
         };
+
 
         Ok(parameter)
     }
@@ -124,6 +127,8 @@ impl Parser {
 
         self.consume_token(Token::LeftParenthesis)?;
 
+        self.semantic_analyzer.enter_function_enviroment();
+
         let parameters = self.parse_parameters()?;
 
         let function_type = if self.match_token(&Token::Colon) {
@@ -134,6 +139,17 @@ impl Parser {
 
         self.consume_token(Token::LeftBrace)?;
         let block = self.parse_block_statement()?;
+
+        self.semantic_analyzer.exit_function_enviroment()?;
+
+        self.semantic_analyzer.save_variable(
+            function_name.clone(), 
+            
+            DataType::Function { 
+                parameters: DataType::from_parameters(&parameters), 
+                return_type: Box::new(function_type.clone())
+            }
+        );
 
         Ok(
             Statement::Function { 
@@ -178,7 +194,7 @@ impl Parser {
         Ok(Statement::RemoveValue { name: name, value: expression })
     }
 
-    fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> {
+    fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> { // Semantic Implemented
         let name = self.consume_identifier()?;
         
         let data_type = if self.match_token(&Token::Colon) {
@@ -189,7 +205,10 @@ impl Parser {
         
         self.consume_token(Token::Equal)?;
         let expression = self.parse_expression()?;
+        
         let dt = self.semantic_analyzer.get_data_type(&expression)?;
+        println!("{:?}", dt);
+        
         if let Some(data_type_to_check) = &data_type {
             if dt != data_type_to_check.clone() {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, "Differenet data types in expression and actual data type."));
@@ -197,6 +216,8 @@ impl Parser {
         }
 
         self.semantic_analyzer.save_variable(name.clone(), dt.clone());
+
+
         self.consume_token(Token::Semicolon)?;
 
         Ok(

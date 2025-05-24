@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use super::parameter::Parameter;
+
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum DataType {
@@ -29,5 +31,17 @@ impl Display for DataType {
             DataType::List(data_type) => write!(f, "list {:?}", data_type),
             DataType::Function{ parameters, return_type } => write!(f, "function({:?}) -> {:?}", parameters, return_type)
         }
+    }
+}
+
+impl DataType {
+    pub fn from_parameters(parameters: &Vec<Parameter>) -> Vec<DataType> {
+        let mut out: Vec<DataType> = Vec::new();
+
+        for parameter in parameters {
+            out.push(parameter.data_type.clone());
+        }
+
+        out
     }
 }

@@ -1,28 +1,59 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::io;
-use std::collections::HashMap;
 
 use crate::parser::operator::Operator;
 
+use super::analyzer_enviroment::AnalyzerEnviroment;
 use super::data_type::DataType;
 use super::expression::Expression;
 
 
 pub struct SemanticAnalyzer {
-    variables: HashMap<String, DataType>
+    enviroment: Rc<RefCell<AnalyzerEnviroment>>
 }
 
 
 impl SemanticAnalyzer {
-    pub fn init() -> SemanticAnalyzer {
-        SemanticAnalyzer { variables: HashMap::new() }
+    pub fn new() -> SemanticAnalyzer {
+        SemanticAnalyzer {
+            enviroment: Rc::new(RefCell::new(AnalyzerEnviroment::new()))
+        }
+    }
+
+    pub fn enter_function_enviroment(&mut self) {
+        let parent = self.enviroment.clone();
+        self.enviroment = Rc::new(RefCell::new(AnalyzerEnviroment::with_parent(parent.clone())));
+    }
+
+    pub fn exit_function_enviroment(&mut self) -> io::Result<()> {
+        let new_env = {
+            let local = self.enviroment.clone();
+            let local_borrow = local.borrow();
+
+            if let Some(parent) = local_borrow.get_parent() {
+                Some(parent.clone())
+            } else {
+                None
+            }
+        };
+
+        if let Some(env) = new_env {
+            self.enviroment = env;
+            Ok(())
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, "No parent enviroment!"))
+        }
     }
 
     fn plus(&self, left: DataType, right: DataType) -> io::Result<DataType> {
         match (left, right) {
             (DataType::Int, DataType::Int) => Ok(DataType::Int),
-            (DataType::Float, DataType::Int) => Ok(DataType::Float),
-            (DataType::Int, DataType::Float) => Ok(DataType::Float),
-            (DataType::Float, DataType::Float) => Ok(DataType::Float),
+            
+            (DataType::Float, DataType::Int)
+            | (DataType::Int, DataType::Float)
+            | (DataType::Float, DataType::Float) => Ok(DataType::Float),
+            
             (DataType::String, DataType::String) => Ok(DataType::String),
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Arithmetic type error!"))
         }
@@ -31,9 +62,11 @@ impl SemanticAnalyzer {
     fn arithmetic(&self, left: DataType, right: DataType) -> io::Result<DataType> {
         match (left, right) {
             (DataType::Int, DataType::Int) => Ok(DataType::Int),
-            (DataType::Float, DataType::Int) => Ok(DataType::Float),
-            (DataType::Int, DataType::Float) => Ok(DataType::Float),
-            (DataType::Float, DataType::Float) => Ok(DataType::Float),
+            
+            (DataType::Float, DataType::Int)
+            | (DataType::Int, DataType::Float)
+            | (DataType::Float, DataType::Float) => Ok(DataType::Float),
+            
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Arithmetic type error!"))
         }
     }
@@ -46,13 +79,10 @@ impl SemanticAnalyzer {
     }
 
     fn comparison(&self, left: DataType, right: DataType) -> io::Result<DataType> {
-        match (left, right) {
-            (DataType::Int, DataType::Int) 
-            | (DataType::Float, DataType::Int)
-            | (DataType::Int, DataType::Float)
-            | (DataType::Float, DataType::Float)
-            | (DataType::String, DataType::String) => Ok(DataType::Bool),
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Arithmetic type error!"))
+        if left == right {
+            Ok(DataType::Bool)
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, "Arithmetic type error!"))
         }
     }
 
@@ -69,17 +99,22 @@ impl SemanticAnalyzer {
     fn binary_operation(&self, operator: &Operator, left: DataType, right: DataType) -> io::Result<DataType> {
         match operator {
             Operator::Plus => self.plus(left, right),
-            Operator::Minus => self.arithmetic(left, right),
-            Operator::Multiply => self.arithmetic(left, right),
-            Operator::Divide => self.arithmetic(left, right),
-            Operator::And => self.boolean(left, right),
-            Operator::Or => self.boolean(left, right),
-            Operator::EqualEqual => self.comparison(left, right),
-            Operator::NotEqual => self.comparison(left, right),
-            Operator::GreaterEqual => self.logic(left, right),
-            Operator::Greater => self.logic(left, right),
-            Operator::LessEqual => self.logic(left, right),
-            Operator::Less => self.logic(left, right),
+            
+            Operator::Minus
+            | Operator::Multiply
+            | Operator::Divide => self.arithmetic(left, right),
+            
+            Operator::And
+            | Operator::Or => self.boolean(left, right),
+            
+            Operator::EqualEqual
+            | Operator::NotEqual => self.comparison(left, right),
+            
+            Operator::GreaterEqual
+            | Operator::Greater
+            | Operator::LessEqual
+            | Operator::Less => self.logic(left, right),
+            
             _ => unreachable!()
         }
     }
@@ -148,32 +183,33 @@ impl SemanticAnalyzer {
             },
             
             Expression::Identifier(name) => {
-                match self.variables.get(name) {
-                    Some(DataType::Void) => Ok(DataType::Void),
-                    Some(data_type) => Ok(data_type.clone()),
-                    None => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} not found!", name)))
+                match self.enviroment.borrow().get_variable_type(name) {
+                    Ok(DataType::Void) => Ok(DataType::Void),
+                    Ok(data_type) => Ok(data_type.clone()),
+                    Err(_) => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} not found!", name)))
                 }
             },
 
             Expression::FunctionCall(name, parameters) => {
-                todo!()
+                Ok(DataType::Void)
             },
 
             Expression::IdentifierIndex { left, index } => {
                 let left = self.get_data_type(left)?;
                 let index = self.get_data_type(index)?;
-                
+
                 self.identefier_index(left, index)
             },
 
             Expression::IntegerLiteral(_) => Ok(DataType::Int),
             Expression::FloatLiteral(_) => Ok(DataType::Float),
             Expression::StringLiteral(_) => Ok(DataType::String),
-            Expression::BooleanLiteral(_) => Ok(DataType::Bool)
+            Expression::BooleanLiteral(_) => Ok(DataType::Bool),
+            Expression::NullLiteral => Ok(DataType::Void)
         }
     }
 
-    pub fn save_variable(&mut self, name: String, expression: DataType) {
-        self.variables.insert(name, expression);
+    pub fn save_variable(&mut self, name: String, data_type: DataType) {
+        self.enviroment.borrow_mut().add(name, data_type);
     }
 }

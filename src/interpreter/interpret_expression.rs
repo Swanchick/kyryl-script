@@ -110,6 +110,9 @@ impl<'a> InterpretExpression<'a> {
                 
                 Ok(value)
             },
+            Expression::NullLiteral => {
+                todo!()
+            },
             Expression::Identifier(name) => {
                 self.interpreter.get_variable(name.as_str())
             }

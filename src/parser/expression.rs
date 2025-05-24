@@ -2,13 +2,13 @@ use super::operator::Operator;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Expression {
-    // NullLiteral,
-    IntegerLiteral(i32), //  
-    FloatLiteral(f64), //
-    StringLiteral(String), //
-    BooleanLiteral(bool), //
-    Identifier(String), //
-    FunctionCall(String, Vec<Expression>), //
+    NullLiteral,
+    IntegerLiteral(i32),  
+    FloatLiteral(f64),
+    StringLiteral(String),
+    BooleanLiteral(bool),
+    Identifier(String),
+    FunctionCall(String, Vec<Expression>),
     ListLiteral(Vec<Expression>),
     IdentifierIndex {
         left: Box<Expression>,
