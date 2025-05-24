@@ -130,7 +130,7 @@ impl Parser {
         self.parse_expression_statement()
     }
 
-    pub fn parse_function(&mut self) -> io::Result<Statement> { // implemented
+    pub fn parse_function(&mut self) -> io::Result<Statement> {
         let function_name = self.consume_identifier()?;
 
         self.consume_token(Token::LeftParenthesis)?;
@@ -184,8 +184,6 @@ impl Parser {
 
         self.semantic_analyzer.enter_function_enviroment();
 
-        println!("For: {:?}", data_type);
-
         match data_type {
             DataType::List(child_data_type) => self.semantic_analyzer.save_variable(name.clone(), *child_data_type),
             DataType::String => self.semantic_analyzer.save_variable(name.clone(), DataType::String),
@@ -223,7 +221,7 @@ impl Parser {
         Ok(Statement::RemoveValue { name: name, value: expression })
     }
 
-    fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> { // Implemented
+    fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> {
         let name = self.consume_identifier()?;
         
         let data_type = if self.match_token(&Token::Colon) {
@@ -236,7 +234,6 @@ impl Parser {
         let expression = self.parse_expression()?;
         
         let dt = self.semantic_analyzer.get_data_type(&expression)?;
-        println!("Let: {:?}", dt);
         
         if let Some(data_type_to_check) = &data_type {
             if dt != data_type_to_check.clone() && !DataType::is_void(&dt) {
@@ -314,7 +311,7 @@ impl Parser {
         Ok(parameters)
     }
 
-    fn parse_if_statement(&mut self) -> io::Result<Statement> { // implemented
+    fn parse_if_statement(&mut self) -> io::Result<Statement> {
         let condition = self.parse_expression()?;
 
         let statment_data_type = self.semantic_analyzer.get_data_type(&condition)?;
@@ -349,7 +346,7 @@ impl Parser {
         )
     }
 
-    fn parse_while_statement(&mut self) -> io::Result<Statement> { // implemented
+    fn parse_while_statement(&mut self) -> io::Result<Statement> {
         let condition = self.parse_expression()?;
         
         let condition_data_type = self.semantic_analyzer.get_data_type(&condition)?;
