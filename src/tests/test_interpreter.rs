@@ -4,10 +4,10 @@ use crate::interpreter::interpreter::Interpreter;
 use crate::interpreter::value::ValueType;
 
 use crate::lexer::lexer::Lexer;
+use crate::native_registry::native_registry::NativeRegistry;
 use crate::parser::expression::Expression;
 use crate::parser::operator::Operator;
 use crate::parser::parser::Parser;
-use crate::parser::statement::Statement;
 
 
 fn get_expression(expression_str: &str) -> Expression {
@@ -16,17 +16,8 @@ fn get_expression(expression_str: &str) -> Expression {
     let mut lexer = Lexer::new(expression_str);
     lexer.lexer().unwrap();
     
-    let mut parser = Parser::new(lexer.get_tokens().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), &NativeRegistry::new());
     parser.parse_expression().unwrap()
-}
-
-fn get_statement(statement_str: &str) -> Statement {
-    let statement_str = String::from(statement_str);
-    let mut lexer = Lexer::new(statement_str);
-    lexer.lexer().unwrap();
-    
-    let mut parser = Parser::new(lexer.get_tokens().clone());
-    parser.parse_statement().unwrap()
 }
 
 
@@ -34,7 +25,7 @@ fn get_statement(statement_str: &str) -> Statement {
 fn test_interpreter_plus() {
     let expression = get_expression("5 + 2");
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
 
     let test_value = ValueType::Integer(7);
     let value = interpreter.interpret_expression(expression).unwrap().get_type().clone();
@@ -45,7 +36,7 @@ fn test_interpreter_plus() {
 
 #[test]
 fn test_interpreter_minus() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
 
     let expression = Expression::BinaryOp {
         left: Box::new(Expression::IntegerLiteral(10)),
@@ -66,7 +57,7 @@ fn test_interpreter_complex() {
     
     let expression = get_expression("-10 + 22 + 3");
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
     let value = interpreter.interpret_expression(expression).unwrap().get_type().clone();
 
     assert_eq!(value, test_value);
@@ -79,7 +70,7 @@ fn test_interpreter_even_more_complex() {
     
     let expression = get_expression("(22 + 3) / 10 + 5 * 25 - 10");
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
     let value = interpreter.interpret_expression(expression).unwrap().get_type().clone();
 
     assert_eq!(value, test_value);
@@ -91,7 +82,7 @@ fn test_interpreter_even_more_complex_2() {
     
     let expression = get_expression("((22 + 3) / 10 + 5 * 25 - 10) * -2");
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
     let value = interpreter.interpret_expression(expression).unwrap().get_type().clone();
 
     assert_eq!(value, test_value);
@@ -103,7 +94,7 @@ fn test_interpreter_string_error() {
     
     let expression = get_expression("((22 + 3) / 10 + 5 * 25 - \"Hello World\") * -2");
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
     let value = interpreter.interpret_expression(expression).unwrap_err();
 
     assert_eq!(value.to_string(), err.to_string());
@@ -114,7 +105,7 @@ fn test_interpreter_add_strings() {
     let expression = get_expression("\"Hello\" + \" World\"");
     let test_value = ValueType::String(String::from("Hello World"));
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
 
     let value = interpreter.interpret_expression(expression).unwrap().get_type().clone();
 
@@ -127,7 +118,7 @@ fn test_interpreter_boolean_false_1() {
     let expression = get_expression("22 == 33");
     let test_value = ValueType::Boolean(false);
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
     let value = interpreter.interpret_expression(expression).unwrap().get_type().clone();
 
     assert_eq!(value, test_value)
@@ -138,7 +129,7 @@ fn test_interpreter_boolean_true_1() {
     let expression = get_expression("\"Hello World\" == \"Hello World\"");
     let test_value = ValueType::Boolean(true);
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
     let value = interpreter.interpret_expression(expression).unwrap().get_type().clone();
 
     assert_eq!(value, test_value)
@@ -149,7 +140,7 @@ fn test_interpreter_boolean_true_2() {
     let expression = get_expression("\"Hello World\" == \"Hello World\" && 22 == 22 || 90 == 10");
     let test_value = ValueType::Boolean(true);
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
     let value = interpreter.interpret_expression(expression).unwrap().get_type().clone();
 
     assert_eq!(value, test_value)
@@ -160,7 +151,7 @@ fn test_interpreter_boolean_true_3() {
     let expression = get_expression("\"Hello World\" == \"Hello World\" && 22 == 22 && 90 == 10");
     let test_value = ValueType::Boolean(false);
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(&NativeRegistry::new());
     let value = interpreter.interpret_expression(expression).unwrap().get_type().clone();
 
     assert_eq!(value, test_value)
@@ -174,7 +165,7 @@ fn test_interpreter_boolean_true_3() {
 //         (String::from("a"), ValueType::Integer(30))
 //     ]);
 
-//     let mut interpreter = Interpreter::new();
+//     let mut interpreter = Interpreter::new(&NativeRegistry::new());
 //     interpreter.interpret_statement(test_statement).unwrap();
 
 //     let env = interpreter.get_local();

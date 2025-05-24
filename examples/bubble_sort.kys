@@ -2,15 +2,15 @@ function bubble_sort(numbers: [int]) {
     let number_length = len(numbers);
     
     for j in range(number_length) {
-        -- for i in range(number_length - j - 1) {
-        --     let n1 = numbers[i];
-        --     let n2 = numbers[i + 1];
+        for i in range(number_length - j - 1) {
+            let n1 = numbers[i];
+            let n2 = numbers[i + 1];
 
-        --     if n1 > n2 {
-        --         numbers[i] = n2;
-        --         numbers[i + 1] = n1;
-        --     }
-        -- }
+            if n1 > n2 {
+                numbers[i] = n2;
+                numbers[i + 1] = n1;
+            }
+        }
     }
 }
 

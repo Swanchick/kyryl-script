@@ -1,28 +1,34 @@
 use crate::lexer::token::Token;
+use crate::native_registry::native_registry::NativeRegistry;
 
 use super::operator::Operator;
 use super::data_type::DataType;
 use super::expression::Expression;
 use super::parameter::Parameter;
 use super::semantic_analyzer::SemanticAnalyzer;
-use super::statement::{self, Statement};
+use super::statement::Statement;
 
 use std::io;
-use std::ptr::null;
 
 pub struct Parser {
     tokens: Vec<Token>,
     current_token: usize,
     semantic_analyzer: SemanticAnalyzer,
-    function_context: Option<DataType>
+    function_context: Option<DataType>,
 }
 
 impl Parser {
-    pub fn new(tokens: Vec<Token>) -> Self {
+    pub fn new(tokens: Vec<Token>, native_registry: &NativeRegistry) -> Self {
+        let mut semantic_analyzer = SemanticAnalyzer::new();
+        
+        for (name, function) in native_registry.get() {
+            semantic_analyzer.register_rust_function(name.clone(), function);
+        }
+        
         Parser {
             tokens,
             current_token: 0,
-            semantic_analyzer: SemanticAnalyzer::new(),
+            semantic_analyzer: semantic_analyzer,
             function_context: None
         }
     }
@@ -59,7 +65,6 @@ impl Parser {
             name: name,
             data_type: data_type
         };
-
 
         Ok(parameter)
     }
@@ -231,7 +236,7 @@ impl Parser {
         let expression = self.parse_expression()?;
         
         let dt = self.semantic_analyzer.get_data_type(&expression)?;
-        println!("{:?}", dt);
+        println!("Let: {:?}", dt);
         
         if let Some(data_type_to_check) = &data_type {
             if dt != data_type_to_check.clone() && !DataType::is_void(&dt) {
@@ -612,6 +617,10 @@ impl Parser {
                 let name = name.to_owned();
                 self.advance();
                 if self.match_token(&Token::LeftParenthesis) {
+                    if self.match_token(&Token::RightParenthesis) {
+                        return Ok(Expression::FunctionCall(name, Vec::new()));
+                    }
+
                     let parameters = self.parse_function_call_parameters()?;
                     self.consume_token(Token::RightParenthesis)?;
 

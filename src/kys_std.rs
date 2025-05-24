@@ -1,8 +1,10 @@
 
 use std::io;
-use crate::interpreter::interpreter::Interpreter;
 
 use crate::interpreter::value::{Value, ValueType};
+use crate::native_registry::native_registry::NativeRegistry;
+use crate::native_registry::rust_function::RustFunction;
+use crate::parser::data_type::DataType;
 
 fn kys_print(args: Vec<Value>) -> io::Result<Value> {
     for arg in args {
@@ -76,9 +78,9 @@ fn kys_range(args: Vec<Value>) -> io::Result<Value> {
     }
 }
 
-pub fn register_standart_library(interpreter: &mut Interpreter) {    
-    interpreter.register_rust_function("println", kys_println);
-    interpreter.register_rust_function("print", kys_print);
-    interpreter.register_rust_function("len", kys_len);
-    interpreter.register_rust_function("range", kys_range);
+pub fn register_standart_library(native_registry: &mut NativeRegistry) {    
+    native_registry.register_function("println", RustFunction::from(kys_println, DataType::void()));
+    native_registry.register_function("print", RustFunction::from(kys_print, DataType::void()));
+    native_registry.register_function("len", RustFunction::from(kys_len, DataType::Int));
+    native_registry.register_function("range", RustFunction::from(kys_range, DataType::List(Box::new(DataType::Int))));
 }

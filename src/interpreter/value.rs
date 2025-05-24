@@ -10,9 +10,12 @@ pub enum ValueType {
     Float(f64),
     String(String),
     Boolean(bool),
-    RustFunction(fn(args: Vec<Value>) -> io::Result<Value>),
     List(Vec<Value>),
     Null,
+    RustFunction {
+        function: fn(args: Vec<Value>) -> io::Result<Value>,
+        return_type: DataType
+    },
     Function {
         name: String,
         return_type: DataType,
@@ -65,7 +68,7 @@ impl ValueType {
 
                 DataType::Function { parameters: parameter_types, return_type: Box::new(return_type.clone()) }
             },
-            ValueType::RustFunction(_) => DataType::RustFunction,
+            ValueType::RustFunction { function: _, return_type } => DataType::RustFunction { return_type: Box::new(return_type.clone()) },
             ValueType::List(list) => {
                 if list.len() != 0 {
                     DataType::List(Box::new(list[0].get_type().get_data_type()))

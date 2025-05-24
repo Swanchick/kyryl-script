@@ -111,7 +111,9 @@ impl<'a> InterpretExpression<'a> {
                 Ok(value)
             },
             Expression::NullLiteral => {
-                todo!()
+                let value = Value::new(None, ValueType::Null);
+
+                Ok(value)
             },
             Expression::Identifier(name) => {
                 self.interpreter.get_variable(name.as_str())

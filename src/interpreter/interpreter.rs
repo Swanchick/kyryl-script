@@ -2,6 +2,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
 
+use crate::native_registry::native_registry::NativeRegistry;
 use crate::parser::expression::Expression;
 use crate::parser::statement::Statement;
 
@@ -17,8 +18,17 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new() -> Interpreter {
+    pub fn new(native_registry: &NativeRegistry) -> Interpreter {
         let global = Rc::new(RefCell::new(Environment::new()));
+
+        for (name, function) in native_registry.get() {
+            let rust_function = ValueType::RustFunction { 
+                function: function.function.clone(), 
+                return_type: function.return_type.clone() 
+            };
+
+            let _ = global.borrow_mut().define_variable(name.to_string(), Value::new(None, rust_function));
+        }
 
         Interpreter {
             global: global.clone(),
@@ -84,18 +94,11 @@ impl Interpreter {
         interpret_expression.interpret_expression(expression)
     }
 
-    pub fn register_rust_function(&mut self, name: &str, function: fn(args: Vec<Value>) -> io::Result<Value>) {
-        let value_type = ValueType::RustFunction(function);
-        let value = Value::new(None, value_type);
-
-        let _ = self.global.borrow_mut().define_variable(name.to_string(), value);
-    }
-
     pub fn call_function(&mut self, name: &str, args: Vec<Value>) -> io::Result<Value> {        
         let value = self.get_variable(name)?;
 
         match value.get_type() {
-            ValueType::RustFunction(function) => {
+            ValueType::RustFunction { function, return_type: _ }=> {
                 function(args)
             },
 

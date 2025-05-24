@@ -1,4 +1,6 @@
-let a = 10;
-let b = [123, 34];
-let c = b[1];
-println(c);
+function test() {
+    println("Hello World");
+}
+
+test();
+

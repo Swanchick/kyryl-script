@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::io;
 
+use crate::native_registry::rust_function::RustFunction;
 use crate::parser::operator::Operator;
 
 use super::analyzer_enviroment::AnalyzerEnviroment;
@@ -19,6 +20,10 @@ impl SemanticAnalyzer {
         SemanticAnalyzer {
             enviroment: Rc::new(RefCell::new(AnalyzerEnviroment::new()))
         }
+    }
+
+    pub fn register_rust_function(&mut self, name: String, function: &RustFunction) {
+        self.enviroment.borrow_mut().add(name, DataType::RustFunction { return_type: Box::new(function.return_type.clone()) });
     }
 
     pub fn get_variable(&self, name: &str) -> io::Result<DataType> {
@@ -214,8 +219,29 @@ impl SemanticAnalyzer {
                 }
             },
 
-            Expression::FunctionCall(name, parameters) => {
-                Ok(DataType::void())
+            Expression::FunctionCall(name, call_parameters) => {
+                let function = self.get_variable(name)?;
+
+                match function {
+                    DataType::RustFunction { return_type } => {
+                        Ok(*return_type)
+                    }
+
+                    DataType::Function { parameters, return_type } => {
+                        for (call_parameter, parameter) in call_parameters.iter().zip(parameters) {
+                            let call_parameter = self.get_data_type(call_parameter)?;
+
+                            if call_parameter != parameter {
+                                return Err(io::Error::new(io::ErrorKind::InvalidData, "Function signature mismatch"));
+                            }
+                        }
+
+                        Ok(*return_type)
+                    }
+
+                    DataType::Void(_) => Err(io::Error::new(io::ErrorKind::InvalidData, "Ти далбайоб?")),
+                    _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Function {} not found!", name)))
+                }
             },
 
             Expression::IdentifierIndex { left, index } => {

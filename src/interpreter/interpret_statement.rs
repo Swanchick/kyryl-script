@@ -27,7 +27,9 @@ impl<'a> InterpretStatement<'a> {
                 };
 
                 if let Some(data_type) = data_type {
-                    if value.get_type().get_data_type() != data_type {
+                    let value_data_type = value.get_type().get_data_type();
+
+                    if value_data_type != data_type && !DataType::is_void(&value_data_type) {
                         return Err(io::Error::new(io::ErrorKind::InvalidData, "Variable declaration type mismatch!"))
                     }
                 }
