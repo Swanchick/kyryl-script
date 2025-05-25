@@ -1,6 +1,6 @@
---
--- Print example
---
+//
+// Print example
+//
 
 println("Hello, World!");
 println("Hello, World!", " asdasdas");

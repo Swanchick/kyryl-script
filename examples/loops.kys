@@ -1,6 +1,6 @@
---
--- Example of loops
---
+//
+// Example of loops
+//
 
 let current = 0;
 

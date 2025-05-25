@@ -1,6 +1,6 @@
--- 
--- Example of drawing a triangle in console
--- 
+// 
+// Example of drawing a triangle in console
+// 
 
 
 function draw_triangle(size: int) {

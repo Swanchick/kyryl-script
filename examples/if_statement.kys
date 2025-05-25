@@ -1,6 +1,6 @@
---
--- If statement example
---
+//
+// If statement example
+//
 
 function main() {
     let a = 10;

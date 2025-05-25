@@ -1,6 +1,6 @@
---
--- Example of recursion
---
+//
+// Example of recursion
+//
 
 
 function fib(n: int): int {
