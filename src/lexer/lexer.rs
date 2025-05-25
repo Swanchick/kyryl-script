@@ -2,6 +2,7 @@ use std::fs::read_to_string;
 use std::io;
 
 use super::token::Token;
+use super::token::COMMENT;
 use super::token::{is_keyword, get_symbol, is_symbol};
 
 use super::lexer_state::LexerState;
@@ -129,7 +130,7 @@ impl Lexer {
                     } else {
                         // Checking if the symbol is a comment and if it is indeed then break the loop to proceed to the next line
                         // easy 
-                        if buffer.contains("--") {
+                        if buffer.contains(COMMENT) {
                             break;
                         }
 

@@ -2,6 +2,8 @@ use std::fmt;
 
 const SYMBOLS: &str = "()[]{}<>;:=+-*/~,^&|/";
 
+pub const COMMENT: &str = "//";
+
 pub fn is_keyword(text: &str) -> bool {
     match text {
         "let" => true,
