@@ -1,4 +1,5 @@
 use crate::lexer::token::Token;
+use crate::lexer::token_pos::TokenPos;
 use crate::native_registry::native_registry::NativeRegistry;
 
 use super::operator::Operator;
@@ -6,19 +7,20 @@ use super::data_type::DataType;
 use super::expression::Expression;
 use super::parameter::Parameter;
 use super::semantic_analyzer::SemanticAnalyzer;
-use super::statement::Statement;
+use super::statement::{self, Statement};
 
-use std::io;
+use std::{clone, io};
 
 pub struct Parser {
     tokens: Vec<Token>,
+    token_pos: Vec<TokenPos>,
     current_token: usize,
     semantic_analyzer: SemanticAnalyzer,
     function_context: Option<DataType>,
 }
 
 impl Parser {
-    pub fn new(tokens: Vec<Token>, native_registry: &NativeRegistry) -> Self {
+    pub fn new(tokens: Vec<Token>, native_registry: &NativeRegistry, token_pos: Vec<TokenPos>) -> Self {
         let mut semantic_analyzer = SemanticAnalyzer::new();
         
         for (name, function) in native_registry.get() {
@@ -27,10 +29,46 @@ impl Parser {
         
         Parser {
             tokens,
+            token_pos,
             current_token: 0,
             semantic_analyzer: semantic_analyzer,
             function_context: None
         }
+    }
+
+    pub fn start(&mut self) -> io::Result<Vec<Statement>> {
+        let result = self.parse_block_statement();
+
+        match result {
+            Ok(statements) => {
+                Ok(statements)
+            },
+
+            Err(e) => {
+                let pos = self.peek_pos();
+
+                let file = match pos.get_source() {
+                    Some(path) => path,
+                    None => "Main"
+                };
+
+                let error = format!("kyryl-script: At {}:{}: {}", file, pos.get_line(), e.to_string());
+
+                Err(io::Error::new(e.kind(), error))
+            }
+        }
+    }
+
+    pub fn parse_block_statement(&mut self) -> io::Result<Vec<Statement>> {
+        let mut statements: Vec<Statement> = Vec::new();
+        
+        while !(self.match_token(&Token::RightBrace) || self.is_end()) {
+            let statement = self.parse_statement()?;
+            
+            statements.push(statement);
+        }
+
+        Ok(statements)
     }
 
     fn parse_parameters(&mut self) -> io::Result<Vec<Parameter>> {
@@ -67,18 +105,6 @@ impl Parser {
         };
 
         Ok(parameter)
-    }
-
-    pub fn parse_block_statement(&mut self) -> io::Result<Vec<Statement>> {
-        let mut statements: Vec<Statement> = Vec::new();
-        
-        while !(self.match_token(&Token::RightBrace) || self.is_end()) {
-            let statement = self.parse_statement()?;
-            
-            statements.push(statement);
-        }
-
-        Ok(statements)
     }
 
     pub fn parse_statement(&mut self) -> io::Result<Statement> {
@@ -767,5 +793,9 @@ impl Parser {
 
     fn peek(&self) -> &Token {
         &self.tokens[self.current_token]
+    }
+
+    fn peek_pos(&self) -> &TokenPos {
+        &self.token_pos[self.current_token]
     }
 }

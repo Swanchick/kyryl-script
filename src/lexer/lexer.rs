@@ -6,11 +6,15 @@ use super::token::COMMENT;
 use super::token::{is_keyword, get_symbol, is_symbol};
 
 use super::lexer_state::LexerState;
+use super::token_pos::TokenPos;
 
 
 pub struct Lexer {
     tokens: Vec<Token>,
+    token_pos: Vec<TokenPos>,
     source_lines: Vec<String>,
+    source_path: Option<String>,
+    current_line_pos: i32
 }
 
 impl Lexer {
@@ -19,7 +23,10 @@ impl Lexer {
         
         Lexer {
             tokens: Vec::new(),
+            token_pos: Vec::new(),
             source_lines: source_lines,
+            source_path: None,
+            current_line_pos: 0
         }
     }
     
@@ -29,26 +36,41 @@ impl Lexer {
 
         Ok(Lexer {
             tokens: Vec::new(),
-            source_lines,
+            token_pos: Vec::new(),
+            source_lines: source_lines,
+            source_path: Some(source_path.to_string()),
+            current_line_pos: 0
         })
     }
 
-    fn add_token(&mut self, buffer: &str, token: &mut Vec<Token>) {
+    pub fn get_tokens(&self) -> &Vec<Token> {
+        &self.tokens
+    }
+
+    pub fn get_token_pos(&self) -> &Vec<TokenPos> {
+        &self.token_pos
+    }
+
+    fn add_token(&mut self, token: Token) {
+        self.tokens.push(token);
+
+        let token_pos = TokenPos::from(self.source_path.clone(), self.current_line_pos);
+        self.token_pos.push(token_pos);
+    }
+
+    fn add_token_text(&mut self, buffer: &str) {
         if is_keyword(buffer) {
-            token.push(Token::Keyword(buffer.to_string()));
+            self.add_token(Token::Keyword(buffer.to_string()));
         } else {
-            token.push(Token::Identifier(buffer.to_string()));
+            self.add_token(Token::Identifier(buffer.to_string()));
         }
     }
 
-    pub fn lex_line(&mut self, line: &str) -> io::Result<Vec<Token>> { 
+    pub fn lex_line(&mut self, mut line: String) -> io::Result<()> { 
         // Todo:
         // Remove this thing
         // I mean, lexer won't work without it, but it could be done better
-        let mut line = line.to_string();
         line.push(' ');
-
-        let mut tokens: Vec<Token> = Vec::new();
         let mut cur: usize = 0;
         let mut state = LexerState::None;
 
@@ -61,7 +83,7 @@ impl Lexer {
                 LexerState::None => {
                     if current_char.is_whitespace() {
                         if buffer.len() > 0 {
-                            self.add_token(&buffer, &mut tokens);
+                            self.add_token_text(&buffer);
                             buffer.clear();
                         }
                     } else if current_char.is_alphabetic() {
@@ -80,7 +102,7 @@ impl Lexer {
 
                 LexerState::String => {
                     if current_char == '"' {
-                        tokens.push(Token::StringLiteral(buffer.clone()));
+                        self.add_token(Token::StringLiteral(buffer.clone()));
                         buffer.clear();
                         state = LexerState::None;
                     } else {
@@ -93,7 +115,7 @@ impl Lexer {
                         buffer.push(current_char);
                     } else if current_char == 'f' {
                         if let Ok(num) = buffer.parse::<f64>() {
-                            tokens.push(Token::FloatLiteral(num));
+                            self.add_token(Token::FloatLiteral(num));
                             buffer.clear();
                             state = LexerState::None;
                         } else {
@@ -101,7 +123,7 @@ impl Lexer {
                         }
                     } else {
                         if let Ok(num) = buffer.parse::<i32>() {
-                            tokens.push(Token::IntegerLiteral(num));
+                            self.add_token(Token::IntegerLiteral(num));
                             buffer.clear();
                             state = LexerState::None;
 
@@ -116,7 +138,7 @@ impl Lexer {
                     if current_char.is_alphabetic() || current_char.is_numeric() || current_char == '_' {
                         buffer.push(current_char);
                     } else {
-                        self.add_token(buffer.as_str(), &mut tokens);
+                        self.add_token_text(buffer.as_str());
                         buffer.clear();
                         state = LexerState::None;
 
@@ -134,9 +156,7 @@ impl Lexer {
                             break;
                         }
 
-                        let mut symbols = self.get_symbols(&buffer);
-
-                        tokens.append(&mut symbols);
+                        self.get_symbols(&buffer);
                         buffer.clear();
                         state = LexerState::None;
                         
@@ -146,13 +166,12 @@ impl Lexer {
             }
 
             cur += 1;
-        }  
-        
-        Ok(tokens)
+        }
+
+        Ok(())
     }
 
-    fn get_symbols(&self, buffer: &str) -> Vec<Token> {
-        let mut tokens = Vec::new();
+    fn get_symbols(&mut self, buffer: &str) {
         let chars: Vec<char> = buffer.chars().collect();
         let mut i = 0;
     
@@ -163,7 +182,7 @@ impl Lexer {
                 let slice: String = chars[i..j].iter().collect();
     
                 if let Some(token) = get_symbol(&slice) {
-                    tokens.push(token);
+                    self.add_token(token);
                     i = j;
                     matched = true;
                     break;
@@ -173,26 +192,23 @@ impl Lexer {
             if !matched {
                 let single = chars[i].to_string();
                 if let Some(token) = get_symbol(&single) {
-                    tokens.push(token);
+                    self.add_token(token);
                 }
     
                 i += 1;
             }
         }
-    
-        tokens
     }
 
     pub fn lexer(&mut self) -> io::Result<()> {
         for line in self.source_lines.clone() {
-            let tokens = self.lex_line(&line)?;
-            self.tokens.extend(tokens);
+            let line = line.clone();
+            
+            self.lex_line(line)?;
+
+            self.current_line_pos += 1;
         }
 
         Ok(())
-    }
-
-    pub fn get_tokens(&self) -> &Vec<Token> {
-        &self.tokens
     }
 }

@@ -16,7 +16,7 @@ fn get_expression(expression_str: &str) -> Expression {
     let mut lexer = Lexer::new(expression_str);
     lexer.lexer().unwrap();
     
-    let mut parser = Parser::new(lexer.get_tokens().clone(), &NativeRegistry::new());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), &NativeRegistry::new(), Vec::new());
     parser.parse_expression().unwrap()
 }
 

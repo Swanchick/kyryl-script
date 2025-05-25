@@ -21,8 +21,8 @@ fn run_script(script_path: &str) -> io::Result<()> {
     let mut lexer = Lexer::load(script_path)?;
     lexer.lexer()?;
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), &native_registry);
-    let statements = parser.parse_block_statement()?;
+    let mut parser = Parser::new(lexer.get_tokens().clone(), &native_registry, lexer.get_token_pos().clone());
+    let statements = parser.start()?;
 
     let mut interpreter = Interpreter::new(&native_registry);
 
@@ -39,9 +39,7 @@ fn main() {
         let result = run_script(script_path);
 
         if let Err(e) = result {
-            println!("========== KyrylScript Error!!!");
             println!("{}", e);
-            println!("===============================");
         } 
     }
 }
