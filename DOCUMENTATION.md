@@ -157,9 +157,7 @@ Use `--` to add single-line comments:
 ## Examples
 ### Hello World
 ```kys
-function main() {
-    println("Hello, World!");
-}
+println("Hello, World!");
 ```
 
 ### Bubble Sort
@@ -201,11 +199,6 @@ function to_meters(inches: float): float {
     return inches / 39.37f;
 }
 ```
-
----
-
-## License
-This language was created as part of a Aalto University's Modern And Emerging Programming Languages course project.
 
 ---
 
