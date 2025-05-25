@@ -234,34 +234,9 @@ impl<'a> InterpretExpression<'a> {
     }
 
     fn interpret_equal_equal(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
-        match (left, right) {
-            (ValueType::Integer(n1), ValueType::Integer(n2)) => {
-                let value = ValueType::Boolean(n1 == n2);
+        let value = ValueType::Boolean(left == right);
 
-                Ok(value)
-            },
-            (ValueType::Float(n1), ValueType::Float(n2)) => {
-                let value = ValueType::Boolean(n1 == n2);
-
-                Ok(value)
-            },
-            (ValueType::Float(n1), ValueType::Integer(n2)) => {
-                let value = ValueType::Boolean(n1 == (n2 as f64));
-
-                Ok(value)
-            },
-            (ValueType::Integer(n1), ValueType::Float(n2)) => {
-                let value = ValueType::Boolean((n1 as f64) == n2);
-
-                Ok(value)
-            },
-            (ValueType::String(str1), ValueType::String(str2)) => {
-                let value = ValueType::Boolean(str1 == str2);
-
-                Ok(value)
-            },
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Different or unsupported data types!"))
-        }
+        Ok(value)
     }
 
     fn interpret_greater_equal(&self, left: ValueType, right: ValueType) -> io::Result<ValueType> {
