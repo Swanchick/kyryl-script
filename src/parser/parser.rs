@@ -52,7 +52,7 @@ impl Parser {
                     None => "Main"
                 };
 
-                let error = format!("kyryl-script: At {}:{}: {}", file, pos.get_line(), e.to_string());
+                let error = format!("kyryl-script: At {}:{}: {}", file, pos.get_line() + 1, e.to_string());
 
                 Err(io::Error::new(e.kind(), error))
             }
