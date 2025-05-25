@@ -136,9 +136,9 @@ function fib(n: int): int {
 ---
 
 ## Comments
-Use `--` to add single-line comments:
+Use `//` to add single-line comments:
 ```kys
--- This is a comment
+// This is a comment
 ```
 
 ---
