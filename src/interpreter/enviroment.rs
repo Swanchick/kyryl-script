@@ -1,7 +1,7 @@
 use std::io;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 
 use super::value::Value;
 use super::variable_slot::VariableSlot;
@@ -30,6 +30,13 @@ impl Environment {
             values: HashMap::new(),
             references: HashMap::new(),
             last_reference: 0
+        }
+    }
+
+    pub fn get_parent(&self) -> Option<Rc<RefCell<Environment>>> {
+        match &self.parent {
+            Some(parent) => Some(parent.clone()),
+            None => None
         }
     }
 
@@ -131,8 +138,10 @@ impl Environment {
             
             self.references.insert(reference, VariableSlot::Variable(Value::new(Some(reference), value.get_type().clone())));
             Ok(())
+        } else if let Some(parent) = &self.parent {
+            parent.borrow_mut().assign_variable(name, value)
         } else {
-            Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {name} does not exist!")))
+            Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} does not exist!", name)))
         }
     }
 
@@ -166,11 +175,11 @@ impl Environment {
                     VariableSlot::Reference(parent_reference) => {
                         let parent_reference = parent_reference.clone();
                         
-                        if let Some(parent) = &self.parent {
+                        if let Some(parent) = &self.parent {                            
                             return parent.borrow().get_by_reference(parent_reference);
                         } 
 
-                        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} does not exist!", name)));
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable ashdakshdjk {} does not exist!", name)));
                     }
                 }
             }
@@ -180,7 +189,7 @@ impl Environment {
             return parent.borrow().get_variable(name)
         }
 
-        Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} does not exist!", name)))
+        Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable ajhajdhj {} does not exist!", name)))
     }
 }
 

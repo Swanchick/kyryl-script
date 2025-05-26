@@ -99,13 +99,18 @@ impl<'a> InterpretStatement<'a> {
                 let value_type = value.get_type().clone();
                 if let ValueType::Boolean(condition) = value_type {
                     if condition {
+                        self.interpreter.enter_enviroment();
                         let value = self.interpret_block(body)?;
+                        self.interpreter.exit_enviroment()?;
+
                         if let Return::Success(value) = value {
                             return Ok(Return::Success(value));
                         }
                     } else {
                         if let Some(body) = else_body {
+                            self.interpreter.enter_enviroment();
                             let value = self.interpret_block(body)?;
+                            self.interpreter.exit_enviroment()?;
 
                             if let Return::Success(value) = value {
                                 return Ok(Return::Success(value));
@@ -126,7 +131,10 @@ impl<'a> InterpretStatement<'a> {
                     let mut boolean = boolean.clone();
                     
                     while boolean {
+                        self.interpreter.enter_enviroment();
                         let return_value = self.interpret_block(body.clone())?;
+                        self.interpreter.exit_enviroment()?;
+
                         if let Return::Success(return_value) = return_value {
                             return Ok(Return::Success(return_value));
                         }
@@ -167,18 +175,24 @@ impl<'a> InterpretStatement<'a> {
         match list_value {
             ValueType::String(str) => {
                 for char in str.chars() {
-                    self.interpreter.define_variable(name.as_str(), Value::new(None, ValueType::String(char.to_string())))?;
+                    self.interpreter.enter_enviroment();
 
+                    self.interpreter.define_variable(name.as_str(), Value::new(None, ValueType::String(char.to_string())))?;
+                    
                     self.interpret_block(body.clone())?;
+                    self.interpreter.exit_enviroment()?;
                 }
                 
                 Ok(())
             },
             ValueType::List(list) => {
                 for value in list {
-                    self.interpreter.define_variable(name.as_str(), value.clone())?;
+                    self.interpreter.enter_enviroment();
 
+                    self.interpreter.define_variable(name.as_str(), value.clone())?;
+                    
                     self.interpret_block(body.clone())?;
+                    self.interpreter.exit_enviroment()?;
                 }
 
                 Ok(())

@@ -70,6 +70,32 @@ impl Interpreter {
         Ok(())
     }
 
+    pub fn enter_enviroment(&mut self) {
+        let previous = self.local.clone();
+
+        self.local = Rc::new(RefCell::new(Environment::with_parent(previous)));
+    }
+
+    pub fn exit_enviroment(&mut self) -> io::Result<()> {
+        let new_env = {
+            let local = self.local.clone();
+            let local_borrow = local.borrow();
+
+            if let Some(parent) = local_borrow.get_parent() {
+                Some(parent.clone())
+            } else {
+                None
+            }
+        };
+
+        if let Some(env) = new_env {
+            self.local = env;
+            Ok(())
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, "No parent enviroment!"))
+        }
+    }
+
     pub fn interpret_statements(&mut self, statements: Vec<Statement>) -> io::Result<Return> {
         for statement in statements {
             let result = self.interpret_statement(statement)?;
@@ -107,8 +133,7 @@ impl Interpreter {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
                 }
 
-                let previous = self.local.clone();
-                self.local = Rc::new(RefCell::new(Environment::with_parent(previous.clone())));
+                self.enter_enviroment();
 
                 for (arg, parameter) in args.iter().zip(parameters) {
                     if arg.get_type().get_data_type() != parameter.data_type {
@@ -124,7 +149,7 @@ impl Interpreter {
 
                 let result = self.interpret_statements(body.to_vec())?;
 
-                self.local = previous.clone();
+                self.exit_enviroment()?;
 
                 match result {
                     Return::Success(value) => Ok(value),
