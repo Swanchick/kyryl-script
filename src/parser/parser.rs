@@ -7,9 +7,9 @@ use super::data_type::DataType;
 use super::expression::Expression;
 use super::parameter::Parameter;
 use super::semantic_analyzer::SemanticAnalyzer;
-use super::statement::{self, Statement};
+use super::statement::Statement;
 
-use std::{clone, io};
+use std::io;
 
 pub struct Parser {
     tokens: Vec<Token>,

@@ -78,9 +78,24 @@ fn kys_range(args: Vec<Value>) -> io::Result<Value> {
     }
 }
 
+fn kys_ref(args: Vec<Value>) -> io::Result<Value> {
+    if args.len() > 1 {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!")); 
+    }
+
+    let value = args[0].clone();
+    let reference = value.get_reference();
+    if let Some(reference) = reference {
+        Ok(Value::new(None, ValueType::Integer(reference as i32)))
+    } else {
+        Ok(Value::new(None, ValueType::Null))
+    }
+}
+
 pub fn register_standart_library(native_registry: &mut NativeRegistry) {    
     native_registry.register_function("println", RustFunction::from(kys_println, DataType::void()));
     native_registry.register_function("print", RustFunction::from(kys_print, DataType::void()));
     native_registry.register_function("len", RustFunction::from(kys_len, DataType::Int));
     native_registry.register_function("range", RustFunction::from(kys_range, DataType::List(Box::new(DataType::Int))));
+    native_registry.register_function("ref", RustFunction::from(kys_ref, DataType::Int));
 }

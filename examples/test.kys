@@ -1,3 +1,5 @@
 let a = 10;
-let b = null;
-let c = a + b;
+println(ref(a));
+
+let b = a;
+println(ref(b));
