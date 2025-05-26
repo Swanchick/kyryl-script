@@ -1,7 +1,7 @@
 use std::io;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 
 use super::value::Value;
 use super::variable_slot::VariableSlot;
