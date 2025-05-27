@@ -159,6 +159,8 @@ impl Environment {
                     }
                 }
             }
+        } else if let Some(parent) = &self.parent {
+            return parent.borrow().get_by_reference(reference);
         }
 
         return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Reference not found {}!", reference)));

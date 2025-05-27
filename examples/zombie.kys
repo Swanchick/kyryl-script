@@ -1,0 +1,36 @@
+let input = [
+    "Z...",
+    "#.#.",
+    "..#.",
+    "#..."
+];
+
+let steps = 10;
+
+function display(map: [string]) {
+    for line in map {
+        println(line);
+    }
+}
+
+function step(): [string] {
+    // println("Hi!");
+
+
+    return ["123123"];
+}
+
+function main() {    
+    display(input);
+    
+    for i in range(steps) {
+        
+        
+        //step();
+    }
+}
+
+// println(input);
+
+main();
+
