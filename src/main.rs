@@ -2,7 +2,7 @@ mod lexer;
 mod parser;
 mod interpreter;
 mod native_registry;
-mod kys_std;
+mod ks_std;
 
 use std::io;
 use std::env;
@@ -12,7 +12,7 @@ use lexer::lexer::Lexer;
 use native_registry::native_registry::NativeRegistry;
 use parser::parser::Parser;
 
-use kys_std::register_standart_library;
+use ks_std::register_standart_library;
 
 fn run_script(script_path: &str) -> io::Result<()> {
     let mut native_registry = NativeRegistry::new();

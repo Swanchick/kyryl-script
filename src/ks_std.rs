@@ -6,7 +6,7 @@ use crate::native_registry::native_registry::NativeRegistry;
 use crate::native_registry::rust_function::RustFunction;
 use crate::parser::data_type::DataType;
 
-fn kys_print(args: Vec<Value>) -> io::Result<Value> {
+fn ks_print(args: Vec<Value>) -> io::Result<Value> {
     for arg in args {
         let value_type = arg.get_type().clone();
 
@@ -18,7 +18,7 @@ fn kys_print(args: Vec<Value>) -> io::Result<Value> {
             ValueType::List(vars) => {
                 print!("[");
                 for (i, var) in vars.iter().enumerate() {
-                    kys_print(vec![Value::new(None, var.clone().get_type().clone())])?;
+                    ks_print(vec![Value::new(None, var.clone().get_type().clone())])?;
 
                     if i != vars.len() - 1 {
                         print!(", ")
@@ -37,14 +37,14 @@ fn kys_print(args: Vec<Value>) -> io::Result<Value> {
     Ok(Value::new(None, ValueType::Null))
 }
 
-fn kys_println(args: Vec<Value>) -> io::Result<Value> {    
-    kys_print(args)?;
+fn ks_println(args: Vec<Value>) -> io::Result<Value> {    
+    ks_print(args)?;
     println!("");
     
     Ok(Value::new(None, ValueType::Null))
 }
 
-fn kys_len(args: Vec<Value>) -> io::Result<Value> {
+fn ks_len(args: Vec<Value>) -> io::Result<Value> {
     if args.len() > 1 {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
     }
@@ -60,7 +60,7 @@ fn kys_len(args: Vec<Value>) -> io::Result<Value> {
     }
 }
 
-fn kys_range(args: Vec<Value>) -> io::Result<Value> {
+fn ks_range(args: Vec<Value>) -> io::Result<Value> {
     if args.len() > 1 {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
     }
@@ -78,7 +78,7 @@ fn kys_range(args: Vec<Value>) -> io::Result<Value> {
     }
 }
 
-fn kys_ref(args: Vec<Value>) -> io::Result<Value> {
+fn ks_ref(args: Vec<Value>) -> io::Result<Value> {
     if args.len() > 1 {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!")); 
     }
@@ -92,10 +92,24 @@ fn kys_ref(args: Vec<Value>) -> io::Result<Value> {
     }
 }
 
+fn ks_append(args: Vec<Value>) -> io::Result<Value> {
+    if args.len() > 2 {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments! Expected 2 arguments"))
+    }
+
+    let list = args[0].clone();
+    let item = args[1].clone();
+
+
+
+    Ok(Value::new(None, ValueType::Null))
+}
+
 pub fn register_standart_library(native_registry: &mut NativeRegistry) {    
-    native_registry.register_function("println", RustFunction::from(kys_println, DataType::void()));
-    native_registry.register_function("print", RustFunction::from(kys_print, DataType::void()));
-    native_registry.register_function("len", RustFunction::from(kys_len, DataType::Int));
-    native_registry.register_function("range", RustFunction::from(kys_range, DataType::List(Box::new(DataType::Int))));
-    native_registry.register_function("ref", RustFunction::from(kys_ref, DataType::Int));
+    native_registry.register_function("println", RustFunction::from(ks_println, DataType::void()));
+    native_registry.register_function("print", RustFunction::from(ks_print, DataType::void()));
+    native_registry.register_function("len", RustFunction::from(ks_len, DataType::Int));
+    native_registry.register_function("range", RustFunction::from(ks_range, DataType::List(Box::new(DataType::Int))));
+    native_registry.register_function("ref", RustFunction::from(ks_ref, DataType::Int));
+    native_registry.register_function("append", RustFunction::from(ks_append, DataType::List(Box::new(DataType::void()))));
 }

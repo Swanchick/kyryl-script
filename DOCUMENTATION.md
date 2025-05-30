@@ -30,13 +30,13 @@ KyrylScript aims to offer:
 
 ## Syntax
 ### Variable Declaration
-```kys
+```ks
 let a = 10;
 let text: string = "Hello";
 ```
 
 ### Function Declaration
-```kys
+```ks
 function add(a: int, b: int): int {
     return a + b;
 }
@@ -55,7 +55,7 @@ function add(a: int, b: int): int {
 
 ## Control Flow
 ### If-Else
-```kys
+```ks
 if a == 10 {
     println("Yes");
 } else {
@@ -64,7 +64,7 @@ if a == 10 {
 ```
 
 ### While Loop
-```kys
+```ks
 while a < 10 {
     println(a);
     a += 1;
@@ -76,14 +76,14 @@ while a < 10 {
 ## Functions
 Functions must be declared using `function`, can accept typed parameters, and return values of a specified type.
 
-```kys
+```ks
 function multiply(x: int, y: int): int {
     return x * y;
 }
 ```
 
 Return type can be `void` if no return value:
-```kys
+```ks
 function greet(name: string): void {
     println("Hello", name);
 }
@@ -93,12 +93,12 @@ function greet(name: string): void {
 
 ## Lists and Indexing
 KyrylScript supports lists with type homogeneity:
-```kys
+```ks
 let numbers: [int] = [1, 2, 3];
 numbers[1] = 10;
 ```
 Nested indexing is allowed:
-```kys
+```ks
 let matrix = [[1, 2], [3, 4]];
 println(matrix[1][0]);
 ```
@@ -107,14 +107,14 @@ println(matrix[1][0]);
 
 ## Loops
 ### For-Range Loop
-```kys
+```ks
 for i in range(10) {
     println(i);
 }
 ```
 
 ### For-In List Loop
-```kys
+```ks
 for item in list {
     println(item);
 }
@@ -124,7 +124,7 @@ for item in list {
 
 ## Recursion
 KyrylScript supports recursive functions:
-```kys
+```ks
 function fib(n: int): int {
     if n <= 1 {
         return n;
@@ -137,7 +137,7 @@ function fib(n: int): int {
 
 ## Comments
 Use `//` to add single-line comments:
-```kys
+```ks
 // This is a comment
 ```
 
@@ -156,12 +156,12 @@ Use `//` to add single-line comments:
 
 ## Examples
 ### Hello World
-```kys
+```ks
 println("Hello, World!");
 ```
 
 ### Bubble Sort
-```kys
+```ks
 function bubble_sort(numbers: [int]): [int] {
     for j in range(len(numbers)) {
         for i in range(len(numbers) - j - 1) {
@@ -179,7 +179,7 @@ function bubble_sort(numbers: [int]): [int] {
 ```
 
 ### Triangle Drawing
-```kys
+```ks
 function draw_triangle(size: int) {
     while size > 0 {
         let row = 0;
@@ -194,7 +194,7 @@ function draw_triangle(size: int) {
 ```
 
 ### Unit Converter
-```kys
+```ks
 function to_meters(inches: float): float {
     return inches / 39.37f;
 }

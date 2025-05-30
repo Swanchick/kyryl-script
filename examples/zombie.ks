@@ -1,4 +1,4 @@
-let input = [
+let map = [
     "Z...",
     "#.#.",
     "..#.",
@@ -14,23 +14,17 @@ function display(map: [string]) {
 }
 
 function step(): [string] {
-    // println("Hi!");
-
-
     return ["123123"];
 }
 
 function main() {    
-    display(input);
-    
     for i in range(steps) {
         
-        
-        //step();
+
+        display(map);
     }
 }
 
-// println(input);
 
 main();
 

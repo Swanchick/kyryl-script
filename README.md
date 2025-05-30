@@ -24,7 +24,7 @@ cd kyrylscript
 cargo build --release
 
 # Run the interpreter
-cargo run -- path/to/script.kys
+cargo run -- path/to/script.ks
 ```
 
 ## Integration with Rust
@@ -32,8 +32,8 @@ cargo run -- path/to/script.kys
 You can register native Rust functions into the KyrylScript runtime:
 
 ```rs
-interpreter.register_rust_function("println", kys_println);
-interpreter.register_rust_function("len", kys_len);
+interpreter.register_rust_function("println", ks_println);
+interpreter.register_rust_function("len", ks_len);
 ```
 
 This allows full integration between game engine core logic and high-level script behavior.
