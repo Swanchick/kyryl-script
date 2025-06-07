@@ -100,6 +100,8 @@ fn ks_append(args: Vec<Value>) -> io::Result<Value> {
     let list = args[0].clone();
     let item = args[1].clone();
 
+    
+
 
 
     Ok(Value::new(None, ValueType::Null))

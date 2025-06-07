@@ -19,8 +19,6 @@ function step(): [string] {
 
 function main() {    
     for i in range(steps) {
-        
-
         display(map);
     }
 }

@@ -46,32 +46,22 @@ impl<'a> InterpretStatement<'a> {
                 Ok(Return::Nothing)
             },
             Statement::AssigmentIndex { name, index, value } => {
-                let list_value = self.interpreter.get_variable(&name)?;
-                let list_value_type = list_value.get_type().clone();
+                let mut list_value = self.interpreter.get_variable(&name)?;
+                let list_value_type = list_value.get_type_mut();
                 let value_to_assign = self.interpreter.interpret_expression(value)?;
 
-                let mut indeces: Vec<ValueType> = Vec::new();
+                let mut indeces: Vec<i32> = Vec::new();
 
                 for i in index {
                     let value = self.interpreter.interpret_expression(i)?;
                     let value_type = value.get_type().clone();
                     
-                    if value_type.get_data_type() != DataType::Int {
-                        return Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong type"));
+                    if let ValueType::Integer(i32_index) = value_type {
+                        indeces.push(i32_index);
                     }
-        
-                    indeces.push(value_type);
                 }
 
-                match list_value_type {
-                    ValueType::List(_) => {
-                        self.interpret_assign_list_index(&name, list_value_type, indeces, value_to_assign)?;
-                    }
-                    ValueType::String(mut str) => {
-                        self.interpret_assign_string_index(&name, &mut str, indeces, value_to_assign)?;
-                    }
-                    _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid data type!"))
-                }
+                self.interpret_index_assigment(list_value_type, indeces, value_to_assign);
 
                 Ok(Return::Nothing)
             }
@@ -201,87 +191,62 @@ impl<'a> InterpretStatement<'a> {
         }
     }
 
-    fn interpret_assign_string_index(&mut self, name: &str, str: &mut String, indeces: Vec<ValueType>, value_to_assign: Value) -> io::Result<()> {
-        if indeces.len() > 1 {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "Required only one index in string!"));
+    fn replace_char_at(&self, s: &mut String, index: usize, new_char: char) -> String {
+        let mut chars: Vec<char> = s.chars().collect();
+        if index >= chars.len() {
+            panic!("Index out of bounds");
         }
+        chars[index] = new_char;
+        chars.into_iter().collect()
+    }
 
-        let value_type = value_to_assign.get_type();
-
-        if let ValueType::String(c) = value_type {
-            if c.len() != 1 {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, "Required only char but not a string to change a char in a string!"));
+    fn interpret_index_assigment(&mut self, list_value: &mut ValueType, indeces: Vec<i32>, value_to_assign: Value) -> io::Result<()> {
+        match list_value {
+            ValueType::List(_) => {
+                self.interpret_assign_list_index(list_value, indeces, value_to_assign)?;
             }
-            
-            let index = &indeces[0];
-            if let ValueType::Integer(index) = index {
-                if *index < 0 || *index > (str.len() - 1) as i32 {
-                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds!"))
-                }
-
-                let index = *index as usize;
-                
-                str.replace_range(index..(index+1), &c);
-
-                self.interpreter.assign_variable(&name, Value::new(None, ValueType::String(str.to_owned())))?;
+            ValueType::String(str) => {
+                // self.interpret_assign_string_index(&name, &mut str, indeces, value_to_assign)?;
             }
+            _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid data type!"))
         }
 
         Ok(())
     }
 
-    fn interpret_assign_list_index(&mut self, name: &str, list_value: ValueType, indeces: Vec<ValueType>, value_to_assign: Value) -> io::Result<()> {        
-        let mut results: Vec<ValueType> = Vec::new();
-
-        let expression = InterpretExpression::new(self.interpreter);
-
-        for i in 0..indeces.len() {
-            let index = indeces[i].clone();
-            if results.len() != 0 {
-                results.push(expression.interpret_identifier_index(results.last().unwrap().clone(), index.clone())?);
-            } else {
-                results.push(expression.interpret_identifier_index(list_value.clone(), index.clone())?);
-            }
+    fn interpret_assign_string_index(&mut self, string: &mut String, indeces: Vec<i32>, value_to_assign: Value) -> io::Result<()> {
+        if indeces.len() != 1 {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "String is not a matrix or something"))
         }
 
-        let mut final_results = vec![list_value.clone()];
-        final_results.append(&mut results);
-        
-        let mut result: Option<Value> = None;
-        let mut last_index = final_results.len() - 2;
+        let index = indeces[0] as usize;
 
-        for fi in 0..(final_results.len() - 1) {
-            let value = &final_results[final_results.len() - 1 - fi];
-            
-            match result.clone() {
-                Some(v) => {
-                    let current_index = indeces[last_index as usize].clone();
-                    if let ValueType::Integer(n) = current_index {
-                        if let ValueType::List(mut list) = value.clone() {
-                            if n < 0 || n > (list.len() - 1) as i32 {
-                                return Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds!"));
-                            }
-                            
-                            list[n as usize] = v.clone();
-                            last_index = last_index - 1;
-                            result = Some(Value::new(None, ValueType::List(list)));
-                        }
-                    }
-                },
-                _ => {
-                    result = Some(value_to_assign.clone());
-                }
+        // self.replace_char_at(string, index, new_char);
+
+        Ok(())
+    }
+
+    fn interpret_assign_list_index(&mut self, list_value: &mut ValueType, indeces: Vec<i32>, value_to_assign: Value) -> io::Result<()> {        
+        if let ValueType::List(children) = list_value {
+            let index = indeces[0] as usize;
+            if index >= children.len() {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "Out of index!"));
             }
-        }
 
-        if let ValueType::List(mut list) = list_value {
-            let index = indeces[0].clone();
-            
-            if let ValueType::Integer(index) = index {
-                list[index as usize] = result.unwrap();
+            let are_we_changing_child = indeces.len() == 1;
 
-                self.interpreter.assign_variable(name, Value::new(None, ValueType::List(list)))?;
+            if are_we_changing_child {
+                children[index] = value_to_assign;
+
+                return Ok(())
             }
+
+            let indeces: Vec<i32> = Vec::from(&indeces[1..]);
+            
+            let child = &mut children[index];
+            let value_type = child.get_type_mut();
+
+            self.interpret_index_assigment(value_type, indeces, value_to_assign)?;
         }
 
         Ok(())

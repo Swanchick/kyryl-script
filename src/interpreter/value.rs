@@ -50,6 +50,10 @@ impl Value {
     pub fn get_type(&self) -> &ValueType {
         &self.value_type
     }
+
+    pub fn get_type_mut(&mut self) -> &mut ValueType {
+        &mut self.value_type
+    }
 }
 
 impl ValueType {

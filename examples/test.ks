@@ -1,5 +1,5 @@
-let a = 10;
-println(ref(a));
+let a = ["Hello World", "asjdkawd"];
 
-let b = a;
-println(ref(b));
+a[0][1] = "a";
+
+println(a);
