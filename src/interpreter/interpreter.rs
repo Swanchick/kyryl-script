@@ -35,13 +35,18 @@ impl Interpreter {
             local: global
         }
     }
+    
+    /// Todo:
+    /// 1. Make it mutable version of the function
+    /// 2. Get the borrow, not the clone of a variable
+    /// 
 
     pub fn get_variable(&self, name: &str) -> io::Result<Value> {
         let local = self.local.borrow();
         
         let value = local.get_variable(name)?;
 
-        Ok(value.clone())
+        Ok(value)
     }
 
     pub fn define_variable(&mut self, name: &str, value: Value) -> io::Result<()> {

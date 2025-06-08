@@ -6,7 +6,6 @@ use crate::parser::data_type::DataType;
 use super::interpreter::Interpreter;
 use super::return_value::Return;
 use super::value::{Value, ValueType};
-use super::interpret_expression::InterpretExpression;
 
 pub struct InterpretStatement<'a> {
     interpreter: &'a mut Interpreter
@@ -61,7 +60,8 @@ impl<'a> InterpretStatement<'a> {
                     }
                 }
 
-                self.interpret_index_assigment(list_value_type, indeces, value_to_assign);
+                self.interpret_index_assigment(list_value_type, indeces, value_to_assign)?;
+                self.interpreter.assign_variable(&name, list_value)?;
 
                 Ok(Return::Nothing)
             }
@@ -191,7 +191,7 @@ impl<'a> InterpretStatement<'a> {
         }
     }
 
-    fn replace_char_at(&self, s: &mut String, index: usize, new_char: char) -> String {
+    fn replace_char_at(&self, s: String, index: usize, new_char: char) -> String {
         let mut chars: Vec<char> = s.chars().collect();
         if index >= chars.len() {
             panic!("Index out of bounds");
@@ -206,7 +206,7 @@ impl<'a> InterpretStatement<'a> {
                 self.interpret_assign_list_index(list_value, indeces, value_to_assign)?;
             }
             ValueType::String(str) => {
-                // self.interpret_assign_string_index(&name, &mut str, indeces, value_to_assign)?;
+                self.interpret_assign_string_index(str, indeces, value_to_assign)?;
             }
             _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid data type!"))
         }
@@ -221,12 +221,27 @@ impl<'a> InterpretStatement<'a> {
 
         let index = indeces[0] as usize;
 
-        // self.replace_char_at(string, index, new_char);
+        let value_type = value_to_assign.get_type();
 
-        Ok(())
+        if let ValueType::String(string_to_change) = value_type {
+            if string_to_change.len() != 1 {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "You have to change with a char, not with a string!"));
+            }
+
+            let chars: Vec<char> = string_to_change.chars().collect();
+            let new_char: char = chars[0];
+
+            *string = self.replace_char_at(string.clone(), index, new_char);
+
+            Ok(())
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, "Expected string to change the char inside of the string!"))
+        }
+
+        
     }
 
-    fn interpret_assign_list_index(&mut self, list_value: &mut ValueType, indeces: Vec<i32>, value_to_assign: Value) -> io::Result<()> {        
+    fn interpret_assign_list_index(&mut self, list_value: &mut ValueType, indeces: Vec<i32>, value_to_assign: Value) -> io::Result<()> {
         if let ValueType::List(children) = list_value {
             let index = indeces[0] as usize;
             if index >= children.len() {
@@ -236,6 +251,12 @@ impl<'a> InterpretStatement<'a> {
             let are_we_changing_child = indeces.len() == 1;
 
             if are_we_changing_child {
+                let child = &children[index];
+                
+                if child.get_type().get_data_type() != value_to_assign.get_type().get_data_type() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Expected the same data type!"));
+                }
+
                 children[index] = value_to_assign;
 
                 return Ok(())
@@ -248,6 +269,8 @@ impl<'a> InterpretStatement<'a> {
 
             self.interpret_index_assigment(value_type, indeces, value_to_assign)?;
         }
+
+        
 
         Ok(())
     }

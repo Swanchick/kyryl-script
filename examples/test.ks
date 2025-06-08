@@ -1,5 +1,5 @@
-let a = ["Hello World", "asjdkawd"];
+let a = [100, 23, 405];
 
-a[0][1] = "a";
+a[0] = "asdasd";
 
 println(a);
