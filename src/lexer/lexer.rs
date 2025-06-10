@@ -31,16 +31,25 @@ impl Lexer {
     }
     
     pub fn load(source_path: &str) -> io::Result<Lexer> {
-        let source: String = read_to_string(source_path)?;
-        let source_lines: Vec<String> = source.lines().map(|s| s.to_string()).collect();
+        let result = read_to_string(source_path);
 
-        Ok(Lexer {
-            tokens: Vec::new(),
-            token_pos: Vec::new(),
-            source_lines: source_lines,
-            source_path: Some(source_path.to_string()),
-            current_line_pos: 0
-        })
+        match result {
+            Ok(source) => {
+                let source_lines: Vec<String> = source.lines().map(|s| s.to_string()).collect();
+
+                Ok(Lexer {
+                    tokens: Vec::new(),
+                    token_pos: Vec::new(),
+                    source_lines: source_lines,
+                    source_path: Some(source_path.to_string()),
+                    current_line_pos: 0
+                })
+            }
+            Err(_) => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("Cannot find file with that path: {source_path}!")
+            ))
+        }
     }
 
     pub fn get_tokens(&self) -> &Vec<Token> {

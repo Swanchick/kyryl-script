@@ -182,7 +182,7 @@ impl Environment {
     }
 
     fn same_scope_reference(&self, reference: u64) -> bool {
-        if let Some(value) = self.references.get(&reference) {
+        if let Some(_) = self.references.get(&reference) {
             true
         } else {
             false
