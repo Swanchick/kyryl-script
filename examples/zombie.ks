@@ -5,6 +5,13 @@ let map = [
     "#..."
 ];
 
+let directions: [[int]] = [
+    [0, -1],
+    [1, 0],
+    [0, 1],
+    [-1, 0]
+];
+
 let steps = 10;
 
 function display(map: [string]) {
@@ -13,16 +20,17 @@ function display(map: [string]) {
     }
 }
 
-function step(): [string] {
+function step(map: [string]): [string] {
+    let clone_map = map;
+
+    println(clone_map);
+    
     return ["123123"];
 }
 
 function main() {    
-    for i in range(steps) {
-        display(map);
-    }
+    step(map);
 }
-
 
 main();
 

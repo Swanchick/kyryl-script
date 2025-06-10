@@ -27,23 +27,23 @@ pub enum ValueType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Value {
-    reference: Option<u128>,
+    reference: Option<u64>,
     value_type: ValueType
 }
 
 impl Value {
-    pub fn new(reference: Option<u128>, value_type: ValueType) -> Value {
+    pub fn new(reference: Option<u64>, value_type: ValueType) -> Value {
         Value {
             reference,
             value_type
         }
     }
 
-    pub fn set_reference(&mut self, reference: u128) {
+    pub fn set_reference(&mut self, reference: u64) {
         self.reference = Some(reference);
     }
 
-    pub fn get_reference(&self) -> Option<u128> {
+    pub fn get_reference(&self) -> Option<u64> {
         self.reference
     }
 
@@ -53,6 +53,10 @@ impl Value {
 
     pub fn get_type_mut(&mut self) -> &mut ValueType {
         &mut self.value_type
+    }
+
+    pub fn clear_reference(&mut self) {
+        self.reference = None;
     }
 }
 

@@ -35,11 +35,6 @@ impl Interpreter {
             local: global
         }
     }
-    
-    /// Todo:
-    /// 1. Make it mutable version of the function
-    /// 2. Get the borrow, not the clone of a variable
-    /// 
 
     pub fn get_variable(&self, name: &str) -> io::Result<Value> {
         let local = self.local.borrow();
@@ -57,19 +52,17 @@ impl Interpreter {
         Ok(())
     }
 
-    pub fn define_variable_by_reference(&mut self, name: &str, value: &Value) -> io::Result<()> {
+    pub fn define_variable_by_reference(&mut self, name: &str, reference: u64) -> io::Result<()> {
         let mut local = self.local.borrow_mut();
 
-        if let Some(reference) = value.get_reference() {
-            local.create_value_reference(name.to_string(), reference);
-        }
+        local.create_value_reference(name.to_string(), reference);
         
         Ok(())
     }
 
     pub fn assign_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
         let mut local = self.local.borrow_mut();
-
+        
         local.assign_variable(name, value)?;
         
         Ok(())
@@ -145,8 +138,8 @@ impl Interpreter {
                         return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
                     }
 
-                    if let Some(_) = arg.get_reference() {
-                        self.define_variable_by_reference(parameter.name.as_str(), arg)?;
+                    if let Some(reference) = arg.get_reference() {
+                        self.define_variable_by_reference(parameter.name.as_str(), reference)?;
                     } else {
                         self.define_variable(parameter.name.as_str(), arg.clone())?;
                     }

@@ -18,7 +18,7 @@ impl<'a> InterpretStatement<'a> {
 
     pub fn interpret_statement(&mut self, statement: Statement) -> io::Result<Return> {        
         match statement {
-            Statement::VariableDeclaration { name, data_type, value } => {
+            Statement::VariableDeclaration { name, data_type, value } => {                
                 let value = if let Some(expression) = value {
                     self.interpreter.interpret_expression(expression)?
                 } else {

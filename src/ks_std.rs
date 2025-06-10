@@ -92,19 +92,17 @@ fn ks_ref(args: Vec<Value>) -> io::Result<Value> {
     }
 }
 
-fn ks_append(args: Vec<Value>) -> io::Result<Value> {
-    if args.len() > 2 {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments! Expected 2 arguments"))
+fn ks_clone(args: Vec<Value>) -> io::Result<Value> {
+    if args.len() != 1 {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
     }
 
-    let list = args[0].clone();
-    let item = args[1].clone();
+    let value = &args[0];
+    let mut clone = value.clone();
 
-    
+    clone.clear_reference();
 
-
-
-    Ok(Value::new(None, ValueType::Null))
+    Ok(clone)
 }
 
 pub fn register_standart_library(native_registry: &mut NativeRegistry) {    
@@ -113,5 +111,5 @@ pub fn register_standart_library(native_registry: &mut NativeRegistry) {
     native_registry.register_function("len", RustFunction::from(ks_len, DataType::Int));
     native_registry.register_function("range", RustFunction::from(ks_range, DataType::List(Box::new(DataType::Int))));
     native_registry.register_function("ref", RustFunction::from(ks_ref, DataType::Int));
-    native_registry.register_function("append", RustFunction::from(ks_append, DataType::List(Box::new(DataType::void()))));
+    native_registry.register_function("clone", RustFunction::from(ks_clone, DataType::List(Box::new(DataType::void()))));
 }

@@ -2,16 +2,19 @@ use std::io;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use super::value::Value;
 use super::variable_slot::VariableSlot;
 
+
+static GLOBAL_REFERENCE_COUNT: AtomicU64 = AtomicU64::new(0);
+
 #[derive(Debug, Clone)]
 pub struct Environment {
     parent: Option<Rc<RefCell<Environment>>>,
-    values: HashMap<String, u128>,
-    references: HashMap<u128, VariableSlot>,
-    last_reference: u128
+    values: HashMap<String, u64>,
+    references: HashMap<u64, VariableSlot>,
 }
 
 impl Environment {
@@ -20,7 +23,6 @@ impl Environment {
             parent: None,
             values: HashMap::new(),
             references: HashMap::new(),
-            last_reference: 0
         }
     }
 
@@ -29,7 +31,6 @@ impl Environment {
             parent: Some(parent),
             values: HashMap::new(),
             references: HashMap::new(),
-            last_reference: 0
         }
     }
 
@@ -40,22 +41,24 @@ impl Environment {
         }
     }
 
+    fn next_reference(&self) -> u64 {
+        GLOBAL_REFERENCE_COUNT.fetch_add(1, Ordering::SeqCst)
+    }
+
     fn create_value(&mut self, name: String, mut value: Value) {
-        value.set_reference(self.last_reference);
-        self.references.insert(self.last_reference, VariableSlot::Variable(value));
-        self.values.insert(name, self.last_reference);
-
-        self.last_reference += 1;
+        let reference = self.next_reference();
+        
+        value.set_reference(reference);
+        self.references.insert(reference, VariableSlot::Variable(value));
+        self.values.insert(name, reference);
     }
 
-    pub fn create_value_reference(&mut self, name: String, reference: u128) {
-        self.values.insert(name, self.last_reference);
-        self.references.insert(self.last_reference, VariableSlot::Reference(reference));
-
-        self.last_reference += 1;
+    pub fn create_value_reference(&mut self, name: String, reference: u64) {        
+        self.values.insert(name, reference);
+        self.references.insert(reference, VariableSlot::Reference(reference));
     }
 
-    pub fn variable_exists(&self, reference: u128) -> bool {
+    pub fn variable_exists(&self, reference: u64) -> bool {
         if self.references.contains_key(&reference) {
             return true;
         }
@@ -67,7 +70,7 @@ impl Environment {
         false
     }
 
-    pub fn variable_is_used(&self, reference: u128) -> bool {
+    pub fn variable_is_used(&self, reference: u64) -> bool {
         if self.values.values().any(|&x| x == reference) {
             return true;
         }
@@ -82,15 +85,19 @@ impl Environment {
     pub fn define_variable(&mut self, name: String, value: Value) -> io::Result<()> {
         match value.get_reference() {
             Some(reference) => {
+                let same_scope = self.same_scope_reference(reference);
                 let is_existing = self.variable_exists(reference);
                 let is_used = self.variable_is_used(reference);
-                
-                if !(is_existing && is_used) {
-                    self.create_value(name, value);
-                    return Ok(());
-                }
 
-                self.values.insert(name, reference);
+                if same_scope {
+                    if is_existing && is_used {
+                        self.values.insert(name, reference);
+                    } else {
+                        self.create_value(name, value);
+                    }
+                } else {
+                    self.create_value_reference(name, reference);
+                }
             }
             None => {
                 self.create_value(name, value);
@@ -100,7 +107,7 @@ impl Environment {
         Ok(())
     }
 
-    pub fn assign_variable_by_reference(&mut self, reference: u128, mut value: Value) -> io::Result<()> {
+    pub fn assign_variable_by_reference(&mut self, reference: u64, mut value: Value) -> io::Result<()> {
         if let Some(slot) = self.references.get(&reference) {
             match slot.clone() {
                 VariableSlot::Variable(_) => {                    
@@ -145,7 +152,7 @@ impl Environment {
         }
     }
 
-    pub fn get_by_reference(&self, reference: u128) -> io::Result<Value> {
+    pub fn get_by_reference(&self, reference: u64) -> io::Result<Value> {
         if let Some(slot) = self.references.get(&reference) {
             match slot {
                 VariableSlot::Variable(value) => {
@@ -166,6 +173,22 @@ impl Environment {
         return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Reference not found {}!", reference)));
     }
 
+    pub fn display_references(&self) {
+        for name in self.values.keys() {
+            let reference = self.values.get(name).unwrap();
+            let slot = self.references.get(reference).unwrap();
+            println!("{}({}) = {:?}", name, reference, slot);
+        }
+    }
+
+    fn same_scope_reference(&self, reference: u64) -> bool {
+        if let Some(value) = self.references.get(&reference) {
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn get_variable(&self, name: &str) -> io::Result<Value> {
         if let Some(reference) = self.values.get(name) {
             if let Some(slot) = self.references.get(reference) {
@@ -181,7 +204,7 @@ impl Environment {
                             return parent.borrow().get_by_reference(parent_reference);
                         } 
 
-                        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable ashdakshdjk {} does not exist!", name)));
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} does not exist!", name)));
                     }
                 }
             }
@@ -191,7 +214,7 @@ impl Environment {
             return parent.borrow().get_variable(name)
         }
 
-        Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable ajhajdhj {} does not exist!", name)))
+        Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable asdwasdw {} does not exist!", name)))
     }
 }
 

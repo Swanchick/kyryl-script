@@ -1,5 +1,11 @@
-let a = [100, 23, 405];
+function test(map: string) {
+    let clone_map = map;
 
-a[0] = "asdasd";
+    clone_map = "asdasdasd";
 
-println(a);
+    println("Map: ", map);
+}
+
+let map = "Hello";
+test(map);
+println("Map original: ", map);
