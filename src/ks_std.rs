@@ -15,12 +15,13 @@ fn ks_print(args: Vec<Value>) -> io::Result<Value> {
             ValueType::Float(var) => print!("{}", var),
             ValueType::Boolean(var) => print!("{}", var),
             ValueType::String(var) => print!("{}", var),
-            ValueType::List(vars) => {
+            ValueType::List { references, data_type: _ } => {
                 print!("[");
-                for (i, var) in vars.iter().enumerate() {
-                    ks_print(vec![Value::new(None, var.clone().get_type().clone())])?;
+                for (i, reference) in references.iter().enumerate() {
+                    print!("&{}", reference);
+                    // ks_print(vec![Value::new(None, var.clone().get_type().clone())])?;
 
-                    if i != vars.len() - 1 {
+                    if i != references.len() - 1 {
                         print!(", ")
                     }
                 }
@@ -53,30 +54,30 @@ fn ks_len(args: Vec<Value>) -> io::Result<Value> {
         ValueType::String(str) => {
             Ok(Value::new(None, ValueType::Integer(str.len() as i32)))
         },
-        ValueType::List(list) => {
-            Ok(Value::new(None, ValueType::Integer(list.len() as i32)))
+        ValueType::List { references, data_type } => {
+            Ok(Value::new(None, ValueType::Integer(references.len() as i32)))
         },
         _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid Type!"))
     }
 }
 
-fn ks_range(args: Vec<Value>) -> io::Result<Value> {
-    if args.len() > 1 {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
-    }
+// fn ks_range(args: Vec<Value>) -> io::Result<Value> {
+//     if args.len() > 1 {
+//         return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
+//     }
 
-    if let ValueType::Integer(n) = args[0].get_type() {
-        let mut out: Vec<Value> = Vec::new();
+//     if let ValueType::Integer(n) = args[0].get_type() {
+//         let mut out: Vec<Value> = Vec::new();
 
-        for i in 0..*n {
-            out.push(Value::new(None, ValueType::Integer(i)));
-        }
+//         for i in 0..*n {
+//             out.push(Value::new(None, ValueType::Integer(i)));
+//         }
 
-        Ok(Value::new(None, ValueType::List(out)))
-    } else {
-        Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong argument type!"))
-    }
-}
+//         Ok(Value::new(None, ValueType::List(out)))
+//     } else {
+//         Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong argument type!"))
+//     }
+// }
 
 fn ks_ref(args: Vec<Value>) -> io::Result<Value> {
     if args.len() > 1 {
@@ -92,24 +93,11 @@ fn ks_ref(args: Vec<Value>) -> io::Result<Value> {
     }
 }
 
-fn ks_clone(args: Vec<Value>) -> io::Result<Value> {
-    if args.len() != 1 {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
-    }
-
-    let value = &args[0];
-    let mut clone = value.clone();
-
-    clone.clear_reference();
-
-    Ok(clone)
-}
-
 pub fn register_standart_library(native_registry: &mut NativeRegistry) {    
     native_registry.register_function("println", RustFunction::from(ks_println, DataType::void()));
     native_registry.register_function("print", RustFunction::from(ks_print, DataType::void()));
     native_registry.register_function("len", RustFunction::from(ks_len, DataType::Int));
-    native_registry.register_function("range", RustFunction::from(ks_range, DataType::List(Box::new(DataType::Int))));
+    // native_registry.register_function("range", RustFunction::from(ks_range, DataType::List(Box::new(DataType::Int))));
     native_registry.register_function("ref", RustFunction::from(ks_ref, DataType::Int));
-    native_registry.register_function("clone", RustFunction::from(ks_clone, DataType::List(Box::new(DataType::void()))));
+    // native_registry.register_function("clone", RustFunction::from(ks_clone, DataType::List(Box::new(DataType::void()))));
 }

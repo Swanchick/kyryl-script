@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::parser::data_type::DataType;
+use crate::parser::data_type::{self, DataType};
 use crate::parser::parameter::Parameter;
 use crate::parser::statement::Statement;
 
@@ -10,8 +10,11 @@ pub enum ValueType {
     Float(f64),
     String(String),
     Boolean(bool),
-    List(Vec<Value>),
     Null,
+    List {
+        references: Vec<u64>,
+        data_type: Option<DataType>
+    },
     RustFunction {
         function: fn(args: Vec<Value>) -> io::Result<Value>,
         return_type: DataType
@@ -77,13 +80,16 @@ impl ValueType {
                 DataType::Function { parameters: parameter_types, return_type: Box::new(return_type.clone()) }
             },
             ValueType::RustFunction { function: _, return_type } => DataType::RustFunction { return_type: Box::new(return_type.clone()) },
-            ValueType::List(list) => {
-                if list.len() != 0 {
-                    DataType::List(Box::new(list[0].get_type().get_data_type()))
-                } else {
-                    DataType::List(Box::new(DataType::void()))
+            ValueType::List { references: _, data_type } => {
+                match data_type {
+                    Some(data_type) => {
+                        data_type.clone()
+                    },
+                    None => {
+                        DataType::List(Box::new(DataType::void()))
+                    }
                 }
-            }
+            },
             ValueType::Null => DataType::void(),
         }
     }

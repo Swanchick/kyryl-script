@@ -1,11 +1,10 @@
-function test(map: string) {
-    let clone_map = map;
+let my_list = [1, 2, 3, 4, 5, 6];
+let a = my_list[1];
 
-    clone_map = "asdasdasd";
+println(ref(a));
+println(ref(my_list[1]));
+a = 2;
 
-    println("Map: ", map);
-}
+println(my_list[1]);
 
-let map = "Hello";
-test(map);
-println("Map original: ", map);
+println(a);

@@ -1,5 +1,6 @@
 use std::io;
 
+
 use crate::parser::statement::Statement;
 use crate::parser::data_type::DataType;
 
@@ -175,12 +176,12 @@ impl<'a> InterpretStatement<'a> {
                 
                 Ok(())
             },
-            ValueType::List(list) => {
-                for value in list {
-                    self.interpreter.enter_enviroment();
+            ValueType::List { references, data_type: _ } => {
+                for reference in references {
+                    let value = self.interpreter.get_variable_reference(*reference)?;
 
+                    self.interpreter.enter_enviroment();
                     self.interpreter.define_variable(name.as_str(), value.clone())?;
-                    
                     self.interpret_block(body.clone())?;
                     self.interpreter.exit_enviroment()?;
                 }
@@ -202,7 +203,7 @@ impl<'a> InterpretStatement<'a> {
 
     fn interpret_index_assigment(&mut self, list_value: &mut ValueType, indeces: Vec<i32>, value_to_assign: Value) -> io::Result<()> {
         match list_value {
-            ValueType::List(_) => {
+            ValueType::List { references: _, data_type: _ } => {
                 self.interpret_assign_list_index(list_value, indeces, value_to_assign)?;
             }
             ValueType::String(str) => {
@@ -242,29 +243,31 @@ impl<'a> InterpretStatement<'a> {
     }
 
     fn interpret_assign_list_index(&mut self, list_value: &mut ValueType, indeces: Vec<i32>, value_to_assign: Value) -> io::Result<()> {
-        if let ValueType::List(children) = list_value {
+        if let ValueType::List { references, data_type: _ } = list_value {
             let index = indeces[0] as usize;
-            if index >= children.len() {
+            if index >= references.len() {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, "Out of index!"));
             }
 
+            println!("Indeces: {}", indeces.len());
+
             let are_we_changing_child = indeces.len() == 1;
 
+            let child_reference = references[index];
+            let mut child = self.interpreter.get_variable_reference(child_reference)?;
+
             if are_we_changing_child {
-                let child = &children[index];
-                
                 if child.get_type().get_data_type() != value_to_assign.get_type().get_data_type() {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "Expected the same data type!"));
                 }
 
-                children[index] = value_to_assign;
+                self.interpreter.assign_variable_by_reference(child_reference, value_to_assign)?;
 
                 return Ok(())
             }
 
             let indeces: Vec<i32> = Vec::from(&indeces[1..]);
             
-            let child = &mut children[index];
             let value_type = child.get_type_mut();
 
             self.interpret_index_assigment(value_type, indeces, value_to_assign)?;

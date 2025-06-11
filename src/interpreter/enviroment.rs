@@ -53,9 +53,26 @@ impl Environment {
         self.values.insert(name, reference);
     }
 
+    pub fn create_value_without_name(&mut self, mut value: Value) -> u64 {
+        let reference = self.next_reference();
+        
+        value.set_reference(reference);
+        self.references.insert(reference, VariableSlot::Variable(value));
+
+        reference
+    }
+
     pub fn create_value_reference(&mut self, name: String, reference: u64) {        
+        let next_reference = self.next_reference();
+        
         self.values.insert(name, reference);
-        self.references.insert(reference, VariableSlot::Reference(reference));
+        self.references.insert(next_reference, VariableSlot::Reference(reference));
+    }
+
+    pub fn create_reference(&mut self, reference: u64) {
+        let next_reference = self.next_reference();
+
+        self.references.insert(next_reference, VariableSlot::Reference(reference));
     }
 
     pub fn variable_exists(&self, reference: u64) -> bool {
@@ -174,20 +191,33 @@ impl Environment {
     }
 
     pub fn display_references(&self) {
+        println!("==========[Values]==========");
+        
         for name in self.values.keys() {
             let reference = self.values.get(name).unwrap();
             let slot = self.references.get(reference).unwrap();
             println!("{}({}) = {:?}", name, reference, slot);
         }
+
+        println!("========[References]========");
+
+        for reference in self.references.keys() {
+            let value = self.references.get(reference).unwrap();
+            println!("{} = {:?}", reference, value);
+        }
+
+        println!("============================");
     }
 
-    fn same_scope_reference(&self, reference: u64) -> bool {
+    pub fn same_scope_reference(&self, reference: u64) -> bool {
         if let Some(_) = self.references.get(&reference) {
             true
         } else {
             false
         }
     }
+
+    // pub fn create_list(&self, )
 
     pub fn get_variable(&self, name: &str) -> io::Result<Value> {
         if let Some(reference) = self.values.get(name) {
@@ -206,6 +236,7 @@ impl Environment {
 
                         return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} does not exist!", name)));
                     }
+
                 }
             }
         }

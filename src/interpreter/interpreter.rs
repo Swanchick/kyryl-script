@@ -14,7 +14,7 @@ use super::value::{Value, ValueType};
 
 pub struct Interpreter {
     global: Rc<RefCell<Environment>>,
-    local: Rc<RefCell<Environment>>
+    local: Rc<RefCell<Environment>>,
 }
 
 impl Interpreter {
@@ -32,16 +32,29 @@ impl Interpreter {
 
         Interpreter {
             global: global.clone(),
-            local: global
+            local: global,
         }
+    }
+
+    pub fn create_reference(&mut self, reference: u64) {
+        let mut local = self.local.borrow_mut();
+        local.create_reference(reference);
+    }
+
+    pub fn create_value(&mut self, value: Value) -> u64 {
+        let mut local = self.local.borrow_mut();
+        local.create_value_without_name(value)
     }
 
     pub fn get_variable(&self, name: &str) -> io::Result<Value> {
         let local = self.local.borrow();
-        
-        let value = local.get_variable(name)?;
+        local.get_variable(name)
+    }
 
-        Ok(value)
+    pub fn get_variable_reference(&self, reference: u64) -> io::Result<Value> {
+        let local = self.local.borrow();
+
+        local.get_by_reference(reference)
     }
 
     pub fn define_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
@@ -66,6 +79,25 @@ impl Interpreter {
         local.assign_variable(name, value)?;
         
         Ok(())
+    }
+
+    pub fn assign_variable_by_reference(&mut self, reference: u64, value: Value) -> io::Result<()> {
+        let mut local = self.local.borrow_mut();
+
+        local.assign_variable_by_reference(reference, value)?;
+        Ok(())
+    }
+
+    pub fn same_scope(&self, reference: u64) -> bool {
+        let local = self.local.borrow();
+
+        local.same_scope_reference(reference)
+    } 
+
+    pub fn variable_exists(&self, reference: u64) -> bool {
+        let local = self.local.borrow();
+
+        local.variable_exists(reference)
     }
 
     pub fn enter_enviroment(&mut self) {

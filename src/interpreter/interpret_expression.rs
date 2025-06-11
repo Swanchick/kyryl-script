@@ -14,7 +14,7 @@ pub struct InterpretExpression<'a> {
 
 impl<'a> InterpretExpression<'a> {
     pub fn new(interpreter: &'a mut Interpreter) -> InterpretExpression<'a> {
-        InterpretExpression { interpreter: interpreter }
+        InterpretExpression { interpreter }
     }
 
     pub fn interpret_expression(&mut self, expression: Expression) -> io::Result<Value> {        
@@ -62,32 +62,47 @@ impl<'a> InterpretExpression<'a> {
                 self.interpreter.call_function(&name, args)
             },
             Expression::ListLiteral(expressions) => {
-                let mut values: Vec<Value> = Vec::new();
+                let mut references: Vec<u64> = Vec::new();
                 let mut data_type: Option<DataType> = None;
 
-                for expression in expressions {
+                for (i, expression) in expressions.iter().enumerate() {
+                    let expression = expression.clone();
                     let value = self.interpret_expression(expression)?;
-                    let value_type = value.get_type();
 
-                    if let Some(t) = &data_type {
-                        if &value.get_type().get_data_type() != t {
-                            return Err(io::Error::new(io::ErrorKind::InvalidData, "List has different values. List should consist only of one type!"));
-                        }
+                    if i == 0 {
+                        data_type = Some(value.get_type().get_data_type());
                     } else {
-                        data_type = Some(value_type.get_data_type().clone())
+                        if value.get_type().get_data_type() != data_type.clone().unwrap() {
+                            return Err(io::Error::new(io::ErrorKind::InvalidData, "List type mismatch!"))
+                        }
                     }
 
-                    values.push(value.clone());
+                    if let Some(reference) = value.get_reference() {
+                        let same_scope = self.interpreter.same_scope(reference);
+                        let is_exist = self.interpreter.variable_exists(reference);
+
+                        if is_exist {
+                            references.push(reference);
+
+                            println!("{:?}", value);
+                            
+                            if !same_scope {
+                                self.interpreter.create_reference(reference);
+                            } 
+                        }
+                    } else {
+                        let reference = self.interpreter.create_value(value);
+                        references.push(reference);
+                    }
                 }
 
-                Ok(Value::new(None, ValueType::List(values)))
+                Ok(Value::new(None, ValueType::List { references: references, data_type: data_type }))
             },
             Expression::IdentifierIndex{ left, index } => {
                 let left = self.interpret_expression(*left)?;
                 let index = self.interpret_expression(*index)?;
 
-                let value_type = self.interpret_identifier_index(left.get_type().clone(), index.get_type().clone())?;
-                let value = Value::new(None, value_type);
+                let value = self.interpret_identifier_index(left.get_type().clone(), index.get_type().clone())?;
                 Ok(value)
             },
             Expression::IntegerLiteral(value) => {
@@ -121,24 +136,26 @@ impl<'a> InterpretExpression<'a> {
         }
     }    
 
-    pub fn interpret_identifier_index(&self, left: ValueType, index: ValueType) -> io::Result<ValueType> {
+    pub fn interpret_identifier_index(&self, left: ValueType, index: ValueType) -> io::Result<Value> {
         if let ValueType::Integer(index) = index {
             match left {
                 ValueType::String(str) => {
                     let character = str.chars().nth(index as usize);
                     if let Some(character) = character {
-                        let value = ValueType::String(character.to_string());
+                        let value_type = ValueType::String(character.to_string());
     
-                        Ok(value)
+                        Ok(Value::new(None, value_type))
                     } else {
                         Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds in string."))
                     }
                 },
-    
-                ValueType::List(values) => {
-                    let child_value = values.iter().nth(index as usize);
-                    if let Some(child_value) = child_value {
-                        Ok(child_value.get_type().clone())
+                ValueType::List { references, data_type: _ } => {
+                    let child_reference = references.iter().nth(index as usize);
+                    
+                    if let Some(child_reference) = child_reference {
+                        let child_value = self.interpreter.get_variable_reference(child_reference.clone())?;
+                        
+                        Ok(child_value)
                     } else {
                         Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds!"))
                     }
