@@ -245,7 +245,7 @@ impl Environment {
             return parent.borrow().get_variable(name)
         }
 
-        Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable asdwasdw {} does not exist!", name)))
+        Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} does not exist!", name)))
     }
 }
 

@@ -1,10 +1,10 @@
-let my_list = [1, 2, 3, 4, 5, 6];
-let a = my_list[1];
+function test(): int {
+    let a = 10;
 
-println(ref(a));
-println(ref(my_list[1]));
-a = 2;
+    return a;
+}
 
-println(my_list[1]);
 
-println(a);
+let b = test();
+
+println(ref(b));

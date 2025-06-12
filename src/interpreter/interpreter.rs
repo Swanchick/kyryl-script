@@ -1,3 +1,4 @@
+use std::env::var_os;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
@@ -179,11 +180,24 @@ impl Interpreter {
 
                 let result = self.interpret_statements(body.to_vec())?;
 
-                self.exit_enviroment()?;
-
+                
                 match result {
-                    Return::Success(value) => Ok(value),
-                    Return::Nothing => Ok(Value::new(None, ValueType::Null))
+                    Return::Success(mut value) => {
+                        if let Some(reference) = value.get_reference() {
+                            if self.same_scope(reference) {
+                                value.clear_reference();
+                            }
+                        }        
+                        
+                        self.exit_enviroment()?;
+                        
+                        Ok(value)
+                    },
+                    Return::Nothing => {
+
+                        self.exit_enviroment()?;
+                        Ok(Value::new(None, ValueType::Null))
+                    }
                 }
             }
 
