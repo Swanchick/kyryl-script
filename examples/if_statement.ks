@@ -2,12 +2,10 @@
 // If statement example
 //
 
-function main() {
-    let a = 10;
+let a = 10;
 
-    if a == 10 {
-        println("Yes");
-    } else {
-        print("No");
-    }
+if a == 10 {
+    println("Yes");
+} else {
+    print("No");
 }

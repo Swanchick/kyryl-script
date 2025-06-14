@@ -152,6 +152,12 @@ impl Interpreter {
         interpret_expression.interpret_expression(expression)
     }
 
+    fn move_to_parent(&mut self, value: Value) {
+        let mut local = self.local.borrow_mut();
+
+        local.move_to_parent(value);
+    }
+
     pub fn call_function(&mut self, name: &str, args: Vec<Value>) -> io::Result<Value> {        
         let value = self.get_variable(name)?;
 
@@ -180,15 +186,21 @@ impl Interpreter {
                 }
 
                 let result = self.interpret_statements(body.to_vec())?;
-
                 
                 match result {
                     Return::Success(mut value) => {
                         if let Some(reference) = value.get_reference() {
                             if self.same_scope(reference) {
+                                if let ValueType::List { references, data_type: _ } = value.get_type() {
+                                    for reference in references {
+                                        let list_value = self.get_variable_reference(*reference)?;
+                                        self.move_to_parent(list_value);
+                                    }
+                                }
+
                                 value.clear_reference();
                             }
-                        }        
+                        }
                         
                         self.exit_enviroment()?;
                         

@@ -217,7 +217,19 @@ impl Environment {
         }
     }
 
-    // pub fn create_list(&self, )
+    pub fn create_by_value(&mut self, value: Value) {
+        if let Some(reference) = value.get_reference() {
+            self.references.insert(reference, VariableSlot::Variable(value));
+        }
+    }
+
+    pub fn move_to_parent(&mut self, value: Value) {
+        if let Some(parent) = self.parent.clone() {
+            let mut parent = parent.borrow_mut();
+
+            parent.create_by_value(value);
+        }
+    }
 
     pub fn get_variable(&self, name: &str) -> io::Result<Value> {
         if let Some(reference) = self.values.get(name) {

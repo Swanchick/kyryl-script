@@ -1,12 +1,8 @@
-function test(some_shit: int) {
-    some_shit?{
-        println("Early return works!");
-    };
-
-    println("Some shit: ", some_shit);
+function test(): [int] {
+    let a = [10, 20, 30, 40, 50];
+    return a;
 }
 
-test(123);
+let b = test();
 
-test(null);
-
+println(b[0]);
