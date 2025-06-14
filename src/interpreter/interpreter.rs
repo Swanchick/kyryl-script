@@ -4,6 +4,7 @@ use std::cell::RefCell;
 use std::io;
 
 use crate::native_registry::native_registry::NativeRegistry;
+use crate::parser::data_type::DataType;
 use crate::parser::expression::Expression;
 use crate::parser::statement::Statement;
 
@@ -167,7 +168,7 @@ impl Interpreter {
                 self.enter_enviroment();
 
                 for (arg, parameter) in args.iter().zip(parameters) {
-                    if arg.get_type().get_data_type() != parameter.data_type {
+                    if arg.get_type().get_data_type() != parameter.data_type && !DataType::is_void(&arg.get_data_type()) {
                         return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
                     }
 

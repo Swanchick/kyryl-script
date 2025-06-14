@@ -1,6 +1,7 @@
 use std::io;
 
 
+use crate::interpreter::interpret_statement;
 use crate::parser::statement::Statement;
 use crate::parser::data_type::DataType;
 
@@ -156,6 +157,27 @@ impl<'a> InterpretStatement<'a> {
             },
             Statement::Function { name, return_type, parameters, body } => {
                 self.interpreter.define_variable(name.clone().as_str(), Value::new(None, ValueType::Function { name: name, return_type: return_type, parameters: parameters, body: body }))?;
+                
+                Ok(Return::Nothing)
+            }
+
+            Statement::EarlyReturn { name, body } => {
+                let value = self.interpreter.get_variable(&name)?;
+
+                if DataType::is_void(&value.get_data_type()) {
+                    let return_data = if let Some(body) = body {
+                        let return_result = self.interpret_block(body)?;
+
+                        match return_result {
+                            Return::Success(_) => return_result,
+                            Return::Nothing => Return::Success(Value::new(None, ValueType::Null))
+                        }
+                    } else {
+                        Return::Success(Value::new(None, ValueType::Null))
+                    };
+
+                    return Ok(return_data);
+                }
                 
                 Ok(Return::Nothing)
             }

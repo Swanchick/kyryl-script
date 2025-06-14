@@ -61,6 +61,10 @@ impl Value {
     pub fn clear_reference(&mut self) {
         self.reference = None;
     }
+
+    pub fn get_data_type(&self) -> DataType {
+        self.value_type.get_data_type()
+    }
 }
 
 impl ValueType {

@@ -149,7 +149,10 @@ impl Parser {
 
                     return Ok(Statement::AssigmentIndex { name: name, index: indexes, value: value });
                 }
-            } 
+            } else if self.match_token(&Token::Question) {
+                
+                return self.parse_early_return(name);
+            }
         }
 
         self.back();
@@ -199,6 +202,18 @@ impl Parser {
                 body: block 
             }
         )
+    }
+
+    fn parse_early_return(&mut self, name: String) -> io::Result<Statement> {
+        let body: Option<Vec<Statement>> = if self.match_token(&Token::LeftBrace) {
+            Some(self.parse_block_statement()?)
+        } else {
+            None
+        };
+
+        self.consume_token(Token::Semicolon)?;
+
+        Ok(Statement::EarlyReturn { name: name, body: body })
     }
 
     fn parse_for_statement(&mut self) -> io::Result<Statement> {

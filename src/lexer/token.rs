@@ -1,6 +1,6 @@
 use std::fmt;
 
-const SYMBOLS: &str = "()[]{}<>;:=+-*/~,^&|/";
+const SYMBOLS: &str = "()[]{}<>;:=+-*/~,^&|/?";
 
 pub const COMMENT: &str = "//";
 
@@ -60,6 +60,7 @@ pub fn get_symbol(c: &str) -> Option<Token> {
         ">=" => Some(Token::GreaterEqual),
         "&&" => Some(Token::AmpersandAmpersand),
         "||" => Some(Token::PipePipe),
+        "?" => Some(Token::Question),
         _ => None
     }
 }
@@ -103,6 +104,7 @@ pub enum Token {
     GreaterEqual, // >=
     AmpersandAmpersand, // &&
     PipePipe, // ||
+    Question, // ?
 }
 
 impl fmt::Display for Token {
@@ -141,6 +143,7 @@ impl fmt::Display for Token {
             Token::GreaterEqual => write!(f, "greater equal"),
             Token::AmpersandAmpersand => write!(f, "ampersand ampersand"),
             Token::PipePipe => write!(f, "pipe pipe"),
+            Token::Question => write!(f, "question")
         }
     }
 }

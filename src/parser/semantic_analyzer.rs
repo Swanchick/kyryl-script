@@ -231,7 +231,7 @@ impl SemanticAnalyzer {
                         for (call_parameter, parameter) in call_parameters.iter().zip(parameters) {
                             let call_parameter = self.get_data_type(call_parameter)?;
 
-                            if call_parameter != parameter {
+                            if call_parameter != parameter && !DataType::is_void(&call_parameter) {
                                 return Err(io::Error::new(io::ErrorKind::InvalidData, "Function signature mismatch"));
                             }
                         }

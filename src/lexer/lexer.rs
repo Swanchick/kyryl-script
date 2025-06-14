@@ -20,7 +20,7 @@ pub struct Lexer {
 impl Lexer {
     pub fn new(source: String) -> Lexer {
         let source_lines: Vec<String> = source.lines().map(|s| s.to_string()).collect();
-        
+
         Lexer {
             tokens: Vec::new(),
             token_pos: Vec::new(),

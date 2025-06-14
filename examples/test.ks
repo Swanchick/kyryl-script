@@ -1,10 +1,12 @@
-function test(): int {
-    let a = 10;
+function test(some_shit: int) {
+    some_shit?{
+        println("Early return works!");
+    };
 
-    return a;
+    println("Some shit: ", some_shit);
 }
 
+test(123);
 
-let b = test();
+test(null);
 
-println(ref(b));

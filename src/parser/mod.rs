@@ -7,3 +7,4 @@ pub mod operator;
 pub mod semantic_analyzer;
 
 mod analyzer_enviroment;
+mod context;

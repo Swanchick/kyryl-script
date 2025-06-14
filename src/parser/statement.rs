@@ -52,5 +52,9 @@ pub enum Statement {
         return_type: DataType,
         parameters: Vec<Parameter>,
         body: Vec<Statement>
+    },
+    EarlyReturn {
+        name: String,
+        body: Option<Vec<Statement>>
     }
 }
