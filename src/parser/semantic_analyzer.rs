@@ -175,14 +175,18 @@ impl SemanticAnalyzer {
 
     fn tuple_index(&self, mut left: DataType, indeces: &Vec<i32>) -> io::Result<DataType> {
         for index in indeces {
+            let index = *index as usize;
+
             if let DataType::Tuple(children) = &left {
-                left = children[*index as usize].clone();
+                if index > children.len() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Tuple out of index!"))
+                }
+                
+                left = children[index].clone();
             } else {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid data in tuple indexing operation!"));
             }
         }
-
-        println!("{:?}", left);
 
         Ok(left)
     }

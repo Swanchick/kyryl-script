@@ -127,7 +127,26 @@ impl<'a> InterpretExpression<'a> {
                 Ok(Value::new(None, ValueType::Tuple { references: references, data_types: DataType::Tuple(data_types) }))
             },
             Expression::TupleIndex { left, indeces } => {
-                todo!()
+                let mut value = self.interpret_expression(*left)?;
+                
+                
+                for index in indeces {
+                    let index = index as usize;
+                    let value_type = value.get_type();
+                    
+                    if let ValueType::Tuple { references, data_types: _} = value_type {
+                        if index >= references.len() {
+                            return Err(io::Error::new(io::ErrorKind::InvalidData, "Tuple out of index!"))
+                        }
+
+                        let reference = references[index];
+                        value = self.interpreter.get_variable_reference(reference)?;
+                    } else {
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot take element from tuple, since it's not tuple!"));
+                    }
+                }
+
+                Ok(value)
             },
             Expression::IdentifierIndex{ left, index } => {
                 let left = self.interpret_expression(*left)?;
