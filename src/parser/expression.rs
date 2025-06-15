@@ -10,9 +10,14 @@ pub enum Expression {
     Identifier(String),
     FunctionCall(String, Vec<Expression>),
     ListLiteral(Vec<Expression>),
+    TupleLiteral(Vec<Expression>),
     IdentifierIndex {
         left: Box<Expression>,
         index: Box<Expression>
+    },
+    TupleIndex {
+        left: Box<Expression>,
+        indeces: Vec<i32>
     },
     BinaryOp {
         left: Box<Expression>,

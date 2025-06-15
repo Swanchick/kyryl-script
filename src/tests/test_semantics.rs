@@ -26,7 +26,7 @@ fn test_variable_declatarion_with_type_error() {
     let err = parser.parse_block_statement().unwrap_err();
 
 
-    assert_eq!(err.to_string(), "Differenet data types in expression and actual data type.")
+    assert_eq!(err.to_string(), "Different data types in expression and actual data type.")
 }
 
 
@@ -60,7 +60,7 @@ fn test_function_enviroment_parameters_error() {
     lexer.lexer().unwrap();
 
     let mut parser = Parser::new(lexer.get_tokens().clone(), &NativeRegistry::new(), lexer.get_token_pos().clone());
-    assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Differenet data types in expression and actual data type.");
+    assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Different data types in expression and actual data type.");
 }
 
 #[test]
@@ -196,3 +196,20 @@ fn test_function_assigment_error() {
     let mut parser = Parser::new(lexer.get_tokens().clone(), &NativeRegistry::new(), lexer.get_token_pos().clone());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Assigment value mismatch!");
 }
+
+
+#[test]
+fn test_function_tuple_index() {    
+    let source = concat!(
+        "let a: ((int, bool), string) = ((123, true), \"Hello\");\n",
+        "let b: string = a.0 .1;\n"
+    );
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone(), &NativeRegistry::new(), lexer.get_token_pos().clone());
+
+    assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Different data types in expression and actual data type.")
+}
+

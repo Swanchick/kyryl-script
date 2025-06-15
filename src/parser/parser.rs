@@ -1,6 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token_pos::TokenPos;
 use crate::native_registry::native_registry::NativeRegistry;
+use crate::parser::{data_type, expression};
 
 use super::operator::Operator;
 use super::data_type::DataType;
@@ -278,7 +279,7 @@ impl Parser {
         
         if let Some(data_type_to_check) = &data_type {
             if dt != data_type_to_check.clone() && !DataType::is_void(&dt) {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, "Differenet data types in expression and actual data type."));
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "Different data types in expression and actual data type."));
             } 
         }
 
@@ -555,8 +556,8 @@ impl Parser {
     }
 
     fn parse_identifier_index(&mut self) -> io::Result<Expression> {
-        let left = self.parse_primary()?;
-        
+        let left = self.parse_tuple_index()?;
+
         if self.match_token(&Token::LeftSquareBracket) {
             let mut index: Option<Expression> = None;
             
@@ -582,16 +583,62 @@ impl Parser {
         }
     }
 
+    fn parse_tuple_index(&mut self) -> io::Result<Expression> {
+        let left = self.parse_primary()?;
+
+        if self.match_token(&Token::Dot) {
+            let mut indeces: Vec<i32> = Vec::new();
+
+            loop {
+                if let Token::IntegerLiteral(index) = self.peek() {
+                    indeces.push(*index);
+                    self.advance();
+                }
+
+                if !self.match_token(&Token::Dot) {
+                    break;
+                }
+            }
+
+            Ok(Expression::TupleIndex { left: Box::new(left), indeces: indeces })
+
+        } else {
+            Ok(left)
+        }
+    }
+
     fn parse_primary(&mut self) -> io::Result<Expression> {
         match self.peek() {
             Token::LeftParenthesis => {
                 self.advance();
                 let expression = self.parse_expression()?;
                 
-                if !self.match_token(&Token::RightParenthesis) {
-                    Err(io::Error::new(io::ErrorKind::InvalidData, "Expected closed expression with right parenthesis."))
-                } else {
-                    Ok(expression)
+                match self.peek() {
+                    Token::RightParenthesis => {
+                        self.advance();
+                        Ok(expression)
+                    },
+
+                    Token::Comma => {
+                        let mut expressions: Vec<Expression> = vec![expression];
+                        self.advance();
+
+                        loop {
+                            let expression = self.parse_expression()?;
+
+                            expressions.push(expression);
+
+                            if !self.match_token(&Token::Comma) {
+                                break;
+                            }
+                        }
+
+                        self.consume_token(Token::RightParenthesis)?;
+
+                        Ok(Expression::TupleLiteral(expressions))
+                    }
+
+                    _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Expected closed expression with right parenthesis."))
                 }
             },
             Token::LeftSquareBracket => {
@@ -696,12 +743,29 @@ impl Parser {
                     _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected type got {}", data_type_str)))
                 }
             },
-            Token::LeftSquareBracket => { // Parsing a list data type
+            Token::LeftSquareBracket => {
                 let data_type = self.consume_data_type()?;
                 self.consume_token(Token::RightSquareBracket)?;
 
                 Ok(DataType::List(Box::new(data_type)))
             },
+            Token::LeftParenthesis => {
+                let mut data_types: Vec<DataType> = Vec::new();
+
+                loop {
+                    let data_type = self.consume_data_type()?;
+
+                    data_types.push(data_type);
+
+                    if !self.match_token(&Token::Comma) {
+                        break;
+                    }
+                }
+
+                self.consume_token(Token::RightParenthesis)?;
+
+                Ok(DataType::Tuple(data_types))
+            }
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Expected keyword!"))
         }
     }

@@ -1,8 +1,3 @@
-function test(): [int] {
-    let a = [10, 20, 30, 40, 50];
-    return a;
-}
+let a = ((123, true), "Hello!");
 
-let b = test();
-
-println(b[0]);
+let b: bool = a.0 .1;

@@ -3,6 +3,7 @@ use std::rc::Rc;
 use std::io;
 
 use crate::native_registry::rust_function::RustFunction;
+use crate::parser::{data_type, expression};
 use crate::parser::operator::Operator;
 
 use super::analyzer_enviroment::AnalyzerEnviroment;
@@ -172,6 +173,20 @@ impl SemanticAnalyzer {
         }
     }
 
+    fn tuple_index(&self, mut left: DataType, indeces: &Vec<i32>) -> io::Result<DataType> {
+        for index in indeces {
+            if let DataType::Tuple(children) = &left {
+                left = children[*index as usize].clone();
+            } else {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid data in tuple indexing operation!"));
+            }
+        }
+
+        println!("{:?}", left);
+
+        Ok(left)
+    }
+
     pub fn get_data_type(&self, expression: &Expression) -> io::Result<DataType> {
         match expression {
             Expression::BinaryOp { left, operator, right } => {
@@ -210,6 +225,12 @@ impl SemanticAnalyzer {
 
                 Ok(DataType::List(Box::new(first)))
             },
+
+            Expression::TupleIndex { left, indeces } => {
+                let left = self.get_data_type(&left)?;
+
+                self.tuple_index(left, indeces)
+            },
             
             Expression::Identifier(name) => {
                 match self.enviroment.borrow().get_variable_type(name) {
@@ -246,11 +267,22 @@ impl SemanticAnalyzer {
 
             Expression::IdentifierIndex { left, index } => {
                 let left = self.get_data_type(left)?;
-                let index = self.get_data_type(index)?;
+                let index_type = self.get_data_type(index)?;
 
-                self.identefier_index(left, index)
+                self.identefier_index(left, index_type)
             },
 
+            Expression::TupleLiteral(expressions) => {
+                let mut data_types: Vec<DataType> = Vec::new();
+
+                for expression in expressions {
+                    let data_type = self.get_data_type(expression)?;
+                    data_types.push(data_type);
+                }
+
+                Ok(DataType::Tuple(data_types))
+            },
+            
             Expression::IntegerLiteral(_) => Ok(DataType::Int),
             Expression::FloatLiteral(_) => Ok(DataType::Float),
             Expression::StringLiteral(_) => Ok(DataType::String),

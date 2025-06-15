@@ -1,6 +1,7 @@
 use std::io;
 
-use crate::parser::expression::Expression;
+use crate::interpreter::{interpret_expression, value};
+use crate::parser::expression::{self, Expression};
 use crate::parser::operator::Operator;
 use crate::parser::data_type::DataType;
 
@@ -63,16 +64,16 @@ impl<'a> InterpretExpression<'a> {
             },
             Expression::ListLiteral(expressions) => {
                 let mut references: Vec<u64> = Vec::new();
-                let mut data_type: Option<DataType> = None;
+                let mut data_type: DataType = DataType::List(Box::new(DataType::void()));
 
                 for (i, expression) in expressions.iter().enumerate() {
                     let expression = expression.clone();
                     let value = self.interpret_expression(expression)?;
 
                     if i == 0 {
-                        data_type = Some(value.get_type().get_data_type());
+                        data_type = value.get_type().get_data_type();
                     } else {
-                        if value.get_type().get_data_type() != data_type.clone().unwrap() {
+                        if value.get_type().get_data_type() != data_type.clone() {
                             return Err(io::Error::new(io::ErrorKind::InvalidData, "List type mismatch!"))
                         }
                     }
@@ -83,8 +84,6 @@ impl<'a> InterpretExpression<'a> {
 
                         if is_exist {
                             references.push(reference);
-
-                            println!("{:?}", value);
                             
                             if !same_scope {
                                 self.interpreter.create_reference(reference);
@@ -97,6 +96,38 @@ impl<'a> InterpretExpression<'a> {
                 }
 
                 Ok(Value::new(None, ValueType::List { references: references, data_type: data_type }))
+            },
+            Expression::TupleLiteral(expressions) => {
+                let mut references: Vec<u64> = Vec::new();
+                let mut data_types: Vec<DataType> = Vec::new();
+
+                for expression in expressions.iter() {
+                    let expression = expression.clone();
+                    let value = self.interpret_expression(expression)?;
+
+                    data_types.push(value.get_data_type());
+                    
+                    if let Some(reference) = value.get_reference() {
+                        let same_scope = self.interpreter.same_scope(reference);
+                        let is_exist = self.interpreter.variable_exists(reference);
+
+                        if is_exist {
+                            references.push(reference);
+                            
+                            if !same_scope {
+                                self.interpreter.create_reference(reference);
+                            } 
+                        }
+                    } else {
+                        let reference = self.interpreter.create_value(value);
+                        references.push(reference);
+                    }
+                }
+
+                Ok(Value::new(None, ValueType::Tuple { references: references, data_types: DataType::Tuple(data_types) }))
+            },
+            Expression::TupleIndex { left, indeces } => {
+                todo!()
             },
             Expression::IdentifierIndex{ left, index } => {
                 let left = self.interpret_expression(*left)?;

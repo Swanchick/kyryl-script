@@ -1,5 +1,6 @@
 use std::vec;
 
+use crate::parser::expression;
 use crate::*;
 use lexer::lexer::Lexer;
 use lexer::token::Token;
@@ -409,5 +410,20 @@ fn test_parser_index_assingment_statment() {
     let statement = parser.parse_statement().unwrap();
 
     assert_eq!(statement, test_statement);
+}
+
+#[test]
+fn test_parser_tuple() {
+    let test_expression = Expression::TupleLiteral(vec![Expression::IntegerLiteral(10), Expression::StringLiteral(String::from("Kurwa"))]);
+
+    let mut lexer = Lexer::new(String::from("(10, \"Kurwa\")"));
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone(), &NativeRegistry::new(), Vec::new());
+    let expression = parser.parse_expression().unwrap();
+
+    assert_eq!(expression, test_expression)
+
+
 }
 

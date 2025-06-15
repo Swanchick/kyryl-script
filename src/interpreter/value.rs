@@ -13,7 +13,11 @@ pub enum ValueType {
     Null,
     List {
         references: Vec<u64>,
-        data_type: Option<DataType>
+        data_type: DataType
+    },
+    Tuple {
+        references: Vec<u64>,
+        data_types: DataType
     },
     RustFunction {
         function: fn(args: Vec<Value>) -> io::Result<Value>,
@@ -84,17 +88,9 @@ impl ValueType {
                 DataType::Function { parameters: parameter_types, return_type: Box::new(return_type.clone()) }
             },
             ValueType::RustFunction { function: _, return_type } => DataType::RustFunction { return_type: Box::new(return_type.clone()) },
-            ValueType::List { references: _, data_type } => {
-                match data_type {
-                    Some(data_type) => {
-                        data_type.clone()
-                    },
-                    None => {
-                        DataType::List(Box::new(DataType::void()))
-                    }
-                }
-            },
+            ValueType::List { references: _, data_type } => data_type.clone(),
             ValueType::Null => DataType::void(),
+            ValueType::Tuple { references: _, data_types } => data_types.clone()
         }
     }
 }
