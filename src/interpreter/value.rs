@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::parser::data_type::{self, DataType};
+use crate::parser::data_type::DataType;
 use crate::parser::parameter::Parameter;
 use crate::parser::statement::Statement;
 

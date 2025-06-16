@@ -189,15 +189,18 @@ impl Interpreter {
                 
                 match result {
                     Return::Success(mut value) => {
+                        match value.get_type() {
+                            ValueType::List { references, data_type: _ } | ValueType::Tuple { references, data_types: _ } => {
+                                for reference in references {
+                                    let list_value = self.get_variable_reference(*reference)?;
+                                    self.move_to_parent(list_value);
+                                }
+                            },
+                            _ => {}
+                        }
+                        
                         if let Some(reference) = value.get_reference() {
                             if self.same_scope(reference) {
-                                if let ValueType::List { references, data_type: _ } = value.get_type() {
-                                    for reference in references {
-                                        let list_value = self.get_variable_reference(*reference)?;
-                                        self.move_to_parent(list_value);
-                                    }
-                                }
-
                                 value.clear_reference();
                             }
                         }

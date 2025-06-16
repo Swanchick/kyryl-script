@@ -1,4 +1,5 @@
-let a = ((123, true), "Hello!");
-let b: bool = a.0 .1;
+function test_pos(): (int, int) {
+    return (500, 600);
+}
 
-println(b);
+println(test_pos().0);

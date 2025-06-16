@@ -51,6 +51,8 @@ impl DataType {
 
                     if i != len - 1 {
                         out.push_str(", ");
+                    } else {
+                        out.push(')');
                     }
                 }
 
