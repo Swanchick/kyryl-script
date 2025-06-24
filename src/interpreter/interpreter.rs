@@ -1,4 +1,3 @@
-use std::env::var_os;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
@@ -20,21 +19,21 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new(native_registry: &NativeRegistry) -> Interpreter {
-        let global = Rc::new(RefCell::new(Environment::new()));
-
-        for (name, function) in native_registry.get() {
-            let rust_function = ValueType::RustFunction { 
-                function: function.function.clone(), 
-                return_type: function.return_type.clone() 
-            };
-
-            let _ = global.borrow_mut().define_variable(name.to_string(), Value::new(None, rust_function));
-        }
-
+    pub fn new(global: Rc<RefCell<Environment>>) -> Interpreter {
+        let local = Rc::new(RefCell::new(Environment::new()));
+        
         Interpreter {
             global: global.clone(),
-            local: global,
+            local: local,
+        }
+    }
+
+    pub fn empty() -> Interpreter {
+        let local = Rc::new(RefCell::new(Environment::new()));
+        
+        Interpreter {
+            global: local.clone(),
+            local: local,
         }
     }
 
