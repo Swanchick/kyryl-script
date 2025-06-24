@@ -2,8 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::io;
 
-use crate::native_registry::rust_function::RustFunction;
-use crate::parser::{data_type, expression};
+use crate::native_registry::native_function::NativeFunction;
 use crate::parser::operator::Operator;
 
 use super::analyzer_enviroment::AnalyzerEnviroment;
@@ -23,7 +22,7 @@ impl SemanticAnalyzer {
         }
     }
 
-    pub fn register_rust_function(&mut self, name: String, function: &RustFunction) {
+    pub fn register_rust_function(&mut self, name: String, function: &NativeFunction) {
         self.enviroment.borrow_mut().add(name, DataType::RustFunction { return_type: Box::new(function.return_type.clone()) });
     }
 

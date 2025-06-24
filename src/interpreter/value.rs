@@ -19,10 +19,6 @@ pub enum ValueType {
         references: Vec<u64>,
         data_types: DataType
     },
-    RustFunction {
-        function: fn(args: Vec<Value>) -> io::Result<Value>,
-        return_type: DataType
-    },
     Function {
         name: String,
         return_type: DataType,
@@ -87,7 +83,6 @@ impl ValueType {
 
                 DataType::Function { parameters: parameter_types, return_type: Box::new(return_type.clone()) }
             },
-            ValueType::RustFunction { function: _, return_type } => DataType::RustFunction { return_type: Box::new(return_type.clone()) },
             ValueType::List { references: _, data_type } => data_type.clone(),
             ValueType::Null => DataType::void(),
             ValueType::Tuple { references: _, data_types } => data_types.clone()

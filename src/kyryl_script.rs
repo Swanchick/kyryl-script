@@ -3,10 +3,12 @@ use std::rc::Rc;
 use std::io;
 
 use crate::lexer::lexer::Lexer;
+use crate::native_registry::native_registry::NativeRegistry;
 use crate::parser::parser::Parser;
 use crate::interpreter::enviroment::Environment;
 use crate::interpreter::interpreter::Interpreter;
 
+use crate::ks_std::register_standart_library;
 
 pub struct KyrylScript {
     global: Rc<RefCell<Environment>>,
@@ -34,6 +36,9 @@ impl KyrylScript {
     }
     
     pub fn run_from_file(&mut self, path: &str) -> io::Result<()> {
+
+        register_standart_library();
+
         let mut lexer = Lexer::load(path)?;
         lexer.lexer()?;
 

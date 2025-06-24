@@ -1,6 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token_pos::TokenPos;
 use crate::native_registry::native_registry::NativeRegistry;
+use crate::native_registry::native_types::NativeTypes;
 
 use super::operator::Operator;
 use super::data_type::DataType;
@@ -21,11 +22,20 @@ pub struct Parser {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>, token_pos: Vec<TokenPos>) -> Self {
-        let semantic_analyzer = SemanticAnalyzer::new();
+        let mut semantic_analyzer = SemanticAnalyzer::new();
         
-        // for (name, function) in native_registry.get() {
-        //     semantic_analyzer.register_rust_function(name.clone(), function);
-        // }
+        let registry = NativeRegistry::get();
+        {
+            let registry = registry.borrow();
+
+            for (name, native) in registry.get_natives() {
+                match native {
+                    NativeTypes::NativeFunction(function) => {
+                        semantic_analyzer.register_rust_function(name.clone(), function);
+                    }
+                }
+            }
+        }
         
         Parser {
             tokens,

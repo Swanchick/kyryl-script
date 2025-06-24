@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::io;
 
 use crate::native_registry::native_registry::NativeRegistry;
+use crate::native_registry::native_types::NativeTypes;
 use crate::parser::data_type::DataType;
 use crate::parser::expression::Expression;
 use crate::parser::statement::Statement;
@@ -13,6 +14,7 @@ use super::interpret_statement::InterpretStatement;
 use super::return_value::Return;
 use super::value::{Value, ValueType};
 
+#[derive(Debug)]
 pub struct Interpreter {
     global: Rc<RefCell<Environment>>,
     local: Rc<RefCell<Environment>>,
@@ -158,65 +160,74 @@ impl Interpreter {
     }
 
     pub fn call_function(&mut self, name: &str, args: Vec<Value>) -> io::Result<Value> {        
+        let registry = NativeRegistry::get();
+        {
+            let registry = registry.borrow();
+            let native = registry.get_native(name);
+
+            match native {
+                Some(NativeTypes::NativeFunction(native_function)) => {
+                    let value = (native_function.function)(args.clone())?;
+
+                    return Ok(value);
+                },
+                _ => {}
+            }
+        }
+
         let value = self.get_variable(name)?;
 
-        match value.get_type() {
-            ValueType::RustFunction { function, return_type: _ }=> {
-                function(args)
-            },
+        if let ValueType::Function { name, return_type: _, parameters, body } = value.get_type() {
+            if args.len() != parameters.len() {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
+            }
 
-            ValueType::Function { name, return_type: _, parameters, body } => {
-                if args.len() != parameters.len() {
+            self.enter_enviroment();
+
+            for (arg, parameter) in args.iter().zip(parameters) {
+                if arg.get_type().get_data_type() != parameter.data_type && !DataType::is_void(&arg.get_data_type()) {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
                 }
 
-                self.enter_enviroment();
-
-                for (arg, parameter) in args.iter().zip(parameters) {
-                    if arg.get_type().get_data_type() != parameter.data_type && !DataType::is_void(&arg.get_data_type()) {
-                        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
-                    }
-
-                    if let Some(reference) = arg.get_reference() {
-                        self.define_variable_by_reference(parameter.name.as_str(), reference)?;
-                    } else {
-                        self.define_variable(parameter.name.as_str(), arg.clone())?;
-                    }
-                }
-
-                let result = self.interpret_statements(body.to_vec())?;
-                
-                match result {
-                    Return::Success(mut value) => {
-                        match value.get_type() {
-                            ValueType::List { references, data_type: _ } | ValueType::Tuple { references, data_types: _ } => {
-                                for reference in references {
-                                    let list_value = self.get_variable_reference(*reference)?;
-                                    self.move_to_parent(list_value);
-                                }
-                            },
-                            _ => {}
-                        }
-                        
-                        if let Some(reference) = value.get_reference() {
-                            if self.same_scope(reference) {
-                                value.clear_reference();
-                            }
-                        }
-                        
-                        self.exit_enviroment()?;
-                        
-                        Ok(value)
-                    },
-                    Return::Nothing => {
-
-                        self.exit_enviroment()?;
-                        Ok(Value::new(None, ValueType::Null))
-                    }
+                if let Some(reference) = arg.get_reference() {
+                    self.define_variable_by_reference(parameter.name.as_str(), reference)?;
+                } else {
+                    self.define_variable(parameter.name.as_str(), arg.clone())?;
                 }
             }
 
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} is not a function!", name)))
+            let result = self.interpret_statements(body.to_vec())?;
+            
+            match result {
+                Return::Success(mut value) => {
+                    match value.get_type() {
+                        ValueType::List { references, data_type: _ } | ValueType::Tuple { references, data_types: _ } => {
+                            for reference in references {
+                                let list_value = self.get_variable_reference(*reference)?;
+                                self.move_to_parent(list_value);
+                            }
+                        },
+                        _ => {}
+                    }
+                    
+                    if let Some(reference) = value.get_reference() {
+                        if self.same_scope(reference) {
+                            value.clear_reference();
+                        }
+                    }
+                    
+                    self.exit_enviroment()?;
+                    
+                    return Ok(value);
+                },
+                Return::Nothing => {
+
+                    self.exit_enviroment()?;
+                    return Ok(Value::new(None, ValueType::Null));
+                }
+            }
         }
+
+        Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} is not a function!", name)))
     }
 }

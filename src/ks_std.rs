@@ -2,8 +2,9 @@
 use std::io;
 
 use crate::interpreter::value::{Value, ValueType};
+use crate::native_registry::native_buffer::NativeBuffer;
 use crate::native_registry::native_registry::NativeRegistry;
-use crate::native_registry::rust_function::RustFunction;
+use crate::native_registry::native_function::NativeFunction;
 use crate::parser::data_type::DataType;
 
 fn ks_print(args: Vec<Value>) -> io::Result<Value> {
@@ -61,24 +62,6 @@ fn ks_len(args: Vec<Value>) -> io::Result<Value> {
     }
 }
 
-// fn ks_range(args: Vec<Value>) -> io::Result<Value> {
-//     if args.len() > 1 {
-//         return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
-//     }
-
-//     if let ValueType::Integer(n) = args[0].get_type() {
-//         let mut out: Vec<Value> = Vec::new();
-
-//         for i in 0..*n {
-//             out.push(Value::new(None, ValueType::Integer(i)));
-//         }
-
-//         Ok(Value::new(None, ValueType::List(out)))
-//     } else {
-//         Err(io::Error::new(io::ErrorKind::InvalidData, "Wrong argument type!"))
-//     }
-// }
-
 fn ks_ref(args: Vec<Value>) -> io::Result<Value> {
     if args.len() > 1 {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!")); 
@@ -93,11 +76,16 @@ fn ks_ref(args: Vec<Value>) -> io::Result<Value> {
     }
 }
 
-pub fn register_standart_library(native_registry: &mut NativeRegistry) {    
-    native_registry.register_function("println", RustFunction::from(ks_println, DataType::void()));
-    native_registry.register_function("print", RustFunction::from(ks_print, DataType::void()));
-    native_registry.register_function("len", RustFunction::from(ks_len, DataType::Int));
-    // native_registry.register_function("range", RustFunction::from(ks_range, DataType::List(Box::new(DataType::Int))));
-    native_registry.register_function("ref", RustFunction::from(ks_ref, DataType::Int));
-    // native_registry.register_function("clone", RustFunction::from(ks_clone, DataType::List(Box::new(DataType::void()))));
+pub fn register_standart_library() {
+    let mut buffer = NativeBuffer::new();
+
+    buffer.add_function("print", NativeFunction::process(ks_print));
+    buffer.add_function("println", NativeFunction::process(ks_println));
+
+    let registry = NativeRegistry::get();
+    {
+        let mut registry = registry.borrow_mut();
+
+        registry.add_buffer(buffer);
+    }
 }
