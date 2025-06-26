@@ -22,8 +22,18 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new(global: Rc<RefCell<Environment>>) -> Interpreter {
-        let local = Rc::new(RefCell::new(Environment::new()));
+        let local = Rc::new(RefCell::new(Environment::with_parent(global.clone())));
         
+        let native = NativeRegistry::get();
+        {
+            let mut native = native.borrow_mut();
+            if let None = native.global {
+                native.global = Some(global.clone());
+            }
+
+            native.local = Some(local.clone());
+        }
+
         Interpreter {
             global: global.clone(),
             local: local,
@@ -78,9 +88,9 @@ impl Interpreter {
 
     pub fn assign_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
         let mut local = self.local.borrow_mut();
-        
+
         local.assign_variable(name, value)?;
-        
+
         Ok(())
     }
 
@@ -105,8 +115,16 @@ impl Interpreter {
 
     pub fn enter_enviroment(&mut self) {
         let previous = self.local.clone();
+        let new_local = Rc::new(RefCell::new(Environment::with_parent(previous)));
+        
+        let native = NativeRegistry::get();
+        {
+            let mut native = native.borrow_mut();
 
-        self.local = Rc::new(RefCell::new(Environment::with_parent(previous)));
+            native.local = Some(new_local.clone());
+        }
+
+        self.local = new_local;
     }
 
     pub fn exit_enviroment(&mut self) -> io::Result<()> {
@@ -121,7 +139,14 @@ impl Interpreter {
             }
         };
 
-        if let Some(env) = new_env {
+        if let Some(env) = new_env {            
+            let native = NativeRegistry::get();
+            {
+                let mut native = native.borrow_mut();
+
+                native.local = Some(env.clone());
+            }
+            
             self.local = env;
             Ok(())
         } else {

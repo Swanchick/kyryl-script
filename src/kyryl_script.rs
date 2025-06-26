@@ -12,13 +12,13 @@ use crate::ks_std::register_standart_library;
 
 pub struct KyrylScript {
     global: Rc<RefCell<Environment>>,
-    interpreter: Interpreter,
+    interpreter: Rc<RefCell<Interpreter>>,
 }
 
 impl KyrylScript {
     pub fn new() -> KyrylScript {
         let global = Rc::new(RefCell::new(Environment::new()));
-        let interpreter = Interpreter::new(global.clone());
+        let interpreter = Rc::new(RefCell::new(Interpreter::new(global.clone())));
         
         KyrylScript {
             global,
@@ -27,7 +27,7 @@ impl KyrylScript {
     }
 
     pub fn with_global(global: Rc<RefCell<Environment>>) -> KyrylScript {
-        let interpreter = Interpreter::new(global.clone());
+        let interpreter = Rc::new(RefCell::new(Interpreter::new(global.clone())));
         
         KyrylScript {
             global: global.clone(),
@@ -36,7 +36,6 @@ impl KyrylScript {
     }
     
     pub fn run_from_file(&mut self, path: &str) -> io::Result<()> {
-
         register_standart_library();
 
         let mut lexer = Lexer::load(path)?;
@@ -56,8 +55,9 @@ impl KyrylScript {
         }
 
         let block = block?;
+        let mut interpreter = self.interpreter.borrow_mut();
 
-        let interpreter_result = self.interpreter.interpret_statements(block);
+        let interpreter_result = interpreter.interpret_statements(block);
 
         if let Err(e) = interpreter_result {
             return Err(io::Error::new(

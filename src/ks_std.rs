@@ -18,15 +18,26 @@ fn ks_print(args: Vec<Value>) -> io::Result<Value> {
             ValueType::String(var) => print!("{}", var),
             ValueType::List { references, data_type: _ } => {
                 print!("[");
+                
                 for (i, reference) in references.iter().enumerate() {
-                    print!("&{}", reference);
-                    // ks_print(vec![Value::new(None, var.clone().get_type().clone())])?;
+                    let native = NativeRegistry::get();
+                    {
+                        let native = native.borrow();
+                        let env = &native.local;
+                        if let Some(env) = env {
+                            let env = env.borrow();
 
-                    if i != references.len() - 1 {
-                        print!(", ")
+                            let value = env.get_by_reference(reference.clone())?;
+                            ks_print(vec![value])?;
+                        }
                     }
+                    
+                    if i  < references.len() - 1 {
+                        print!(", ");
+                    }     
                 }
-                print!("]")
+
+                print!("]");
             }
             ValueType::Null => print!("null"),
             _ => return Err(io::Error::new(

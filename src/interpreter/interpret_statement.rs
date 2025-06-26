@@ -1,7 +1,5 @@
 use std::io;
 
-
-use crate::interpreter::interpret_statement;
 use crate::parser::statement::Statement;
 use crate::parser::data_type::DataType;
 
