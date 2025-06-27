@@ -65,7 +65,7 @@ impl Environment {
     pub fn create_value_reference(&mut self, name: String, reference: u64) {        
         let next_reference = self.next_reference();
         
-        self.values.insert(name, reference);
+        self.values.insert(name, next_reference);
         self.references.insert(next_reference, VariableSlot::Reference(reference));
     }
 

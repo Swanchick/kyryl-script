@@ -1,7 +1,4 @@
-function test() {
-    let a = [123, 32, 43, 54];
-    println(a);
-}
+let a = 10;
 
 
-test();
+show_local();

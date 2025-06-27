@@ -1,5 +1,3 @@
-use std::io;
-
 use crate::parser::data_type::DataType;
 use crate::parser::parameter::Parameter;
 use crate::parser::statement::Statement;
@@ -83,7 +81,7 @@ impl ValueType {
 
                 DataType::Function { parameters: parameter_types, return_type: Box::new(return_type.clone()) }
             },
-            ValueType::List { references: _, data_type } => data_type.clone(),
+            ValueType::List { references: _, data_type } => DataType::List(Box::new(data_type.clone())),
             ValueType::Null => DataType::void(),
             ValueType::Tuple { references: _, data_types } => data_types.clone()
         }

@@ -198,10 +198,8 @@ impl<'a> InterpretStatement<'a> {
             },
             ValueType::List { references, data_type: _ } => {
                 for reference in references {
-                    let value = self.interpreter.get_variable_reference(*reference)?;
-
                     self.interpreter.enter_enviroment();
-                    self.interpreter.define_variable(name.as_str(), value.clone())?;
+                    self.interpreter.define_variable_by_reference(name.as_str(), reference.clone())?;
                     self.interpret_block(body.clone())?;
                     self.interpreter.exit_enviroment()?;
                 }
@@ -268,8 +266,6 @@ impl<'a> InterpretStatement<'a> {
             if index >= references.len() {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, "Out of index!"));
             }
-
-            println!("Indeces: {}", indeces.len());
 
             let are_we_changing_child = indeces.len() == 1;
 

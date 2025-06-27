@@ -66,7 +66,7 @@ fn ks_len(args: Vec<Value>) -> io::Result<Value> {
         ValueType::String(str) => {
             Ok(Value::new(None, ValueType::Integer(str.len() as i32)))
         },
-        ValueType::List { references, data_type } => {
+        ValueType::List { references, data_type: _ } => {
             Ok(Value::new(None, ValueType::Integer(references.len() as i32)))
         },
         _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid Type!"))
@@ -87,11 +87,63 @@ fn ks_ref(args: Vec<Value>) -> io::Result<Value> {
     }
 }
 
+fn ks_range(args: Vec<Value>) -> io::Result<Value> {
+    if args.len() != 1 {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
+    }
+ 
+    let mut references: Vec<u64> = Vec::new();
+
+    let arg = &args[0];
+    if let ValueType::Integer(number) = arg.get_type() {
+        let native = NativeRegistry::get();
+        {
+            let native = native.borrow();
+            let local = &native.local;
+            if let Some(local) = local {
+                let mut local = local.borrow_mut();
+
+                for i in 0..(number.clone()) {
+                    let value = Value::new(None, ValueType::Integer(i));
+                    let reference = local.create_value_without_name(value);
+
+                    references.push(reference);
+                }
+            } 
+        }
+    }
+
+    Ok(Value::new(None, ValueType::List { references, data_type: DataType::Int }))
+}
+
+fn ks_show_local(args: Vec<Value>) -> io::Result<Value> {
+    if args.len() > 0 {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "Too many arguments!"));
+    }
+
+    let native = NativeRegistry::get();
+    {
+        let native = native.borrow();
+        let local = &native.local;
+        if let Some(local) = local {
+            let local = local.borrow();
+
+            local.display_references();
+        } 
+    }
+
+    Ok(Value::new(None, ValueType::Null))
+}
+
 pub fn register_standart_library() {
     let mut buffer = NativeBuffer::new();
 
     buffer.add_function("print", NativeFunction::process(ks_print));
     buffer.add_function("println", NativeFunction::process(ks_println));
+    buffer.add_function("range", NativeFunction::from(ks_range, DataType::List(Box::new(DataType::Int))));
+    buffer.add_function("ref", NativeFunction::from(ks_ref, DataType::Int));
+    buffer.add_function("show_local", NativeFunction::process(ks_show_local));
+    buffer.add_function("len", NativeFunction::from(ks_len, DataType::Int));
 
     let registry = NativeRegistry::get();
     {

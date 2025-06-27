@@ -1,7 +1,6 @@
 use std::io;
 
-use crate::interpreter::{interpret_expression, value};
-use crate::parser::expression::{self, Expression};
+use crate::parser::expression::Expression;
 use crate::parser::operator::Operator;
 use crate::parser::data_type::DataType;
 
@@ -64,7 +63,7 @@ impl<'a> InterpretExpression<'a> {
             },
             Expression::ListLiteral(expressions) => {
                 let mut references: Vec<u64> = Vec::new();
-                let mut data_type: DataType = DataType::List(Box::new(DataType::void()));
+                let mut data_type: DataType = DataType::void();
 
                 for (i, expression) in expressions.iter().enumerate() {
                     let expression = expression.clone();
