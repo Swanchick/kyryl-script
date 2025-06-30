@@ -775,7 +775,7 @@ impl Parser {
 
                 Ok(DataType::Tuple(data_types))
             }
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Expected keyword!"))
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot parse the data type!"))
         }
     }
 

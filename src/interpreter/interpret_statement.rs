@@ -277,7 +277,16 @@ impl<'a> InterpretStatement<'a> {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "Expected the same data type!"));
                 }
 
-                self.interpreter.assign_variable_by_reference(child_reference, value_to_assign)?;
+                if let Some(value_to_assign_reference) = value_to_assign.get_reference() {
+                    if self.interpreter.same_scope(value_to_assign_reference) {
+                        references[index] = value_to_assign_reference;
+                    } else {
+                        self.interpreter.create_reference(value_to_assign_reference);
+                    }
+                } else {
+                    self.interpreter.assign_variable_by_reference(child_reference, value_to_assign)?;
+                }
+
 
                 return Ok(())
             }
