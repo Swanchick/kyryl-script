@@ -285,7 +285,15 @@ impl SemanticAnalyzer {
 
                 Ok(DataType::Tuple(data_types))
             },
-            
+            Expression::FunctionLiteral { parameters, return_type, block: _ } => {
+                let mut data_types: Vec<DataType> = Vec::new();
+
+                for parameter in parameters {
+                    data_types.push(parameter.data_type.clone());
+                }
+                
+                Ok(DataType::Function { parameters: data_types, return_type: Box::new(return_type.clone()) })
+            },
             Expression::IntegerLiteral(_) => Ok(DataType::Int),
             Expression::FloatLiteral(_) => Ok(DataType::Float),
             Expression::StringLiteral(_) => Ok(DataType::String),

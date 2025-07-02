@@ -18,7 +18,6 @@ pub enum ValueType {
         data_types: DataType
     },
     Function {
-        name: String,
         return_type: DataType,
         parameters: Vec<Parameter>,
         body: Vec<Statement>
@@ -72,7 +71,7 @@ impl ValueType {
             ValueType::Float(_) => DataType::Float,
             ValueType::String(_) => DataType::String,
             ValueType::Boolean(_) => DataType::Bool,
-            ValueType::Function { name: _, return_type, parameters, body: _ } => {
+            ValueType::Function { return_type, parameters, body: _ } => {
                 let mut parameter_types: Vec<DataType> = Vec::new();
 
                 for parameter in parameters {

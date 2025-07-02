@@ -2,6 +2,7 @@ use crate::lexer::token::Token;
 use crate::lexer::token_pos::TokenPos;
 use crate::native_registry::native_registry::NativeRegistry;
 use crate::native_registry::native_types::NativeTypes;
+use crate::parser::{data_type, parameter};
 
 use super::operator::Operator;
 use super::data_type::DataType;
@@ -192,9 +193,7 @@ impl Parser {
         };
 
         self.function_context = Some(function_data_type.clone());
-        
         let block = self.parse_block_statement()?;
-        
         self.function_context = None;
 
         self.semantic_analyzer.exit_function_enviroment()?;
@@ -700,6 +699,11 @@ impl Parser {
                         self.advance();
                         Ok(Expression::BooleanLiteral(true))
                     },
+                    "function" => {
+                        self.advance();
+
+                        self.parse_expression_function()
+                    },
                     "null" => {
                         self.advance();
                         Ok(Expression::NullLiteral)
@@ -729,6 +733,41 @@ impl Parser {
         }
     }
 
+    fn parse_expression_function(&mut self) -> io::Result<Expression> {
+        self.consume_token(Token::LeftParenthesis)?;
+
+        self.semantic_analyzer.enter_function_enviroment();
+
+        let parameters = self.parse_parameters()?;
+
+        let return_type = if self.match_token(&Token::Colon) {
+            let data_type = self.consume_data_type()?;
+
+            data_type
+        } else {
+            DataType::void()
+        };
+
+        self.consume_token(Token::LeftBrace)?;
+
+        let function_data_type = DataType::Function { 
+            parameters: DataType::from_parameters(&parameters), 
+            return_type: Box::new(return_type.clone())
+        };
+        
+        self.function_context = Some(function_data_type.clone());
+        let block = self.parse_block_statement()?;
+        self.function_context = None;
+
+        self.semantic_analyzer.exit_function_enviroment()?;
+
+        Ok(Expression::FunctionLiteral {
+            parameters,
+            return_type,
+            block
+        })
+    }
+
     fn check(&self, token: &Token) -> bool {
         if self.is_end() {
             return false;
@@ -749,6 +788,31 @@ impl Parser {
                     "float" => Ok(DataType::Float),
                     "string" => Ok(DataType::String),
                     "bool" => Ok(DataType::Bool),
+                    "function" => {
+                        self.consume_token(Token::LeftParenthesis)?;
+                        
+                        let mut parameters: Vec<DataType> = Vec::new();
+
+                        if !self.match_token(&Token::RightParenthesis) {
+                            loop {
+                                let data_type = self.consume_data_type()?;
+                                parameters.push(data_type);
+                                if !self.match_token(&Token::Comma) {
+                                    break;
+                                }
+                            }
+
+                            self.consume_token(Token::RightParenthesis)?;
+                        }
+
+                        let return_type = if self.match_token(&Token::Colon) {
+                            self.consume_data_type()?
+                        } else {
+                            DataType::void()
+                        };
+
+                        Ok(DataType::Function { parameters: parameters, return_type: Box::new(return_type) })
+                    },
                     _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected type got {}", data_type_str)))
                 }
             },

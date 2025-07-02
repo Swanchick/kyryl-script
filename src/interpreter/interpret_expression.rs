@@ -154,6 +154,9 @@ impl<'a> InterpretExpression<'a> {
                 let value = self.interpret_identifier_index(left.get_type().clone(), index.get_type().clone())?;
                 Ok(value)
             },
+            Expression::FunctionLiteral { parameters, return_type, block } => {
+                Ok(Value::new(None, ValueType::Function { return_type: return_type, parameters: parameters, body: block }))
+            },
             Expression::IntegerLiteral(value) => {
                 let value = Value::new(None, ValueType::Integer(value));
 

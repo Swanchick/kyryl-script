@@ -1,3 +1,8 @@
+use crate::parser::data_type::DataType;
+use crate::parser::statement::Statement;
+
+use super::parameter::Parameter;
+
 use super::operator::Operator;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -11,6 +16,11 @@ pub enum Expression {
     FunctionCall(String, Vec<Expression>),
     ListLiteral(Vec<Expression>),
     TupleLiteral(Vec<Expression>),
+    FunctionLiteral { 
+        parameters: Vec<Parameter>, 
+        return_type: DataType, 
+        block: Vec<Statement>
+    },
     IdentifierIndex {
         left: Box<Expression>,
         index: Box<Expression>

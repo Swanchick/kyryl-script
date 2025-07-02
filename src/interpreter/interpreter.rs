@@ -202,7 +202,7 @@ impl Interpreter {
 
         let value = self.get_variable(name)?;
 
-        if let ValueType::Function { name, return_type: _, parameters, body } = value.get_type() {
+        if let ValueType::Function { return_type: _, parameters, body } = value.get_type() {
             if args.len() != parameters.len() {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
             }

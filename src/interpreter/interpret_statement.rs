@@ -154,7 +154,7 @@ impl<'a> InterpretStatement<'a> {
                 Ok(Return::Nothing)
             },
             Statement::Function { name, return_type, parameters, body } => {
-                self.interpreter.define_variable(name.clone().as_str(), Value::new(None, ValueType::Function { name: name, return_type: return_type, parameters: parameters, body: body }))?;
+                self.interpreter.define_variable(name.clone().as_str(), Value::new(None, ValueType::Function { return_type: return_type, parameters: parameters, body: body }))?;
                 
                 Ok(Return::Nothing)
             }

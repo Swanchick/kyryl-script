@@ -1,8 +1,12 @@
-let a = [10, 20, 30, 40, 50, 60];
-println(a);
-let b = 123;
-a[1] = b;
-println(a);
-b = 323;
-println(a);
-show_local();
+function callFunction(func: function(int, int): int): int {
+    let result = func(10, 20);
+    println("Works");
+    return result;
+}
+
+
+function my_sum(a: int, b: int): int {
+    return a + b;
+}
+
+println(callFunction(my_sum));

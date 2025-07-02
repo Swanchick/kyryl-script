@@ -1,6 +1,7 @@
 use std::vec;
 
 use crate::native_registry::native_registry::NativeRegistry;
+use crate::parser::parameter::Parameter;
 use crate::*;
 use lexer::lexer::Lexer;
 use lexer::token::Token;
@@ -423,7 +424,85 @@ fn test_parser_tuple() {
     let expression = parser.parse_expression().unwrap();
 
     assert_eq!(expression, test_expression)
-
-
 }
+
+
+#[test]
+fn test_parser_callback() {
+    let source = concat!(
+        "let test = function() {};\n",
+    );
+
+    let test_statement = Statement::VariableDeclaration { 
+        name: String::from("test"), 
+        data_type: None, 
+        value:  Some(Expression::FunctionLiteral { parameters: Vec::new(), return_type: DataType::void(), block: Vec::new() })
+    };
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone(), Vec::new());
+    let statement = parser.parse_statement().unwrap();
+
+    assert_eq!(statement, test_statement); 
+}
+
+#[test]
+fn test_parser_callback_with_type() {
+    let source = concat!(
+        "let number_32 = function(): int {\n",
+        "   return 32;\n",
+        "};\n",
+    );
+
+    let test_statement = Statement::VariableDeclaration { 
+        name: String::from("number_32"), 
+        data_type: None, 
+        value:  Some(Expression::FunctionLiteral { parameters: Vec::new(), return_type: DataType::Int, block: vec![
+            Statement::ReturnStatement { value: Some(Expression::IntegerLiteral(32)) }
+        ] })
+    };
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone(), Vec::new());
+    let statement = parser.parse_statement().unwrap();
+
+    assert_eq!(statement, test_statement); 
+}
+
+
+#[test]
+fn test_parser_callback_with_parameters_and_type() {
+    let source = concat!(
+        "let sum = function(a: int, b: int): int {\n",
+        "   return a + b;\n",
+        "};\n",
+    );
+
+    let test_statement = Statement::VariableDeclaration { 
+        name: String::from("sum"), 
+        data_type: None, 
+        value:  Some(Expression::FunctionLiteral { parameters: vec![Parameter {name: String::from("a"), data_type: DataType::Int}, Parameter {name: String::from("b"), data_type: DataType::Int}], return_type: DataType::Int, block: vec![
+            Statement::ReturnStatement { 
+                value: Some(Expression::BinaryOp { 
+                    left: Box::new(Expression::Identifier(String::from("a"))), 
+                    operator: Operator::Plus, 
+                    right: Box::new(Expression::Identifier(String::from("b"))) 
+                }) 
+            }
+        ]})
+    };
+
+    let mut lexer = Lexer::new(source.to_string());
+    lexer.lexer().unwrap();
+
+    let mut parser = Parser::new(lexer.get_tokens().clone(), Vec::new());
+    let statement = parser.parse_statement().unwrap();
+
+    assert_eq!(statement, test_statement); 
+}
+
 
