@@ -110,7 +110,7 @@ impl Parser {
     fn parse_parameter(&mut self) -> io::Result<Parameter> { 
         let name = self.consume_identifier()?;
         self.consume_token(Token::Colon)?;
-        let data_type = self.consume_data_type()?;
+        let data_type = self.parse_data_type()?;
         
         self.semantic_analyzer.save_variable(name.clone(), data_type.clone());
 
@@ -180,7 +180,7 @@ impl Parser {
         let parameters = self.parse_parameters()?;
 
         let function_type = if self.match_token(&Token::Colon) {
-            self.consume_data_type()?
+            self.parse_data_type()?
         } else {
             DataType::void()
         };
@@ -275,7 +275,7 @@ impl Parser {
         let name = self.consume_identifier()?;
 
         let data_type = if self.match_token(&Token::Colon) {
-            Some(self.consume_data_type()?)
+            Some(self.parse_data_type()?)
         } else {
             None
         };
@@ -698,7 +698,7 @@ impl Parser {
         let parameters = self.parse_parameters()?;
 
         let return_type = if self.match_token(&Token::Colon) {
-            let data_type = self.consume_data_type()?;
+            let data_type = self.parse_data_type()?;
 
             data_type
         } else {
@@ -733,7 +733,7 @@ impl Parser {
         self.peek() == token
     }
 
-    fn consume_data_type(&mut self) -> io::Result<DataType> {        
+    fn parse_data_type(&mut self) -> io::Result<DataType> {        
         match self.advance() {
             Some(Token::Int) => Ok(DataType::Int),
             Some(Token::Float) => Ok(DataType::Float),
@@ -746,7 +746,7 @@ impl Parser {
 
                 if !self.match_token(&Token::RightParenthesis) {
                     loop {
-                        let data_type = self.consume_data_type()?;
+                        let data_type = self.parse_data_type()?;
                         parameters.push(data_type);
                         if !self.match_token(&Token::Comma) {
                             break;
@@ -757,7 +757,7 @@ impl Parser {
                 }
 
                 let return_type = if self.match_token(&Token::Colon) {
-                    self.consume_data_type()?
+                    self.parse_data_type()?
                 } else {
                     DataType::void()
                 };
@@ -765,7 +765,7 @@ impl Parser {
                 Ok(DataType::Function { parameters: parameters, return_type: Box::new(return_type) })
             }
             Some(Token::LeftSquareBracket) => {
-                let data_type = self.consume_data_type()?;
+                let data_type = self.parse_data_type()?;
                 self.consume_token(Token::RightSquareBracket)?;
 
                 Ok(DataType::List(Box::new(data_type)))
@@ -774,7 +774,7 @@ impl Parser {
                 let mut data_types: Vec<DataType> = Vec::new();
 
                 loop {
-                    let data_type = self.consume_data_type()?;
+                    let data_type = self.parse_data_type()?;
 
                     data_types.push(data_type);
 
