@@ -1,37 +1,30 @@
 use std::fmt;
 
-const SYMBOLS: &str = "()[]{}<>;:=+-*/~.,^&|/?";
+const SYMBOLS: &str = "()[]{}<>;:=+-*/!.,^&|/?";
 
 pub const COMMENT: &str = "//";
 
-pub fn is_keyword(text: &str) -> bool {
+pub fn get_token(text: &str) -> Option<Token> {
     match text {
-        "let" => true,
-        "function" => true,
-        "if" => true,
-        "else" => true,
-        "while" => true,
-        "for" => true,
-        "return" => true,
-        "int" => true,
-        "float" => true,
-        "string" => true,
-        "bool" => true,
-        "true" => true,
-        "false" => true,
-        "void" => true,
-        "null" => true,
-        "struct" => true,
-        "enum" => true,
-        "list" => true,
-        "tuple" => true,
-        "in" => true,
-        _ => false
-    }
-}
+        "let" => Some(Token::Let),
+        "function" => Some(Token::Function),
+        "if" => Some(Token::If),
+        "else" => Some(Token::Else),
+        "while" => Some(Token::While),
+        "for" => Some(Token::For),
+        "return" => Some(Token::Return),
+        "int" => Some(Token::Int),
+        "float" => Some(Token::Float),
+        "string" => Some(Token::String),
+        "bool" => Some(Token::Bool),
+        "true" => Some(Token::True),
+        "false" => Some(Token::False),
+        "void" => Some(Token::Void),
+        "null" => Some(Token::Null),
+        "struct" => Some(Token::Struct),
+        "enum" => Some(Token::Enum),
+        "in" => Some(Token::In),
 
-pub fn get_symbol(c: &str) -> Option<Token> {
-    match c {
         "(" => Some(Token::LeftParenthesis),
         ")" => Some(Token::RightParenthesis),
         "{" => Some(Token::LeftBrace),
@@ -51,15 +44,15 @@ pub fn get_symbol(c: &str) -> Option<Token> {
         "/" => Some(Token::Divide),
         "<" => Some(Token::LessThan),
         ">" => Some(Token::GreaterThan),
-        "~" => Some(Token::Tilde),
+        "!" => Some(Token::Not),
         "," => Some(Token::Comma),
         "^" => Some(Token::Power),
         "==" => Some(Token::EqualEqual),
-        "~=" => Some(Token::TildeEqual),
+        "!=" => Some(Token::NotEqual),
         "<=" => Some(Token::LessEqual),
         ">=" => Some(Token::GreaterEqual),
-        "&&" => Some(Token::AmpersandAmpersand),
-        "||" => Some(Token::PipePipe),
+        "&&" => Some(Token::And),
+        "||" => Some(Token::Or),
         "?" => Some(Token::Question),
         "." => Some(Token::Dot),
         _ => None
@@ -72,11 +65,34 @@ pub fn is_symbol(c: char) -> bool {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
-    Keyword(String),
     Identifier(String),
     StringLiteral(String),
     IntegerLiteral(i32),
     FloatLiteral(f64),
+
+    // Keywords
+
+    Let,
+    Function,
+    If,
+    Else,
+    While,
+    For,
+    Return,
+    Int,
+    Float,
+    String,
+    Bool,
+    True,
+    False,
+    Void,
+    Null,
+    Struct,
+    Enum,
+    In,
+    
+    // Symbols
+
     LeftParenthesis, // (
     RightParenthesis, // )
     LeftBrace, // {
@@ -97,14 +113,14 @@ pub enum Token {
     Divide, // /
     LessThan, // <
     GreaterThan, // >
-    Tilde, // ~
+    Not, // !
     Power, // ^
     EqualEqual, // ==
-    TildeEqual, // ~=
+    NotEqual, // ~=
     LessEqual, // <=
     GreaterEqual, // >=
-    AmpersandAmpersand, // &&
-    PipePipe, // ||
+    And, // &&
+    Or, // ||
     Question, // ?
     Dot, // .
 }
@@ -112,41 +128,60 @@ pub enum Token {
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Token::Keyword(name) => write!(f, "keyword ({})", name),
             Token::Identifier(name) => write!(f, "identifier ({})", name),
             Token::StringLiteral(string_literal) => write!(f, "string literal ({})", string_literal),
             Token::IntegerLiteral(number) => write!(f, "integer literal ({})", number),
             Token::FloatLiteral(number) => write!(f, "float literal ({})", number),
-            Token::RightParenthesis => write!(f, "right parenthesis"),
-            Token::LeftParenthesis => write!(f, "left parenthesis"),
-            Token::RightBrace => write!(f, "right brace"),
-            Token::LeftBrace => write!(f, "left brace"),
-            Token::RightSquareBracket => write!(f, "right square bracket"),
-            Token::LeftSquareBracket => write!(f, "left square bracket"),
-            Token::Semicolon => write!(f, "semicolon"),
-            Token::Colon => write!(f, "colon"),
-            Token::Comma => write!(f, "comma"),
-            Token::Equal => write!(f, "equal"),
-            Token::Plus => write!(f, "plus"),
-            Token::PlusEqual => write!(f, "plus equal"),
-            Token::PlusPlus => write!(f, "plus plus"),
-            Token::Minus => write!(f, "minus"),
-            Token::MinusEqual => write!(f, "minus equal"),
-            Token::MinusMinus => write!(f, "minus minus"),
-            Token::Multiply => write!(f, "multiply"),
-            Token::Divide => write!(f, "divide"),
-            Token::LessThan => write!(f, "less than"),
-            Token::GreaterThan => write!(f, "greater than"),
-            Token::Tilde => write!(f, "tilde"),
-            Token::Power => write!(f, "power"),
-            Token::EqualEqual => write!(f, "equal equal"),
-            Token::TildeEqual => write!(f, "tilde equal"),
-            Token::LessEqual => write!(f, "less equal"),
-            Token::GreaterEqual => write!(f, "greater equal"),
-            Token::AmpersandAmpersand => write!(f, "ampersand ampersand"),
-            Token::PipePipe => write!(f, "pipe pipe"),
-            Token::Question => write!(f, "question"),
-            Token::Dot => write!(f, "dot"),
+            
+            Token::Let => write!(f, "let"),
+            Token::Function => write!(f, "function"),
+            Token::If => write!(f, "if"),
+            Token::Else => write!(f, "else"),
+            Token::While => write!(f, "while"),
+            Token::For => write!(f, "for"),
+            Token::Return => write!(f, "return"),
+            Token::Int => write!(f, "int"),
+            Token::Float => write!(f, "float"),
+            Token::String => write!(f, "string"),
+            Token::Bool => write!(f, "bool"),
+            Token::True => write!(f, "true"),
+            Token::False => write!(f, "false"),
+            Token::Void => write!(f, "void"),
+            Token::Null => write!(f, "null"),
+            Token::Struct => write!(f, "struct"),
+            Token::Enum => write!(f, "enum"),
+            Token::In => write!(f, "in"),
+
+            Token::RightParenthesis => write!(f, ")"),
+            Token::LeftParenthesis => write!(f, "("),
+            Token::RightBrace => write!(f, "}}"),
+            Token::LeftBrace => write!(f, "{{"),
+            Token::RightSquareBracket => write!(f, "["),
+            Token::LeftSquareBracket => write!(f, "]"),
+            Token::Semicolon => write!(f, ";"),
+            Token::Colon => write!(f, ":"),
+            Token::Comma => write!(f, ","),
+            Token::Equal => write!(f, "="),
+            Token::Plus => write!(f, "+"),
+            Token::PlusEqual => write!(f, "+="),
+            Token::PlusPlus => write!(f, "++"),
+            Token::Minus => write!(f, "--"),
+            Token::MinusEqual => write!(f, "-="),
+            Token::MinusMinus => write!(f, "--"),
+            Token::Multiply => write!(f, "*"),
+            Token::Divide => write!(f, "/"),
+            Token::LessThan => write!(f, "<"),
+            Token::GreaterThan => write!(f, ">"),
+            Token::Not => write!(f, "!"),
+            Token::Power => write!(f, "^"),
+            Token::EqualEqual => write!(f, "=="),
+            Token::NotEqual => write!(f, "!="),
+            Token::LessEqual => write!(f, "<="),
+            Token::GreaterEqual => write!(f, ">="),
+            Token::And => write!(f, "&&"),
+            Token::Or => write!(f, "||"),
+            Token::Question => write!(f, "?"),
+            Token::Dot => write!(f, "."),
         }
     }
 }

@@ -2,7 +2,6 @@ use crate::lexer::token::Token;
 use crate::lexer::token_pos::TokenPos;
 use crate::native_registry::native_registry::NativeRegistry;
 use crate::native_registry::native_types::NativeTypes;
-use crate::parser::{data_type, parameter};
 
 use super::operator::Operator;
 use super::data_type::DataType;
@@ -76,7 +75,12 @@ impl Parser {
         while !(self.match_token(&Token::RightBrace) || self.is_end()) {
             let statement = self.parse_statement()?;
             
-            statements.push(statement);
+
+            if let Some(statement) = statement {
+                statements.push(statement);
+            } else {
+                break;
+            }
         }
 
         Ok(statements)
@@ -118,56 +122,52 @@ impl Parser {
         Ok(parameter)
     }
 
-    pub fn parse_statement(&mut self) -> io::Result<Statement> {
-        if self.match_keyword("let") {
-            return self.parse_variable_declaration_statement();
-        } else if self.match_keyword("return") {
-            return self.parse_return_statement();
-        } else if self.match_keyword("if") {
-            return self.parse_if_statement();
-        } else if self.match_keyword("while") {
-            return self.parse_while_statement();
-        } else if self.match_keyword("for") {
-            return self.parse_for_statement();
-        } else if self.match_keyword("function") {
-            return self.parse_function();
-        } else if let Token::Identifier(name) = self.peek().to_owned() { 
-            self.advance();
-
-            if self.match_token(&Token::Equal) {
-                return self.parse_assignment_statement(name);
-            } else if self.match_token(&Token::PlusEqual) {
-                return self.parse_add_value_statment(name);
-            } else if self.match_token(&Token::MinusEqual) {
-                return self.parse_remove_value_statement(name);
-            } else if self.match_token(&Token::LeftSquareBracket) {
-                let mut indexes: Vec<Expression> = Vec::new();
+    pub fn parse_statement(&mut self) -> io::Result<Option<Statement>> {
+        match self.advance() {
+            Some(Token::Let) => return Ok(Some(self.parse_variable_declaration_statement()?)),
+            Some(Token::Return) => return Ok(Some(self.parse_return_statement()?)),
+            Some(Token::If) => return Ok(Some(self.parse_if_statement()?)),
+            Some(Token::While) => return Ok(Some(self.parse_while_statement()?)),
+            Some(Token::For) => return Ok(Some(self.parse_for_statement()?)),
+            Some(Token::Function) => return Ok(Some(self.parse_function()?)),
+            Some(Token::Identifier(name)) => {
+                match self.advance() {
+                    Some(Token::Equal) => return Ok(Some(self.parse_assignment_statement(name)?)),
+                    Some(Token::PlusEqual) => return Ok(Some(self.parse_add_value_statment(name)?)),
+                    Some(Token::MinusEqual) => return Ok(Some(self.parse_remove_value_statement(name)?)),
+                    Some(Token::Question) => return Ok(Some(self.parse_early_return(name)?)),
+                    Some(Token::LeftSquareBracket) => {
+                        let mut indexes: Vec<Expression> = Vec::new();
                 
-                loop {
-                    let index = self.parse_expression()?;
-                    self.consume_token(Token::RightSquareBracket)?;
+                        loop {
+                            let index = self.parse_expression()?;
+                            self.consume_token(Token::RightSquareBracket)?;
 
-                    indexes.push(index);
+                            indexes.push(index);
 
-                    if !self.match_token(&Token::LeftSquareBracket) {
-                        break;
+                            if !self.match_token(&Token::LeftSquareBracket) {
+                                break;
+                            }
+                        }
+                        
+                        if self.match_token(&Token::Equal) {
+                            let value  = self.parse_expression()?;
+                            self.consume_token(Token::Semicolon)?;
+
+                            return Ok(Some(Statement::AssigmentIndex { name: name, index: indexes, value: value }));
+                        }
                     }
-                }
-                
-                if self.match_token(&Token::Equal) {
-                    let value  = self.parse_expression()?;
-                    self.consume_token(Token::Semicolon)?;
 
-                    return Ok(Statement::AssigmentIndex { name: name, index: indexes, value: value });
+                    _ => self.back(),
                 }
-            } else if self.match_token(&Token::Question) {
-                
-                return self.parse_early_return(name);
-            }
+            },
+
+            None => return Ok(None),
+            _ => {},
         }
-
+        
         self.back();
-        self.parse_expression_statement()
+        Ok(Some(self.parse_expression_statement()?))
     }
 
     pub fn parse_function(&mut self) -> io::Result<Statement> {
@@ -228,7 +228,7 @@ impl Parser {
     fn parse_for_statement(&mut self) -> io::Result<Statement> {
         let name = self.consume_identifier()?;
 
-        self.consume_keyword("in")?;
+        self.consume_token(Token::In)?;
         let expression = self.parse_expression()?;
         let data_type = self.semantic_analyzer.get_data_type(&expression)?;
 
@@ -273,7 +273,7 @@ impl Parser {
 
     fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> {
         let name = self.consume_identifier()?;
-        
+
         let data_type = if self.match_token(&Token::Colon) {
             Some(self.consume_data_type()?)
         } else {
@@ -282,7 +282,7 @@ impl Parser {
         
         self.consume_token(Token::Equal)?;
         let expression = self.parse_expression()?;
-        
+
         let dt = self.semantic_analyzer.get_data_type(&expression)?;
         
         if let Some(data_type_to_check) = &data_type {
@@ -375,7 +375,7 @@ impl Parser {
         let if_body = self.parse_block_statement()?;
         self.semantic_analyzer.exit_function_enviroment()?;
 
-        let else_block= if self.match_keyword("else") {
+        let else_block= if self.match_token(&Token::Else) {
             self.consume_token(Token::LeftBrace)?;
             
             self.semantic_analyzer.enter_function_enviroment();
@@ -423,7 +423,7 @@ impl Parser {
     fn parse_logic_or(&mut self) -> io::Result<Expression> {
         let mut expression = self.parse_logic_and()?;
         
-        while self.match_token(&Token::PipePipe) {
+        while self.match_token(&Token::Or) {
             let right = self.parse_logic_and()?;
 
             expression = Expression::BinaryOp { left: Box::new(expression), operator: Operator::Or, right: Box::new(right) }
@@ -435,7 +435,7 @@ impl Parser {
     fn parse_logic_and(&mut self) -> io::Result<Expression> {
         let mut expression = self.parse_comparison()?;
 
-        while self.match_token(&Token::AmpersandAmpersand) {
+        while self.match_token(&Token::And) {
             let right = self.parse_comparison()?;
 
             expression = Expression::BinaryOp { left: Box::new(expression), operator: Operator::And, right: Box::new(right) }
@@ -448,7 +448,7 @@ impl Parser {
         let mut expression = self.parse_addition()?;
 
         while self.match_token(&Token::EqualEqual)      ||
-                self.match_token(&Token::TildeEqual)    ||
+                self.match_token(&Token::NotEqual)    ||
                 self.match_token(&Token::GreaterEqual)  ||
                 self.match_token(&Token::LessEqual)     ||
                 self.match_token(&Token::GreaterThan)   ||
@@ -456,7 +456,7 @@ impl Parser {
         {    
             let operator = match self.previous() {
                 Token::EqualEqual => Operator::EqualEqual,
-                Token::TildeEqual => Operator::NotEqual,
+                Token::NotEqual => Operator::NotEqual,
                 Token::GreaterEqual => Operator::GreaterEqual,
                 Token::GreaterThan => Operator::Greater,
                 Token::LessEqual => Operator::LessEqual,
@@ -521,10 +521,10 @@ impl Parser {
     }
 
     fn parse_unary(&mut self) -> io::Result<Expression> {
-        if self.match_token(&Token::Minus) || self.match_token(&Token::Tilde) {
+        if self.match_token(&Token::Minus) || self.match_token(&Token::Not) {
             let operator = match self.previous() {
                 Token::Minus => Operator::Minus,
-                Token::Tilde => Operator::Tilde,
+                Token::Not => Operator::Tilde,
                 _ => unreachable!()
             };
             
@@ -616,20 +616,25 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> io::Result<Expression> {
-        match self.peek() {
-            Token::LeftParenthesis => {
-                self.advance();
+        match self.advance() {
+            Some(Token::True) => Ok(Expression::BooleanLiteral(true)),
+            Some(Token::False) => Ok(Expression::BooleanLiteral(true)),
+            Some(Token::Function) => self.parse_expression_function(),
+            Some(Token::Null) => Ok(Expression::NullLiteral),
+            Some(Token::IntegerLiteral(value)) => Ok(Expression::IntegerLiteral(value)),
+            Some(Token::FloatLiteral(value)) => Ok(Expression::FloatLiteral(value)),
+            Some(Token::StringLiteral(value)) => Ok(Expression::StringLiteral(value)),
+
+            Some(Token::LeftParenthesis) => {
                 let expression = self.parse_expression()?;
                 
-                match self.peek() {
-                    Token::RightParenthesis => {
-                        self.advance();
+                match self.advance() {
+                    Some(Token::RightParenthesis) => {
                         Ok(expression)
                     },
 
-                    Token::Comma => {
+                    Some(Token::Comma) => {
                         let mut expressions: Vec<Expression> = vec![expression];
-                        self.advance();
 
                         loop {
                             let expression = self.parse_expression()?;
@@ -649,8 +654,7 @@ impl Parser {
                     _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Expected closed expression with right parenthesis."))
                 }
             },
-            Token::LeftSquareBracket => {
-                self.advance();
+            Some(Token::LeftSquareBracket) => {
                 let mut expressions: Vec<Expression> = Vec::new();
 
                 loop {
@@ -666,54 +670,8 @@ impl Parser {
 
                 Ok(Expression::ListLiteral(expressions))
             },
-            Token::IntegerLiteral(value) => {
-                let value = value.to_owned();
-                let expression = Expression::IntegerLiteral(value);
-                self.advance();
-                
-                Ok(expression)
-            },
-            Token::FloatLiteral(value) => {
-                let value = value.to_owned();
-                let expression = Expression::FloatLiteral(value);
-                self.advance();
-
-                Ok(expression)
-            },
-            Token::StringLiteral(value) => {
-                let value = value.to_owned();
-                let expression = Expression::StringLiteral(value);
-                self.advance();
-
-                Ok(expression)
-            },
-            Token::Keyword(keyword) => {
-                let keyword = keyword.as_str();
-                
-                match keyword {
-                    "true" => {
-                        self.advance();
-                        Ok(Expression::BooleanLiteral(true))
-                    },
-                    "false" => {
-                        self.advance();
-                        Ok(Expression::BooleanLiteral(true))
-                    },
-                    "function" => {
-                        self.advance();
-
-                        self.parse_expression_function()
-                    },
-                    "null" => {
-                        self.advance();
-                        Ok(Expression::NullLiteral)
-                    }
-                    _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Unexpected keyword, expected boolean"))
-                }
-            },
-            Token::Identifier(name) => {
+            Some(Token::Identifier(name)) => {
                 let name = name.to_owned();
-                self.advance();
                 if self.match_token(&Token::LeftParenthesis) {
                     if self.match_token(&Token::RightParenthesis) {
                         return Ok(Expression::FunctionCall(name, Vec::new()));
@@ -724,12 +682,11 @@ impl Parser {
 
                     Ok(Expression::FunctionCall(name, parameters))
                 } else {
-                    let expression = Expression::Identifier(name);
-                    
-                    Ok(expression)
+                    Ok(Expression::Identifier(name))
                 }
             },
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected expression got {}", self.peek()))) 
+            None => Err(io::Error::new(io::ErrorKind::InvalidData, "Expected expression got nothing!")),
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected expression got {}", self.peek())))
         }
     }
 
@@ -776,53 +733,44 @@ impl Parser {
         self.peek() == token
     }
 
-    fn consume_data_type(&mut self) -> io::Result<DataType> {
-        let token = self.advance().unwrap();
-        
-        match token {
-            Token::Keyword(data_type_str) => {
-                let data_type_str = data_type_str.as_str();
+    fn consume_data_type(&mut self) -> io::Result<DataType> {        
+        match self.advance() {
+            Some(Token::Int) => Ok(DataType::Int),
+            Some(Token::Float) => Ok(DataType::Float),
+            Some(Token::String) => Ok(DataType::String),
+            Some(Token::Bool) => Ok(DataType::Bool),
+            Some(Token::Function) => {
+                self.consume_token(Token::LeftParenthesis)?;
+                
+                let mut parameters: Vec<DataType> = Vec::new();
 
-                match data_type_str {
-                    "int" => Ok(DataType::Int),
-                    "float" => Ok(DataType::Float),
-                    "string" => Ok(DataType::String),
-                    "bool" => Ok(DataType::Bool),
-                    "function" => {
-                        self.consume_token(Token::LeftParenthesis)?;
-                        
-                        let mut parameters: Vec<DataType> = Vec::new();
-
-                        if !self.match_token(&Token::RightParenthesis) {
-                            loop {
-                                let data_type = self.consume_data_type()?;
-                                parameters.push(data_type);
-                                if !self.match_token(&Token::Comma) {
-                                    break;
-                                }
-                            }
-
-                            self.consume_token(Token::RightParenthesis)?;
+                if !self.match_token(&Token::RightParenthesis) {
+                    loop {
+                        let data_type = self.consume_data_type()?;
+                        parameters.push(data_type);
+                        if !self.match_token(&Token::Comma) {
+                            break;
                         }
+                    }
 
-                        let return_type = if self.match_token(&Token::Colon) {
-                            self.consume_data_type()?
-                        } else {
-                            DataType::void()
-                        };
-
-                        Ok(DataType::Function { parameters: parameters, return_type: Box::new(return_type) })
-                    },
-                    _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected type got {}", data_type_str)))
+                    self.consume_token(Token::RightParenthesis)?;
                 }
-            },
-            Token::LeftSquareBracket => {
+
+                let return_type = if self.match_token(&Token::Colon) {
+                    self.consume_data_type()?
+                } else {
+                    DataType::void()
+                };
+
+                Ok(DataType::Function { parameters: parameters, return_type: Box::new(return_type) })
+            }
+            Some(Token::LeftSquareBracket) => {
                 let data_type = self.consume_data_type()?;
                 self.consume_token(Token::RightSquareBracket)?;
 
                 Ok(DataType::List(Box::new(data_type)))
             },
-            Token::LeftParenthesis => {
+            Some(Token::LeftParenthesis) => {
                 let mut data_types: Vec<DataType> = Vec::new();
 
                 loop {
@@ -845,29 +793,26 @@ impl Parser {
 
     fn consume_token(&mut self, token: Token) -> io::Result<Token> {
         if self.check(&token) {
+            
+
             Ok(self.advance().unwrap())
         } else {
-            Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected token: {:?} got {:?}", token, self.peek())))
+
+            if self.is_end() {
+                Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected token: {:?} got nothing!", token)))
+            } else {
+                Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected token: {:?} got {:?}!", token, self.peek())))
+            }
         }
     }
 
     fn consume_identifier(&mut self) -> io::Result<String> {
-        let token= self.peek().clone();
+        let token= self.advance();
 
-        if let Token::Identifier(name) = token {
-            self.advance();
-            
+        if let Some(Token::Identifier(name)) = token {            
             Ok(name.to_string())
         } else {
             Err(io::Error::new(io::ErrorKind::InvalidData, "Expected token identefier!"))
-        }
-    }
-
-    fn consume_keyword(&mut self, keyword: &str) -> io::Result<()> {
-        if self.match_keyword(keyword) {
-            Ok(())
-        } else {
-            Err(io::Error::new(io::ErrorKind::InvalidData, format!("Expected keyword: {}", keyword)))
         }
     }
 
@@ -914,21 +859,6 @@ impl Parser {
         }
     }
 
-    fn match_keyword(&mut self, keyword: &str) -> bool {
-        if self.is_end() {
-            return false;
-        }
-
-        if let Token::Keyword(ref k) = self.peek() {
-            if k == keyword {
-                self.advance();
-                
-                return true;
-            }
-        }
-
-        false
-    }
 
     fn next(&self) -> Option<&Token> {
         if self.current_token + 1 >= self.tokens.len() {
@@ -947,7 +877,11 @@ impl Parser {
         &self.tokens[self.current_token]
     }
 
-    fn peek_pos(&self) -> &TokenPos {
-        &self.token_pos[self.current_token]
+    fn peek_pos(&self) -> &TokenPos { // Big boss
+        if self.is_end() {
+            &self.token_pos[self.token_pos.len() - 1]
+        } else {
+            &self.token_pos[self.current_token]
+        }
     }
 }

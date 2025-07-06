@@ -3,7 +3,6 @@ use std::rc::Rc;
 use std::io;
 
 use crate::lexer::lexer::Lexer;
-use crate::native_registry::native_registry::NativeRegistry;
 use crate::parser::parser::Parser;
 use crate::interpreter::enviroment::Environment;
 use crate::interpreter::interpreter::Interpreter;

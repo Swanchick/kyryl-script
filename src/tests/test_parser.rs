@@ -136,10 +136,10 @@ fn test_variable_declaration_statement() {
     // let a: int = 10;
 
     let tokens = vec![
-        Token::Keyword(String::from("let")),
+        Token::Let,
         Token::Identifier(String::from("a")),
         Token::Colon,
-        Token::Keyword(String::from("int")),
+        Token::Int,
         Token::Equal,
         Token::IntegerLiteral(10),
         Token::Semicolon
@@ -152,7 +152,7 @@ fn test_variable_declaration_statement() {
     };
 
     let mut parser = Parser::new(tokens, Vec::new());
-    let statement = parser.parse_statement().unwrap();
+    let statement = parser.parse_statement().unwrap().unwrap();
 
     assert_eq!(statement, test_statement);
 }
@@ -193,13 +193,13 @@ fn test_expression_boolean_parse() {
         Token::IntegerLiteral(22),
         Token::Plus,
         Token::IntegerLiteral(33),
-        Token::AmpersandAmpersand,
+        Token::And,
         Token::Identifier(String::from("b")),
         Token::EqualEqual,
         Token::IntegerLiteral(23),
-        Token::PipePipe,
+        Token::Or,
         Token::Identifier(String::from("c")),
-        Token::TildeEqual,
+        Token::NotEqual,
         Token::IntegerLiteral(123)
     ];
 
@@ -250,7 +250,7 @@ fn test_assigment_statement() {
 
     let mut parser = Parser::new(lexer.get_tokens().clone(), Vec::new());
     let _ = parser.parse_statement().unwrap(); // Parsing first line
-    let statement = parser.parse_statement().unwrap(); // Then second, to ensure that value type is actually type-correct 
+    let statement = parser.parse_statement().unwrap().unwrap(); // Then second, to ensure that value type is actually type-correct 
 
     assert_eq!(statement, test_statement);
 }
@@ -408,7 +408,7 @@ fn test_parser_index_assingment_statment() {
     };
 
     let mut parser = Parser::new(lexer.get_tokens().clone(), Vec::new());
-    let statement = parser.parse_statement().unwrap();
+    let statement = parser.parse_statement().unwrap().unwrap();
 
     assert_eq!(statement, test_statement);
 }
@@ -443,7 +443,7 @@ fn test_parser_callback() {
     lexer.lexer().unwrap();
 
     let mut parser = Parser::new(lexer.get_tokens().clone(), Vec::new());
-    let statement = parser.parse_statement().unwrap();
+    let statement = parser.parse_statement().unwrap().unwrap();
 
     assert_eq!(statement, test_statement); 
 }
@@ -468,7 +468,7 @@ fn test_parser_callback_with_type() {
     lexer.lexer().unwrap();
 
     let mut parser = Parser::new(lexer.get_tokens().clone(), Vec::new());
-    let statement = parser.parse_statement().unwrap();
+    let statement = parser.parse_statement().unwrap().unwrap();
 
     assert_eq!(statement, test_statement); 
 }
@@ -500,7 +500,7 @@ fn test_parser_callback_with_parameters_and_type() {
     lexer.lexer().unwrap();
 
     let mut parser = Parser::new(lexer.get_tokens().clone(), Vec::new());
-    let statement = parser.parse_statement().unwrap();
+    let statement = parser.parse_statement().unwrap().unwrap();
 
     assert_eq!(statement, test_statement); 
 }

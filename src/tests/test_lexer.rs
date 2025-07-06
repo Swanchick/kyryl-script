@@ -13,8 +13,8 @@ fn test_lexer_easy() {
     lexer.lexer().unwrap();
 
     let expected_tokens: Vec<Token> = vec![
-        Token::Keyword("function".to_string()),
-        Token::Identifier("main".to_string()),
+        Token::Function,
+        Token::Identifier(String::from("main")),
         Token::LeftParenthesis,
         Token::RightParenthesis,
         Token::LeftBrace,
@@ -41,28 +41,28 @@ fn test_lexer_from_file() {
     lexer.lexer().unwrap();
 
     let expected_tokens: Vec<Token> = vec![
-        Token::Keyword("function".to_string()),
-        Token::Identifier("main".to_string()),
+        Token::Function,
+        Token::Identifier(String::from("main")),
         Token::LeftParenthesis,
         Token::RightParenthesis,
         Token::LeftBrace,
-        Token::Keyword("let".to_string()),
-        Token::Identifier("value".to_string()),
+        Token::Let,
+        Token::Identifier(String::from("value")),
         Token::Colon,
-        Token::Keyword("float".to_string()),
+        Token::Float,
         Token::Equal,
         Token::FloatLiteral(10.2),
         Token::Semicolon,
-        Token::Keyword("let".to_string()),
-        Token::Identifier("value2".to_string()),
+        Token::Let,
+        Token::Identifier(String::from("value2")),
         Token::Colon,
-        Token::Keyword("int".to_string()),
+        Token::Int,
         Token::Equal,
         Token::IntegerLiteral(10),
         Token::Semicolon,
-        Token::Identifier("print".to_string()),
+        Token::Identifier(String::from("print")),
         Token::LeftParenthesis,
-        Token::StringLiteral("Hello World".to_string()),
+        Token::StringLiteral(String::from("Hello World")),
         Token::RightParenthesis,
         Token::Semicolon,
         Token::RightBrace
@@ -85,8 +85,8 @@ fn test_lexer_identefier_underscore() {
     lexer.lexer().unwrap();
 
     let expected_tokens: Vec<Token> = vec![
-        Token::Keyword("function".to_string()),
-        Token::Identifier("test_function".to_string()),
+        Token::Function,
+        Token::Identifier(String::from("test_function")),
         Token::LeftParenthesis,
         Token::RightParenthesis,
         Token::LeftBrace,

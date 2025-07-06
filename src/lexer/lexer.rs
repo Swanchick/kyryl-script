@@ -3,7 +3,7 @@ use std::io;
 
 use super::token::Token;
 use super::token::COMMENT;
-use super::token::{is_keyword, get_symbol, is_symbol};
+use super::token::{get_token, is_symbol};
 
 use super::lexer_state::LexerState;
 use super::token_pos::TokenPos;
@@ -68,17 +68,14 @@ impl Lexer {
     }
 
     fn add_token_text(&mut self, buffer: &str) {
-        if is_keyword(buffer) {
-            self.add_token(Token::Keyword(buffer.to_string()));
+        if let Some(keyword) = get_token(buffer) {
+            self.add_token(keyword);
         } else {
             self.add_token(Token::Identifier(buffer.to_string()));
         }
     }
 
     pub fn lex_line(&mut self, mut line: String) -> io::Result<()> { 
-        // Todo:
-        // Remove this thing
-        // I mean, lexer won't work without it, but it could be done better
         line.push(' ');
         let mut cur: usize = 0;
         let mut state = LexerState::None;
@@ -190,7 +187,7 @@ impl Lexer {
             for j in (i + 1..=chars.len()).rev() {
                 let slice: String = chars[i..j].iter().collect();
     
-                if let Some(token) = get_symbol(&slice) {
+                if let Some(token) = get_token(&slice) {
                     self.add_token(token);
                     i = j;
                     matched = true;
@@ -200,7 +197,7 @@ impl Lexer {
 
             if !matched {
                 let single = chars[i].to_string();
-                if let Some(token) = get_symbol(&single) {
+                if let Some(token) = get_token(&single) {
                     self.add_token(token);
                 }
     
