@@ -74,5 +74,5 @@ Game Developer | Systems Thinker
 
 ---
 
-> Created with by Kyryl Lebedenko 
+> Created with love by Kyryl Lebedenko 
 
