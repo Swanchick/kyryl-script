@@ -1,54 +1,78 @@
-# Kyryl Script
+# KyrylScript
 
-KyrylScript is a small functional programming language designed and implemented by Kyryl Lebedenko as both a learning project and a scripting foundation for other projects.
+**KyrylScript** is a lightweight interpreted programming language designed and built from scratch in Rust.  
+It combines the simplicity of scripting with the clarity of structured typing, offering a unique reference-based runtime without garbage collection.
 
-It draws inspiration from Lua, Rust, and C#, with practical features meant for game development, web development and scriptable runtime environments.
+> A spiritual successor to Lua, with the structural rigor of Rust and the flexibility of Python.
 
 ---
 
 ## Features
 
-* Functional scripting style
-* Static typing
-* Interpreted runtime
-* Native support for Rust
+- **Custom Lexer and Parser**
+  - Hand-written in Rust, with clear syntax trees and tokenization rules.
 
-## Build
+- **Runtime and Scoping**
+  - Lexical scoping with reference-based variable tracking.
+  - No garbage collector — all memory is managed manually using reference IDs.
 
-```sh
-# Clone the repository
-git clone https://github.com/your-username/kyrylscript.git
-cd kyrylscript
+- **Type System**
+  - Built-in support for numbers, strings, booleans, lists, tuples, functions, and native values.
 
-# Build the project
-cargo build --release
+- **Control Structures**
+  - If/else, while loops, pattern matching, recursion, scoped blocks.
 
-# Run the interpreter
-cargo run -- path/to/script.ks
-```
-
-## Integration with Rust
-
-You can register native Rust functions into the KyrylScript runtime:
-
-```rs
-interpreter.register_rust_function("println", ks_println);
-interpreter.register_rust_function("len", ks_len);
-```
-
-This allows full integration between game engine core logic and high-level script behavior.
-
-## Future Plans
-* Module system
-* Better REPL/debugger tools
-* Error messages with position tracking
-* `null` support with `?` early-return operator
-* Add structs and enums
-* Structs with access control: `public`, `private`, `protected`
-
-## License
-MIT License. See `LICENSE` for details.
+- **Native Function Registry**
+  - Easily extend the language by registering native Rust functions with the runtime.
 
 ---
 
-// Created with love by Kyryl Lebedenko
+## Getting Started
+
+1. **Clone the repo**
+
+```bash
+git clone https://github.com/yourname/kyrylscript.git
+cd kyrylscript
+```
+
+2. **Build & Run**
+
+```bash
+cargo run -- examples/test.ks
+```
+
+---
+
+## Roadmap
+
+* [x] Lexing, Parsing, Runtime
+* [x] Custom Value Model
+* [x] Native Function Integration
+* [x] Basic Control Structures
+* [x] Functional Programming Support
+* [ ] Generics
+* [ ] Module System & Imports
+* [ ] REPL
+* [ ] Object-Oriented Programming System
+* [ ] Online Playground
+
+---
+
+## License
+
+MIT © 2025 Kyryl Lebedenko
+
+---
+
+## About the Author
+
+**Kyryl Lebedenko**
+Bachelor of Computer Engineering | Creator of KyrylScript
+Erasmus+ Exchange Student at Aalto University (2025)
+Game Developer | Systems Thinker
+
+---
+
+> Created with by Kyryl Lebedenko 
+
