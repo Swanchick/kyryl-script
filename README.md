@@ -65,14 +65,5 @@ MIT © 2025 Kyryl Lebedenko
 
 ---
 
-## About the Author
-
-**Kyryl Lebedenko**
-Bachelor of Computer Engineering | Creator of KyrylScript
-Erasmus+ Exchange Student at Aalto University (2025)
-Game Developer | Systems Thinker
-
----
-
-> Created with by Kyryl Lebedenko 
+> Created with love by Kyryl Lebedenko 
 
