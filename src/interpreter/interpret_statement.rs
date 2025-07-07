@@ -18,7 +18,7 @@ impl<'a> InterpretStatement<'a> {
 
     pub fn interpret_statement(&mut self, statement: Statement) -> io::Result<Return> {        
         match statement {
-            Statement::VariableDeclaration { name, data_type, value } => {                
+            Statement::VariableDeclaration { name, public, data_type, value } => {                
                 let value = if let Some(expression) = value {
                     self.interpreter.interpret_expression(expression)?
                 } else {
@@ -33,7 +33,11 @@ impl<'a> InterpretStatement<'a> {
                     }
                 }
 
-                self.interpreter.define_variable(name.as_str(), value)?;
+                if public {
+                    self.interpreter.global_define_variable(name.as_str(), value)?;
+                } else {
+                    self.interpreter.define_variable(name.as_str(), value)?;
+                }
 
                 Ok(Return::Nothing)
             },
@@ -64,7 +68,7 @@ impl<'a> InterpretStatement<'a> {
                 self.interpreter.assign_variable(&name, list_value)?;
 
                 Ok(Return::Nothing)
-            }
+            },
             Statement::AddValue { name, value } => {
                 let value = self.interpreter.interpret_expression(value)?;
                 self.interpret_add_equal(&name, value)?;
@@ -139,7 +143,6 @@ impl<'a> InterpretStatement<'a> {
 
                 Ok(Return::Nothing)
             },
-
             Statement::ForLoopStatement { name, list, body } => {
                 let list = self.interpreter.interpret_expression(list)?;
                 let list_type = list.get_type();
@@ -147,18 +150,23 @@ impl<'a> InterpretStatement<'a> {
                 self.interpret_for_loop(name, list_type, body)?;
                 
                 Ok(Return::Nothing)
-            }
+            },
             Statement::Expression { value } => {
                 self.interpreter.interpret_expression(value)?;
 
                 Ok(Return::Nothing)
             },
-            Statement::Function { name, return_type, parameters, body } => {
-                self.interpreter.define_variable(name.clone().as_str(), Value::new(None, ValueType::Function { return_type: return_type, parameters: parameters, body: body }))?;
+            Statement::Function { name, public, return_type, parameters, body } => {
+                let value = Value::new(None, ValueType::Function { return_type: return_type, parameters: parameters, body: body });
+                
+                if public {
+                    self.interpreter.global_define_variable(name.as_str(), value)?;
+                } else {
+                    self.interpreter.define_variable(name.as_str(), value)?;
+                }
                 
                 Ok(Return::Nothing)
-            }
-
+            },
             Statement::EarlyReturn { name, body } => {
                 let value = self.interpreter.get_variable(&name)?;
 
@@ -178,6 +186,10 @@ impl<'a> InterpretStatement<'a> {
                 }
                 
                 Ok(Return::Nothing)
+            },
+
+            Statement::Use { body } => {
+                todo!()
             }
         } 
     }

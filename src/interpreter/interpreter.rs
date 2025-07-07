@@ -78,6 +78,14 @@ impl Interpreter {
         Ok(())
     }
 
+    pub fn global_define_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
+        let mut global = self.global.borrow_mut();
+        
+        global.define_variable(name.to_string(), value)?;
+        
+        Ok(())
+    }
+
     pub fn define_variable_by_reference(&mut self, name: &str, reference: u64) -> io::Result<()> {
         let mut local = self.local.borrow_mut();
 

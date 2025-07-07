@@ -7,6 +7,7 @@ use super::parameter::Parameter;
 pub enum Statement {
     VariableDeclaration {
         name: String,
+        public: bool,
         data_type: Option<DataType>,
         value: Option<Expression>
     },
@@ -49,6 +50,7 @@ pub enum Statement {
     },
     Function {
         name: String,
+        public: bool,
         return_type: DataType,
         parameters: Vec<Parameter>,
         body: Vec<Statement>
@@ -56,5 +58,8 @@ pub enum Statement {
     EarlyReturn {
         name: String,
         body: Option<Vec<Statement>>
+    },
+    Use {
+        body: Vec<Statement>
     }
 }

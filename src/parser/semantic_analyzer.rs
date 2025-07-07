@@ -11,23 +11,28 @@ use super::expression::Expression;
 
 
 pub struct SemanticAnalyzer {
-    enviroment: Rc<RefCell<AnalyzerEnviroment>>
+    global: Rc<RefCell<AnalyzerEnviroment>>,
+    local: Rc<RefCell<AnalyzerEnviroment>>
 }
 
 
 impl SemanticAnalyzer {
     pub fn new() -> SemanticAnalyzer {
+        let global = Rc::new(RefCell::new(AnalyzerEnviroment::new()));
+        let local = Rc::new(RefCell::new(AnalyzerEnviroment::with_parent(global.clone())));
+
         SemanticAnalyzer {
-            enviroment: Rc::new(RefCell::new(AnalyzerEnviroment::new()))
+            global,
+            local
         }
     }
 
     pub fn register_rust_function(&mut self, name: String, function: &NativeFunction) {
-        self.enviroment.borrow_mut().add(name, DataType::RustFunction { return_type: Box::new(function.return_type.clone()) });
+        self.local.borrow_mut().add(name, DataType::RustFunction { return_type: Box::new(function.return_type.clone()) });
     }
 
     pub fn get_variable(&self, name: &str) -> io::Result<DataType> {
-        let env = self.enviroment.borrow();
+        let env = self.local.borrow();
         env.get_variable_type(name)
     }
 
@@ -39,13 +44,13 @@ impl SemanticAnalyzer {
     }
 
     pub fn enter_function_enviroment(&mut self) {
-        let parent = self.enviroment.clone();
-        self.enviroment = Rc::new(RefCell::new(AnalyzerEnviroment::with_parent(parent.clone())));
+        let parent = self.local.clone();
+        self.local = Rc::new(RefCell::new(AnalyzerEnviroment::with_parent(parent.clone())));
     }
 
     pub fn exit_function_enviroment(&mut self) -> io::Result<()> {
         let new_env = {
-            let local = self.enviroment.clone();
+            let local = self.local.clone();
             let local_borrow = local.borrow();
 
             if let Some(parent) = local_borrow.get_parent() {
@@ -56,7 +61,7 @@ impl SemanticAnalyzer {
         };
 
         if let Some(env) = new_env {
-            self.enviroment = env;
+            self.local = env;
             Ok(())
         } else {
             Err(io::Error::new(io::ErrorKind::InvalidData, "No parent enviroment!"))
@@ -236,7 +241,7 @@ impl SemanticAnalyzer {
             },
             
             Expression::Identifier(name) => {
-                match self.enviroment.borrow().get_variable_type(name) {
+                match self.local.borrow().get_variable_type(name) {
                     Ok(DataType::Void(_)) => Ok(DataType::void()),
                     Ok(data_type) => Ok(data_type.clone()),
                     Err(_) => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} not found!", name)))
@@ -303,6 +308,6 @@ impl SemanticAnalyzer {
     }
 
     pub fn save_variable(&mut self, name: String, data_type: DataType) {
-        self.enviroment.borrow_mut().add(name, data_type);
+        self.local.borrow_mut().add(name, data_type);
     }
 }

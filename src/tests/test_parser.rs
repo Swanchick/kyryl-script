@@ -133,8 +133,6 @@ fn test_single_expression() {
 
 #[test]
 fn test_variable_declaration_statement() {
-    // let a: int = 10;
-
     let tokens = vec![
         Token::Let,
         Token::Identifier(String::from("a")),
@@ -147,6 +145,7 @@ fn test_variable_declaration_statement() {
 
     let test_statement = Statement::VariableDeclaration {
         name: String::from("a"),
+        public: false,
         data_type: Some(DataType::Int),
         value: Some(Expression::IntegerLiteral(10))
     };
@@ -434,7 +433,8 @@ fn test_parser_callback() {
     );
 
     let test_statement = Statement::VariableDeclaration { 
-        name: String::from("test"), 
+        name: String::from("test"),
+        public: false,
         data_type: None, 
         value:  Some(Expression::FunctionLiteral { parameters: Vec::new(), return_type: DataType::void(), block: Vec::new() })
     };
@@ -458,6 +458,7 @@ fn test_parser_callback_with_type() {
 
     let test_statement = Statement::VariableDeclaration { 
         name: String::from("number_32"), 
+        public: false,
         data_type: None, 
         value:  Some(Expression::FunctionLiteral { parameters: Vec::new(), return_type: DataType::Int, block: vec![
             Statement::ReturnStatement { value: Some(Expression::IntegerLiteral(32)) }
@@ -484,6 +485,7 @@ fn test_parser_callback_with_parameters_and_type() {
 
     let test_statement = Statement::VariableDeclaration { 
         name: String::from("sum"), 
+        public: false,
         data_type: None, 
         value:  Some(Expression::FunctionLiteral { parameters: vec![Parameter {name: String::from("a"), data_type: DataType::Int}, Parameter {name: String::from("b"), data_type: DataType::Int}], return_type: DataType::Int, block: vec![
             Statement::ReturnStatement { 
@@ -504,5 +506,3 @@ fn test_parser_callback_with_parameters_and_type() {
 
     assert_eq!(statement, test_statement); 
 }
-
-

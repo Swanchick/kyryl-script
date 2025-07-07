@@ -123,13 +123,15 @@ impl Parser {
     }
 
     pub fn parse_statement(&mut self) -> io::Result<Option<Statement>> {
+        let public = self.match_token(&Token::Pub);
+        
         match self.advance() {
-            Some(Token::Let) => return Ok(Some(self.parse_variable_declaration_statement()?)),
+            Some(Token::Let) => return Ok(Some(self.parse_variable_declaration_statement(public)?)),
             Some(Token::Return) => return Ok(Some(self.parse_return_statement()?)),
             Some(Token::If) => return Ok(Some(self.parse_if_statement()?)),
             Some(Token::While) => return Ok(Some(self.parse_while_statement()?)),
             Some(Token::For) => return Ok(Some(self.parse_for_statement()?)),
-            Some(Token::Function) => return Ok(Some(self.parse_function()?)),
+            Some(Token::Function) => return Ok(Some(self.parse_function(public)?)),
             Some(Token::Identifier(name)) => {
                 match self.advance() {
                     Some(Token::Equal) => return Ok(Some(self.parse_assignment_statement(name)?)),
@@ -170,7 +172,7 @@ impl Parser {
         Ok(Some(self.parse_expression_statement()?))
     }
 
-    pub fn parse_function(&mut self) -> io::Result<Statement> {
+    pub fn parse_function(&mut self, public: bool) -> io::Result<Statement> {
         let function_name = self.consume_identifier()?;
 
         self.consume_token(Token::LeftParenthesis)?;
@@ -205,7 +207,8 @@ impl Parser {
 
         Ok(
             Statement::Function { 
-                name: function_name, 
+                name: function_name,
+                public: public,
                 return_type: function_type, 
                 parameters: parameters, 
                 body: block 
@@ -271,7 +274,7 @@ impl Parser {
         Ok(Statement::RemoveValue { name: name, value: expression })
     }
 
-    fn parse_variable_declaration_statement(&mut self) -> io::Result<Statement> {
+    fn parse_variable_declaration_statement(&mut self, public: bool) -> io::Result<Statement> {
         let name = self.consume_identifier()?;
 
         let data_type = if self.match_token(&Token::Colon) {
@@ -297,8 +300,9 @@ impl Parser {
 
         Ok(
             Statement::VariableDeclaration {
-                name: name,
-                data_type: data_type,
+                name,
+                public,
+                data_type,
                 value: Some(expression)
             }
         )

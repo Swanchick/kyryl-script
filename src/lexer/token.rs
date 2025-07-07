@@ -24,6 +24,8 @@ pub fn get_token(text: &str) -> Option<Token> {
         "struct" => Some(Token::Struct),
         "enum" => Some(Token::Enum),
         "in" => Some(Token::In),
+        "use" => Some(Token::Use),
+        "pub" => Some(Token::Pub),
 
         "(" => Some(Token::LeftParenthesis),
         ")" => Some(Token::RightParenthesis),
@@ -90,7 +92,9 @@ pub enum Token {
     Struct,
     Enum,
     In,
-    
+    Use,
+    Pub,
+
     // Symbols
 
     LeftParenthesis, // (
@@ -151,6 +155,8 @@ impl fmt::Display for Token {
             Token::Struct => write!(f, "struct"),
             Token::Enum => write!(f, "enum"),
             Token::In => write!(f, "in"),
+            Token::Use => write!(f, "use"),
+            Token::Pub => write!(f, "pub"),
 
             Token::RightParenthesis => write!(f, ")"),
             Token::LeftParenthesis => write!(f, "("),

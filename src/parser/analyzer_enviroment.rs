@@ -18,17 +18,17 @@ impl AnalyzerEnviroment {
         }
     }
 
-    pub fn get_parent(&self) -> Option<Rc<RefCell<AnalyzerEnviroment>>> {
-        match &self.parent {
-            Some(parent) => Some(parent.clone()),
-            None => None
-        }
-    }
-
     pub fn with_parent(parent: Rc<RefCell<AnalyzerEnviroment>>) -> AnalyzerEnviroment {
         AnalyzerEnviroment {
             parent: Some(parent),
             variables: HashMap::new()
+        }
+    }
+
+    pub fn get_parent(&self) -> Option<Rc<RefCell<AnalyzerEnviroment>>> {
+        match &self.parent {
+            Some(parent) => Some(parent.clone()),
+            None => None
         }
     }
 
