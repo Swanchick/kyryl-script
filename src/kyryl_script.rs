@@ -8,6 +8,7 @@ use crate::interpreter::enviroment::Environment;
 use crate::interpreter::interpreter::Interpreter;
 
 use crate::ks_std::register_standart_library;
+use crate::parser::statement::Statement;
 
 pub struct KyrylScript {
     global: Rc<RefCell<Environment>>,
@@ -33,7 +34,7 @@ impl KyrylScript {
             interpreter
         }
     }
-    
+
     pub fn run_from_file(&mut self, path: &str) -> io::Result<()> {
         register_standart_library();
 

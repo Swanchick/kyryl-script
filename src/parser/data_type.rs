@@ -76,9 +76,6 @@ impl DataType {
     }
 
     pub fn is_void(data_type: &DataType) -> bool {
-        match data_type {
-            DataType::Void(_) => true,
-            _ => false
-        }
+        matches!(data_type, DataType::Void(_))
     }
 }

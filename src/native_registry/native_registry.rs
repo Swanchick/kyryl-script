@@ -5,8 +5,6 @@ use std::sync::Once;
 
 
 use crate::interpreter::enviroment::Environment;
-use crate::interpreter::interpreter::Interpreter;
-use crate::interpreter::value::Value;
 use super::native_buffer::NativeBuffer;
 
 use super::native_types::NativeTypes;

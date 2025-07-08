@@ -1,4 +1,4 @@
-func name() {
+function name() {
     println("Kyryl");
 }
 

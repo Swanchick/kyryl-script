@@ -57,6 +57,7 @@ pub fn get_token(text: &str) -> Option<Token> {
         "||" => Some(Token::Or),
         "?" => Some(Token::Question),
         "." => Some(Token::Dot),
+        "::" => Some(Token::ColonColon),
         _ => None
     }
 }
@@ -127,6 +128,7 @@ pub enum Token {
     Or, // ||
     Question, // ?
     Dot, // .
+    ColonColon, // ::
 }
 
 impl fmt::Display for Token {
@@ -188,6 +190,7 @@ impl fmt::Display for Token {
             Token::Or => write!(f, "||"),
             Token::Question => write!(f, "?"),
             Token::Dot => write!(f, "."),
+            Token::ColonColon => write!(f, "::")
         }
     }
 }

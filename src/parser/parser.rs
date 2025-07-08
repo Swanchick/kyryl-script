@@ -1,4 +1,5 @@
-use crate::lexer::token::Token;
+use crate::lexer::lexer::Lexer;
+use crate::{kyryl_script::KyrylScript, lexer::token::Token};
 use crate::lexer::token_pos::TokenPos;
 use crate::native_registry::native_registry::NativeRegistry;
 use crate::native_registry::native_types::NativeTypes;
@@ -9,15 +10,16 @@ use super::expression::Expression;
 use super::parameter::Parameter;
 use super::semantic_analyzer::SemanticAnalyzer;
 use super::statement::Statement;
+use super::context::Context;
 
-use std::io;
+use std::{io, path::{self, PathBuf}};
 
 pub struct Parser {
     tokens: Vec<Token>,
     token_pos: Vec<TokenPos>,
     current_token: usize,
     semantic_analyzer: SemanticAnalyzer,
-    function_context: Option<DataType>,
+    function_context: Context,
 }
 
 impl Parser {
@@ -42,7 +44,7 @@ impl Parser {
             token_pos,
             current_token: 0,
             semantic_analyzer: semantic_analyzer,
-            function_context: None
+            function_context: Context::None
         }
     }
 
@@ -124,6 +126,12 @@ impl Parser {
 
     pub fn parse_statement(&mut self) -> io::Result<Option<Statement>> {
         let public = self.match_token(&Token::Pub);
+
+        if let Context::Function { return_data: _ } = self.function_context {
+            if public {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid context for public visibility!"));
+            }
+        }
         
         match self.advance() {
             Some(Token::Let) => return Ok(Some(self.parse_variable_declaration_statement(public)?)),
@@ -132,6 +140,7 @@ impl Parser {
             Some(Token::While) => return Ok(Some(self.parse_while_statement()?)),
             Some(Token::For) => return Ok(Some(self.parse_for_statement()?)),
             Some(Token::Function) => return Ok(Some(self.parse_function(public)?)),
+            Some(Token::Use) => return Ok(Some(self.parse_use()?)),
             Some(Token::Identifier(name)) => {
                 match self.advance() {
                     Some(Token::Equal) => return Ok(Some(self.parse_assignment_statement(name)?)),
@@ -194,9 +203,9 @@ impl Parser {
             return_type: Box::new(function_type.clone())
         };
 
-        self.function_context = Some(function_data_type.clone());
+        self.function_context = Context::Function { return_data: function_data_type.clone() };
         let block = self.parse_block_statement()?;
-        self.function_context = None;
+        self.function_context = Context::None;
 
         self.semantic_analyzer.exit_function_enviroment()?;
 
@@ -214,6 +223,46 @@ impl Parser {
                 body: block 
             }
         )
+    }
+
+
+    fn parse_use(&mut self) -> io::Result<Statement> {
+        let mut path_vec: Vec<String> = Vec::new();
+        
+        loop {
+            let name = self.consume_identifier()?;
+            path_vec.push(name);
+
+            if !self.match_token(&Token::ColonColon) {
+                break;
+            }
+        }
+
+        if let Some(last) = path_vec.last() {
+            let mut last = last.clone();
+            
+            last.push_str(".ks");
+
+            let len = path_vec.len();
+            path_vec[len - 1] = last;
+        }
+        
+
+        let mut path = PathBuf::new();
+        for path_str in path_vec {
+            path = path.join(path_str);
+        }
+
+        if let Some(source) = path.to_str() {
+            let mut lexer = Lexer::load(source)?;
+            lexer.lexer()?;
+
+            
+
+        }
+
+
+        todo!()
     }
 
     fn parse_early_return(&mut self, name: String) -> io::Result<Statement> {
@@ -309,11 +358,11 @@ impl Parser {
     }
 
     fn parse_return_statement(&mut self) -> io::Result<Statement> { 
-        if let Some(function_context) = self.function_context.clone() {
+        if let Context::Function{ return_data} = self.function_context.clone() {
             let expression = self.parse_expression()?;
             let data_type = self.semantic_analyzer.get_data_type(&expression)?;
 
-            if let DataType::Function { parameters: _, return_type } = function_context {
+            if let DataType::Function { parameters: _, return_type } = return_data {
                 if *return_type != data_type {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "Mismatch return and function return types!"));
                 }
@@ -716,9 +765,9 @@ impl Parser {
             return_type: Box::new(return_type.clone())
         };
         
-        self.function_context = Some(function_data_type.clone());
+        self.function_context = Context::Function{ return_data: function_data_type.clone() };
         let block = self.parse_block_statement()?;
-        self.function_context = None;
+        self.function_context = Context::None;
 
         self.semantic_analyzer.exit_function_enviroment()?;
 
