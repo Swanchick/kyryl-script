@@ -1,5 +1,10 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::io;
+use std::rc::Rc;
 
+use crate::interpreter::enviroment::Environment;
+use crate::interpreter::variable_slot::VariableSlot;
 use crate::parser::statement::Statement;
 use crate::parser::data_type::DataType;
 
@@ -157,7 +162,21 @@ impl<'a> InterpretStatement<'a> {
                 Ok(Return::Nothing)
             },
             Statement::Function { name, public, return_type, parameters, body } => {
-                let value = Value::new(None, ValueType::Function { return_type: return_type, parameters: parameters, body: body });
+                let mut capture = Environment::new();
+                {
+                    let local = self.interpreter.get_local();
+                    let local = local.borrow();
+
+                    capture = local.partially_clone();
+                }
+                
+
+                let value = Value::new(None, ValueType::Function { 
+                    return_type, 
+                    parameters, 
+                    body, 
+                    capture: Rc::new(RefCell::new(capture))
+                });
                 
                 if public {
                     self.interpreter.global_define_variable(name.as_str(), value)?;

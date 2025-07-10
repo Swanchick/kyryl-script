@@ -1,5 +1,8 @@
+use std::cell::RefCell;
 use std::io;
+use std::rc::Rc;
 
+use crate::interpreter::enviroment::Environment;
 use crate::parser::expression::Expression;
 use crate::parser::operator::Operator;
 use crate::parser::data_type::DataType;
@@ -155,7 +158,20 @@ impl<'a> InterpretExpression<'a> {
                 Ok(value)
             },
             Expression::FunctionLiteral { parameters, return_type, block } => {
-                Ok(Value::new(None, ValueType::Function { return_type: return_type, parameters: parameters, body: block }))
+                let mut capture = Environment::new();
+                {
+                    let local = self.interpreter.get_local();
+                    let local = local.borrow();
+
+                    capture = local.partially_clone();
+                }
+                
+                Ok(Value::new(None, ValueType::Function { 
+                    return_type, 
+                    parameters, 
+                    body: block,
+                    capture: Rc::new(RefCell::new(capture))
+                }))
             },
             Expression::IntegerLiteral(value) => {
                 let value = Value::new(None, ValueType::Integer(value));

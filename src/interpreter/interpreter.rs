@@ -49,6 +49,14 @@ impl Interpreter {
         }
     }
 
+    pub fn get_local(&self) -> Rc<RefCell<Environment>> {
+        self.local.clone()
+    }
+
+    pub fn get_global(&self) -> Rc<RefCell<Environment>> {
+        self.global.clone()
+    }
+
     pub fn create_reference(&mut self, reference: u64) {
         let mut local = self.local.borrow_mut();
         local.create_reference(reference);
@@ -192,6 +200,11 @@ impl Interpreter {
         local.move_to_parent(value);
     }
 
+    fn append_environment(&mut self, env: Rc<RefCell<Environment>>) {
+        let mut local = self.local.borrow_mut();
+        local.append_environment(env.clone());
+    }
+
     pub fn call_function(&mut self, name: &str, args: Vec<Value>) -> io::Result<Value> {        
         let registry = NativeRegistry::get();
         {
@@ -210,12 +223,14 @@ impl Interpreter {
 
         let value = self.get_variable(name)?;
 
-        if let ValueType::Function { return_type: _, parameters, body } = value.get_type() {
+        if let ValueType::Function { return_type: _, parameters, body, capture } = value.get_type() {
             if args.len() != parameters.len() {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
             }
 
             self.enter_enviroment();
+
+            self.append_environment(capture.clone());
 
             for (arg, parameter) in args.iter().zip(parameters) {
                 if arg.get_type().get_data_type() != parameter.data_type && !DataType::is_void(&arg.get_data_type()) {

@@ -1,3 +1,7 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use crate::interpreter::enviroment::Environment;
 use crate::parser::data_type::DataType;
 use crate::parser::parameter::Parameter;
 use crate::parser::statement::Statement;
@@ -20,7 +24,8 @@ pub enum ValueType {
     Function {
         return_type: DataType,
         parameters: Vec<Parameter>,
-        body: Vec<Statement>
+        body: Vec<Statement>,
+        capture: Rc<RefCell<Environment>>
     },
 }
 
@@ -71,7 +76,7 @@ impl ValueType {
             ValueType::Float(_) => DataType::Float,
             ValueType::String(_) => DataType::String,
             ValueType::Boolean(_) => DataType::Bool,
-            ValueType::Function { return_type, parameters, body: _ } => {
+            ValueType::Function { return_type, parameters, body: _, capture: _ } => {
                 let mut parameter_types: Vec<DataType> = Vec::new();
 
                 for parameter in parameters {

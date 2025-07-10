@@ -10,7 +10,7 @@ use super::variable_slot::VariableSlot;
 
 static GLOBAL_REFERENCE_COUNT: AtomicU64 = AtomicU64::new(0);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
     parent: Option<Rc<RefCell<Environment>>>,
     values: HashMap<String, u64>,
@@ -26,6 +26,14 @@ impl Environment {
         }
     }
 
+    pub fn partially_clone(&self) -> Environment {
+        Environment { 
+            parent: None, 
+            values: self.values.clone(), 
+            references: self.references.clone() 
+        }
+    } 
+
     pub fn with_parent(parent: Rc<RefCell<Environment>>) -> Environment {
         Environment {
             parent: Some(parent),
@@ -38,6 +46,26 @@ impl Environment {
         match &self.parent {
             Some(parent) => Some(parent.clone()),
             None => None
+        }
+    }
+
+    pub fn get_values(&self) -> &HashMap<String, u64> {
+        &self.values
+    }
+
+    pub fn get_references(&self) -> &HashMap<u64, VariableSlot> {
+        &self.references
+    }
+
+    pub fn append_environment(&mut self, env: Rc<RefCell<Environment>>) {
+        let env = env.borrow();
+
+        for (name, reference) in env.get_values() {
+            self.values.insert(name.clone(), *reference);
+        }
+
+        for (reference, slot) in env.get_references() {
+            self.references.insert(*reference, slot.clone());
         }
     }
 
