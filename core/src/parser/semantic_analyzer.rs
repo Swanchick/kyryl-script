@@ -27,6 +27,19 @@ impl SemanticAnalyzer {
         }
     }
 
+    pub fn with_global(global: Rc<RefCell<AnalyzerEnviroment>>) -> SemanticAnalyzer {
+        let local = Rc::new(RefCell::new(AnalyzerEnviroment::with_parent(global.clone())));
+        
+        SemanticAnalyzer { 
+            global: global.clone(), 
+            local: local
+        }
+    }
+
+    pub fn get_global(&self) -> Rc<RefCell<AnalyzerEnviroment>> {
+        self.global.clone()
+    } 
+
     pub fn register_rust_function(&mut self, name: String, function: &NativeFunction) {
         self.local.borrow_mut().add(name, DataType::RustFunction { return_type: Box::new(function.return_type.clone()) });
     }

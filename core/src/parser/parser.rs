@@ -1,8 +1,9 @@
 use crate::lexer::lexer::Lexer;
-use crate::{kyryl_script::KyrylScript, lexer::token::Token};
+use crate::lexer::token::Token;
 use crate::lexer::token_pos::TokenPos;
 use crate::native_registry::native_registry::NativeRegistry;
 use crate::native_registry::native_types::NativeTypes;
+use crate::parser::semantic_analyzer;
 
 use super::operator::Operator;
 use super::data_type::DataType;
@@ -12,7 +13,8 @@ use super::semantic_analyzer::SemanticAnalyzer;
 use super::statement::Statement;
 use super::context::Context;
 
-use std::{io, path::{self, PathBuf}};
+use std::io;
+use std::path::PathBuf;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -23,9 +25,32 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(tokens: Vec<Token>, token_pos: Vec<TokenPos>) -> Self {
+    pub fn new(tokens: Vec<Token>, token_pos: Vec<TokenPos>) -> Parser {
         let mut semantic_analyzer = SemanticAnalyzer::new();
         
+        let registry = NativeRegistry::get();
+        {
+            let registry = registry.borrow();
+
+            for (name, native) in registry.get_natives() {
+                match native {
+                    NativeTypes::NativeFunction(function) => {
+                        semantic_analyzer.register_rust_function(name.clone(), function);
+                    }
+                }
+            }
+        }
+        
+        Parser {
+            tokens,
+            token_pos,
+            current_token: 0,
+            semantic_analyzer: semantic_analyzer,
+            function_context: Context::None
+        }
+    }
+
+    pub fn with_semantic_analyzer(tokens: Vec<Token>, token_pos: Vec<TokenPos>, mut semantic_analyzer: SemanticAnalyzer) -> Parser {
         let registry = NativeRegistry::get();
         {
             let registry = registry.borrow();
@@ -253,16 +278,25 @@ impl Parser {
             path = path.join(path_str);
         }
 
-        if let Some(source) = path.to_str() {
-            let mut lexer = Lexer::load(source)?;
+        if let Some(file_name) = path.to_str() {
+            let mut lexer: Lexer = Lexer::load(file_name)?;
             lexer.lexer()?;
 
+            let mut parser = Parser::with_semantic_analyzer(
+                lexer.get_tokens().clone(), 
+                lexer.get_token_pos().clone(),
+                SemanticAnalyzer::with_global(self.semantic_analyzer.get_global())
+            );
             
+            let body = parser.parse_block_statement()?;
 
+            Ok(Statement::Use { 
+                file_name: file_name.to_string(), 
+                body 
+            })
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot find file"))
         }
-
-
-        todo!()
     }
 
     fn parse_early_return(&mut self, name: String) -> io::Result<Statement> {
