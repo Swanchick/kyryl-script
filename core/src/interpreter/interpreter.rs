@@ -18,6 +18,7 @@ use super::value::{Value, ValueType};
 pub struct Interpreter {
     global: Rc<RefCell<Environment>>,
     local: Rc<RefCell<Environment>>,
+    pub source_file: String
 }
 
 impl Interpreter {
@@ -37,6 +38,7 @@ impl Interpreter {
         Interpreter {
             global: global.clone(),
             local: local,
+            source_file: String::new()
         }
     }
 
@@ -46,6 +48,7 @@ impl Interpreter {
         Interpreter {
             global: local.clone(),
             local: local,
+            source_file: String::new()
         }
     }
 

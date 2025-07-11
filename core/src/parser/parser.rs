@@ -234,10 +234,17 @@ impl Parser {
 
         self.semantic_analyzer.exit_function_enviroment()?;
 
-        self.semantic_analyzer.save_variable(
-            function_name.clone(), 
-            function_data_type
-        );
+        if public {
+            self.semantic_analyzer.global_save_variable(
+                function_name.clone(), 
+                function_data_type
+            );
+        } else {
+            self.semantic_analyzer.save_variable(
+                function_name.clone(), 
+                function_data_type
+            );
+        }
 
         Ok(
             Statement::Function { 
@@ -262,6 +269,8 @@ impl Parser {
                 break;
             }
         }
+
+        self.consume_token(Token::Semicolon)?;
 
         if let Some(last) = path_vec.last() {
             let mut last = last.clone();
@@ -288,6 +297,9 @@ impl Parser {
                 SemanticAnalyzer::with_global(self.semantic_analyzer.get_global())
             );
             
+            // Todo:
+            // if file in the same directory, but it is not root, then they could not specify the path to this file, since these files are in the same directory
+
             let body = parser.parse_block_statement()?;
 
             Ok(Statement::Use { 
@@ -377,7 +389,11 @@ impl Parser {
             } 
         }
 
-        self.semantic_analyzer.save_variable(name.clone(), dt.clone());
+        if public {
+            self.semantic_analyzer.global_save_variable(name.clone(), dt.clone());
+        } else {
+            self.semantic_analyzer.save_variable(name.clone(), dt.clone());
+        }
 
         self.consume_token(Token::Semicolon)?;
 

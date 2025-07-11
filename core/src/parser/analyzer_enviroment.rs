@@ -5,6 +5,7 @@ use std::io;
 
 use super::data_type::DataType;
 
+#[derive(Debug, Clone)]
 pub struct AnalyzerEnviroment {
     parent: Option<Rc<RefCell<AnalyzerEnviroment>>>,
     variables: HashMap<String, DataType>
@@ -25,6 +26,10 @@ impl AnalyzerEnviroment {
         }
     }
 
+    pub fn get_variables(&self) -> &HashMap<String, DataType> {
+        &self.variables
+    }
+
     pub fn get_parent(&self) -> Option<Rc<RefCell<AnalyzerEnviroment>>> {
         match &self.parent {
             Some(parent) => Some(parent.clone()),
@@ -38,7 +43,10 @@ impl AnalyzerEnviroment {
         } else if let Some(parent) = &self.parent {
             parent.borrow().get_variable_type(name)
         } else {
-            Err(io::Error::new(io::ErrorKind::InvalidData,"Variable not found"))
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Variable {} not found", name)
+            ))
         }
     }
 

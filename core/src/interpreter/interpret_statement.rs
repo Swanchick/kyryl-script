@@ -1,10 +1,10 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
+
 use std::io;
 use std::rc::Rc;
+use std::thread::current;
 
 use crate::interpreter::enviroment::Environment;
-use crate::interpreter::variable_slot::VariableSlot;
 use crate::parser::statement::Statement;
 use crate::parser::data_type::DataType;
 
@@ -208,7 +208,14 @@ impl<'a> InterpretStatement<'a> {
             },
 
             Statement::Use { file_name, body } => {
-                todo!()
+                let current_file = self.interpreter.source_file.clone();
+
+                self.interpreter.source_file = file_name;
+                self.interpret_block(body)?;
+
+                self.interpreter.source_file = current_file;
+
+                Ok(Return::Nothing)
             }
         } 
     }

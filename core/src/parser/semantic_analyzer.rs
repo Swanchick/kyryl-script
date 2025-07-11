@@ -9,7 +9,7 @@ use super::analyzer_enviroment::AnalyzerEnviroment;
 use super::data_type::DataType;
 use super::expression::Expression;
 
-
+#[derive(Debug, Clone)]
 pub struct SemanticAnalyzer {
     global: Rc<RefCell<AnalyzerEnviroment>>,
     local: Rc<RefCell<AnalyzerEnviroment>>
@@ -322,5 +322,9 @@ impl SemanticAnalyzer {
 
     pub fn save_variable(&mut self, name: String, data_type: DataType) {
         self.local.borrow_mut().add(name, data_type);
+    }
+
+    pub fn global_save_variable(&mut self, name: String, data_type: DataType) {
+        self.global.borrow_mut().add(name, data_type);
     }
 }
