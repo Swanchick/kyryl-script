@@ -1,6 +1,12 @@
-[package]
-name = "kyryl-script"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+    "core", 
+    "cli", 
+    "ks_std"
+]
 
-[dependencies]
+resolver = "3"
+
+
+[workspace.dependencies]
+core = { path = "core" }
