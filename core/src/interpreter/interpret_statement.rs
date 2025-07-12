@@ -319,10 +319,13 @@ impl<'a> InterpretStatement<'a> {
                     if self.interpreter.same_scope(value_to_assign_reference) {
                         references[index] = value_to_assign_reference;
                     } else {
-                        self.interpreter.create_reference(value_to_assign_reference);
+                        println!("{:?}", value_to_assign);
+
+                        self.interpreter.assign_variable_on_reference(child_reference, value_to_assign)?;
+
                     }
                 } else {
-                    self.interpreter.assign_variable_by_reference(child_reference, value_to_assign)?;
+                    self.interpreter.assign_variable_on_reference(child_reference, value_to_assign)?;
                 }
 
 

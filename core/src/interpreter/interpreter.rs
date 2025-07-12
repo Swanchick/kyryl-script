@@ -113,10 +113,10 @@ impl Interpreter {
         Ok(())
     }
 
-    pub fn assign_variable_by_reference(&mut self, reference: u64, value: Value) -> io::Result<()> {
+    pub fn assign_variable_on_reference(&mut self, reference: u64, value: Value) -> io::Result<()> {
         let mut local = self.local.borrow_mut();
 
-        local.assign_variable_by_reference(reference, value)?;
+        local.assign_variable_on_reference(reference, value)?;
         Ok(())
     }
 

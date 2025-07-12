@@ -152,7 +152,7 @@ impl Environment {
         Ok(())
     }
 
-    pub fn assign_variable_by_reference(&mut self, reference: u64, mut value: Value) -> io::Result<()> {
+    pub fn assign_variable_on_reference(&mut self, reference: u64, mut value: Value) -> io::Result<()> {
         if let Some(slot) = self.references.get(&reference) {
             match slot.clone() {
                 VariableSlot::Variable(_) => {                    
@@ -161,11 +161,16 @@ impl Environment {
                 }
 
                 VariableSlot::Reference(parent_reference) => {
-                    self.assign_variable_by_reference(parent_reference, value)?;
+                    self.assign_variable_on_reference(parent_reference, value)?;
                 }
             }
+        } else {
+            if let Some(parent) = self.parent.clone() {
+                let mut parent = parent.borrow_mut();
+
+                parent.assign_variable_on_reference(reference, value)?;
+            }
         }
-        
         
         Ok(())
     }
@@ -181,7 +186,7 @@ impl Environment {
             if let Some(slot) = self.references.get(&reference) {
                 if let VariableSlot::Reference(parent_reference) = slot {
                     if let Some(parent) = &self.parent {
-                        return parent.borrow_mut().assign_variable_by_reference(parent_reference.clone(), value);
+                        return parent.borrow_mut().assign_variable_on_reference(parent_reference.clone(), value);
                     } else {
                         return Err(io::Error::new(io::ErrorKind::InvalidData, format!("")))
                     }

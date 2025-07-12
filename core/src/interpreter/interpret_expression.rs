@@ -221,8 +221,8 @@ impl<'a> InterpretExpression<'a> {
                     let child_reference = references.iter().nth(index as usize);
                     
                     if let Some(child_reference) = child_reference {
-                        let child_value = self.interpreter.get_variable_reference(child_reference.clone())?;
-                        
+                        let mut child_value = self.interpreter.get_variable_reference(child_reference.clone())?;
+
                         Ok(child_value)
                     } else {
                         Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds!"))
