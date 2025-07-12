@@ -23,7 +23,7 @@ impl<'a> InterpretStatement<'a> {
 
     pub fn interpret_statement(&mut self, statement: Statement) -> io::Result<Return> {        
         match statement {
-            Statement::VariableDeclaration { name, public, data_type, value } => {                
+            Statement::VariableDeclaration { name, public, data_type, value } => {                                
                 let value = if let Some(expression) = value {
                     self.interpreter.interpret_expression(expression)?
                 } else {
@@ -315,18 +315,7 @@ impl<'a> InterpretStatement<'a> {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "Expected the same data type!"));
                 }
 
-                if let Some(value_to_assign_reference) = value_to_assign.get_reference() {
-                    if self.interpreter.same_scope(value_to_assign_reference) {
-                        references[index] = value_to_assign_reference;
-                    } else {
-                        println!("{:?}", value_to_assign);
-
-                        self.interpreter.assign_variable_on_reference(child_reference, value_to_assign)?;
-
-                    }
-                } else {
-                    self.interpreter.assign_variable_on_reference(child_reference, value_to_assign)?;
-                }
+                self.interpreter.assign_variable_on_reference(child_reference, value_to_assign)?;
 
 
                 return Ok(())

@@ -645,24 +645,27 @@ impl Parser {
     }
 
     fn parse_front_unary(&mut self) -> io::Result<Expression> {
-        if self.match_next_token(&Token::PlusPlus) || self.match_next_token(&Token::MinusMinus) {
-            let operator = match self.next() {
-                Some(Token::PlusPlus) => Operator::PlusPlus,
-                Some(Token::MinusMinus) => Operator::MinusMinus,
+        let left = self.parse_identifier_index()?;
+        
+        if self.match_token(&Token::PlusPlus) 
+            || self.match_token(&Token::MinusMinus)
+            || self.match_token(&Token::Not) {
+
+            let operator = match self.previous() {
+                Token::PlusPlus => Operator::PlusPlus,
+                Token::MinusMinus => Operator::MinusMinus,
+                Token::Not => Operator::Clone,
                 _ => unreachable!()
             };
             
-            let expression = self.parse_identifier_index()?;
-            self.advance();
-            
             Ok(
                 Expression::FrontUnaryOp {
-                    expression: Box::new(expression),
+                    expression: Box::new(left),
                     operator: operator
                 }
             )
         } else {
-            self.parse_identifier_index()
+            Ok(left)
         }
     }
 

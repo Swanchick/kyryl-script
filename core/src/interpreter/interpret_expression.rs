@@ -3,6 +3,7 @@ use std::io;
 use std::rc::Rc;
 
 use crate::interpreter::enviroment::Environment;
+use crate::interpreter::interpret_expression;
 use crate::parser::expression::Expression;
 use crate::parser::operator::Operator;
 use crate::parser::data_type::DataType;
@@ -43,16 +44,9 @@ impl<'a> InterpretExpression<'a> {
                 Ok(value)
             },
             Expression::FrontUnaryOp { expression, operator } => {
-                if let Expression::Identifier(name) = *expression {
-                    self.interpret_front_unary_operation(&name, operator)?;
+                let value = self.interpret_expression(*expression)?;
 
-                    Ok(Value::new(None, ValueType::Null))
-                } else {
-                    Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        format!("Operator \"{:?}\" is used only with variable!", operator)
-                    ))
-                }
+                self.interpret_front_unary_operation(value, operator)
             },
             Expression::FunctionCall(name, parameters) => {
                 let mut args: Vec<Value> = Vec::new();
@@ -242,62 +236,69 @@ impl<'a> InterpretExpression<'a> {
         }        
     }
 
-    fn interpret_front_unary_operation(&mut self, name: &str, operator: Operator) -> io::Result<ValueType> {
+    fn interpret_front_unary_operation(&mut self, value: Value, operator: Operator) -> io::Result<Value> {
         match operator {
-            Operator::PlusPlus => self.interpret_plus_plus(name),
-            Operator::MinusMinus => self.interpret_minus_minus(name),
+            Operator::PlusPlus => {
+                let value_type = self.interpret_plus_plus(value)?;
+                Ok(Value::new(None, value_type))
+            },
+            Operator::MinusMinus => {
+                let value_type = self.interpret_minus_minus(value)?;
+                Ok(Value::new(None, value_type))
+            },
+            Operator::Clone => self.interpret_clone(value),
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Front Unary Operation Error"))
         }
     }
 
-    fn interpret_plus_plus(&mut self, name: &str) -> io::Result<ValueType> {
-        let value_type = {
-            let value = self.interpreter.get_variable(name)?;
-            let value_type = value.get_type();
-
-            let new_value_type = match value_type {
-                ValueType::Integer(number) => ValueType::Integer(number + 1),
-                ValueType::Float(number) => ValueType::Float(number + 1.0),
-                _ => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        format!("Type \"{}\" is not supported by this operator!", value_type.get_data_type()),
-                    ));
-                }
-            };
-
-            let new_value = Value::new(value.get_reference(), new_value_type.clone());
-            self.interpreter.assign_variable(name, new_value)?;
-
-            new_value_type
-        };
-
-        Ok(value_type)
+    fn interpret_clone(&mut self, mut value: Value) -> io::Result<Value> {
+        value.clear_reference();
+        
+        Ok(value)
     }
 
-    fn interpret_minus_minus(&mut self, name: &str) -> io::Result<ValueType> {
-        let value_type = {
-            let value = self.interpreter.get_variable(name)?;
-            let value_type = value.get_type();
+    fn interpret_plus_plus(&mut self, value: Value) -> io::Result<ValueType> {
+        let value_type = value.get_type();
 
-            let new_value_type = match value_type {
-                ValueType::Integer(number) => ValueType::Integer(number - 1),
-                ValueType::Float(number) => ValueType::Float(number - 1.0),
-                _ => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        format!("Type \"{}\" is not supported by this operator!", value_type.get_data_type()),
-                    ));
-                }
-            };
-
-            let new_value = Value::new(value.get_reference(), new_value_type.clone());
-            self.interpreter.assign_variable(name, new_value)?;
-
-            new_value_type
+        let new_value_type = match value_type {
+            ValueType::Integer(number) => ValueType::Integer(number + 1),
+            ValueType::Float(number) => ValueType::Float(number + 1.0),
+            _ => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("Type \"{}\" is not supported by this operator!", value_type.get_data_type()),
+                ));
+            }
         };
 
-        Ok(value_type)
+        let new_value = Value::new(value.get_reference(), new_value_type.clone());
+        if let Some(reference) = new_value.get_reference() {
+            self.interpreter.assign_variable_on_reference(reference, new_value)?;
+        }
+
+        Ok(new_value_type)
+    }
+
+    fn interpret_minus_minus(&mut self, value: Value) -> io::Result<ValueType> {
+        let value_type = value.get_type();
+
+        let new_value_type = match value_type {
+            ValueType::Integer(number) => ValueType::Integer(number - 1),
+            ValueType::Float(number) => ValueType::Float(number - 1.0),
+            _ => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("Type \"{}\" is not supported by this operator!", value_type.get_data_type()),
+                ));
+            }
+        };
+
+        let new_value = Value::new(value.get_reference(), new_value_type.clone());
+        if let Some(reference) = new_value.get_reference() {
+            self.interpreter.assign_variable_on_reference(reference, new_value)?;
+        }
+
+        Ok(new_value_type)
     }
 
     fn interpret_binary_operation(&self, left: ValueType, right: ValueType, operator: Operator) -> io::Result<ValueType> {

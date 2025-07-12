@@ -15,5 +15,6 @@ pub enum Operator {
     Or,
     Tilde,
     PlusPlus,
-    MinusMinus
+    MinusMinus,
+    Clone
 }

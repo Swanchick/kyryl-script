@@ -179,6 +179,9 @@ impl SemanticAnalyzer {
         match (operator, left) {
             (Operator::PlusPlus, DataType::Int) => Ok(DataType::Int),
             (Operator::PlusPlus, DataType::Float) => Ok(DataType::Float),
+            (Operator::MinusMinus, DataType::Int) => Ok(DataType::Int),
+            (Operator::MinusMinus, DataType::Float) => Ok(DataType::Float),
+            (Operator::Clone, data_type) => Ok(data_type),
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid operator in front unary operation!"))
         }
     }
