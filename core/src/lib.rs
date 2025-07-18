@@ -3,6 +3,7 @@ pub mod lexer;
 pub mod parser;
 pub mod interpreter;
 pub mod native_registry;
+pub mod global;
 
 
 #[cfg(test)]

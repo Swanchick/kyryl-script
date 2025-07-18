@@ -1,7 +1,7 @@
 use core::native_registry::native_registry::NativeRegistry;
 use core::native_registry::native_buffer::NativeBuffer;
 use core::native_registry::native_function::NativeFunction;
-use core::parser::data_type::DataType;
+use core::global::data_type::DataType;
 
 mod ks_print;
 mod ks_len;

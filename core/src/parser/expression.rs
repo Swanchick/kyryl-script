@@ -1,4 +1,4 @@
-use crate::parser::data_type::DataType;
+use crate::global::data_type::DataType;
 use crate::parser::statement::Statement;
 
 use super::parameter::Parameter;

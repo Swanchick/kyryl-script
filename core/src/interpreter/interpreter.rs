@@ -1,11 +1,10 @@
-use std::fmt::format;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
 
 use crate::native_registry::native_registry::NativeRegistry;
 use crate::native_registry::native_types::NativeTypes;
-use crate::parser::data_type::DataType;
+use crate::global::data_type::DataType;
 use crate::parser::expression::Expression;
 use crate::parser::parameter::Parameter;
 use crate::parser::statement::Statement;

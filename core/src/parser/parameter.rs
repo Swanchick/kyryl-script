@@ -1,4 +1,4 @@
-use super::data_type::DataType;
+use crate::global::data_type::DataType;
 
 
 #[derive(PartialEq, Debug, Clone)]

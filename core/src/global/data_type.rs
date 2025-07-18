@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::parameter::Parameter;
+use crate::parser::parameter::Parameter;
 
 
 #[derive(PartialEq, Debug, Clone)]

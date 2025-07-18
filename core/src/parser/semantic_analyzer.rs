@@ -4,9 +4,9 @@ use std::io;
 
 use crate::native_registry::native_function::NativeFunction;
 use crate::parser::operator::Operator;
+use crate::global::data_type::DataType;
 
 use super::analyzer_enviroment::AnalyzerEnviroment;
-use super::data_type::DataType;
 use super::expression::Expression;
 
 #[derive(Debug, Clone)]

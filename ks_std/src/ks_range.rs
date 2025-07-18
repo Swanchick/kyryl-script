@@ -2,7 +2,7 @@ use std::io;
 
 use core::interpreter::value::{Value, ValueType};
 use core::native_registry::native_registry::NativeRegistry;
-use core::parser::data_type::DataType;
+use core::global::data_type::DataType;
 
 
 pub fn ks_range(args: Vec<Value>) -> io::Result<Value> {

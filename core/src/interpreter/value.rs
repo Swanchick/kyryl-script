@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::interpreter::enviroment::Environment;
-use crate::parser::data_type::DataType;
+use crate::global::data_type::DataType;
 use crate::parser::parameter::Parameter;
 use crate::parser::statement::Statement;
 

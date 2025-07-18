@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use crate::interpreter::enviroment::Environment;
 use crate::parser::statement::Statement;
-use crate::parser::data_type::DataType;
+use crate::global::data_type::DataType;
 
 use super::interpreter::Interpreter;
 use super::return_value::Return;

@@ -3,9 +3,9 @@ use crate::lexer::token::Token;
 use crate::lexer::token_pos::TokenPos;
 use crate::native_registry::native_registry::NativeRegistry;
 use crate::native_registry::native_types::NativeTypes;
+use crate::global::data_type::DataType;
 
 use super::operator::Operator;
-use super::data_type::DataType;
 use super::expression::Expression;
 use super::parameter::Parameter;
 use super::semantic_analyzer::SemanticAnalyzer;

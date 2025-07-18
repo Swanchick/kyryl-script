@@ -1,4 +1,5 @@
-use super::data_type::DataType;
+use crate::global::data_type::DataType;
+
 use super::expression::Expression;
 use super::parameter::Parameter;
 

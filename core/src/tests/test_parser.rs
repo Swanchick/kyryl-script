@@ -5,10 +5,10 @@ use crate::*;
 use lexer::lexer::Lexer;
 use lexer::token::Token;
 use parser::parser::Parser;
-use parser::data_type::DataType;
 use parser::operator::Operator;
 use parser::expression::Expression;
 use parser::statement::Statement;
+use global::data_type::DataType;
 
 #[test]
 fn test_expression() {
