@@ -26,6 +26,7 @@ pub fn get_token(text: &str) -> Option<Token> {
         "in" => Some(Token::In),
         "use" => Some(Token::Use),
         "pub" => Some(Token::Pub),
+        "root" => Some(Token::Root),
 
         "(" => Some(Token::LeftParenthesis),
         ")" => Some(Token::RightParenthesis),
@@ -95,6 +96,7 @@ pub enum Token {
     In,
     Use,
     Pub,
+    Root,
 
     // Symbols
 
@@ -159,6 +161,7 @@ impl fmt::Display for Token {
             Token::In => write!(f, "in"),
             Token::Use => write!(f, "use"),
             Token::Pub => write!(f, "pub"),
+            Token::Root => write!(f, "root"),
 
             Token::RightParenthesis => write!(f, ")"),
             Token::LeftParenthesis => write!(f, "("),
