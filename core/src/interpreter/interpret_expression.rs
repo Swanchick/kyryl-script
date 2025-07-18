@@ -3,7 +3,6 @@ use std::io;
 use std::rc::Rc;
 
 use crate::interpreter::enviroment::Environment;
-use crate::interpreter::interpret_expression;
 use crate::parser::expression::Expression;
 use crate::parser::operator::Operator;
 use crate::parser::data_type::DataType;
@@ -215,14 +214,11 @@ impl<'a> InterpretExpression<'a> {
                     let child_reference = references.iter().nth(index as usize);
                     
                     if let Some(child_reference) = child_reference {
-                        let mut child_value = self.interpreter.get_variable_reference(child_reference.clone())?;
-
-                        Ok(child_value)
+                        self.interpreter.get_variable_reference(child_reference.clone())
                     } else {
                         Err(io::Error::new(io::ErrorKind::InvalidData, "Out of bounds!"))
                     }
                 },
-    
                 _ => Err(io::Error::new(
                     io::ErrorKind::InvalidData, 
                     format!("Index operation requires lists or strings to get specific value from it! Instead got {}.", left.get_data_type())

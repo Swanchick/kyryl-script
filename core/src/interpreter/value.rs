@@ -27,6 +27,9 @@ pub enum ValueType {
         body: Vec<Statement>,
         capture: Rc<RefCell<Environment>>
     },
+    RustFucntion {
+        return_type: DataType
+    }
 }
 
 
@@ -85,6 +88,7 @@ impl ValueType {
 
                 DataType::Function { parameters: parameter_types, return_type: Box::new(return_type.clone()) }
             },
+            ValueType::RustFucntion { return_type } => DataType::RustFunction { return_type: Box::new(return_type.clone()) },
             ValueType::List { references: _, data_type } => DataType::List(Box::new(data_type.clone())),
             ValueType::Null => DataType::void(),
             ValueType::Tuple { references: _, data_types } => data_types.clone()

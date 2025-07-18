@@ -3,7 +3,6 @@ use crate::lexer::token::Token;
 use crate::lexer::token_pos::TokenPos;
 use crate::native_registry::native_registry::NativeRegistry;
 use crate::native_registry::native_types::NativeTypes;
-use crate::parser::semantic_analyzer;
 
 use super::operator::Operator;
 use super::data_type::DataType;
@@ -955,24 +954,6 @@ impl Parser {
         } else {
             false
         }
-    }
-
-    fn match_next_token(&mut self, token: &Token) -> bool {
-        if let Some(next_token) = self.next() {
-            next_token == token
-        } else {
-            false
-        }
-    }
-
-
-    fn next(&self) -> Option<&Token> {
-        if self.current_token + 1 >= self.tokens.len() {
-            None
-        } else {
-            Some(&self.tokens[self.current_token + 1])
-        }
-
     }
 
     fn previous(&self) -> &Token {

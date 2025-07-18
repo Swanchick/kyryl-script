@@ -33,6 +33,8 @@ impl Interpreter {
             }
 
             native.local = Some(local.clone());
+
+            
         }
 
         Interpreter {
