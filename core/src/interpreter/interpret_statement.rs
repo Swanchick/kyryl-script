@@ -2,7 +2,6 @@ use std::cell::RefCell;
 
 use std::io;
 use std::rc::Rc;
-use std::thread::current;
 
 use crate::interpreter::enviroment::Environment;
 use crate::parser::statement::Statement;

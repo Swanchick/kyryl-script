@@ -1,3 +1,4 @@
+use std::fmt::format;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
@@ -6,6 +7,7 @@ use crate::native_registry::native_registry::NativeRegistry;
 use crate::native_registry::native_types::NativeTypes;
 use crate::parser::data_type::DataType;
 use crate::parser::expression::Expression;
+use crate::parser::parameter::Parameter;
 use crate::parser::statement::Statement;
 
 use super::enviroment::Environment;
@@ -25,16 +27,26 @@ impl Interpreter {
     pub fn new(global: Rc<RefCell<Environment>>) -> Interpreter {
         let local = Rc::new(RefCell::new(Environment::with_parent(global.clone())));
         
-        let native = NativeRegistry::get();
+        let registry = NativeRegistry::get();
         {
-            let mut native = native.borrow_mut();
-            if let None = native.global {
-                native.global = Some(global.clone());
+            let mut registry = registry.borrow_mut();
+            if let None = registry.global {
+                registry.global = Some(global.clone());
             }
 
-            native.local = Some(local.clone());
+            registry.local = Some(local.clone());
 
-            
+            for (name, native) in registry.get_natives() {
+                match native {
+                    NativeTypes::NativeFunction(function) => {
+                        let mut env = global.borrow_mut();
+                        let _ = env.define_variable(name.clone(), Value::new(
+                            None, 
+                            ValueType::RustFucntion { return_type: function.return_type.clone() }
+                        ));
+                    }
+                }
+            }
         }
 
         Interpreter {
@@ -86,7 +98,7 @@ impl Interpreter {
     pub fn define_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
         let mut local = self.local.borrow_mut();
 
-        local.define_variable(name.to_string(), value)?;
+        local.define_variable(name.to_string(), value);
         
         Ok(())
     }
@@ -94,7 +106,7 @@ impl Interpreter {
     pub fn global_define_variable(&mut self, name: &str, value: Value) -> io::Result<()> {
         let mut global = self.global.borrow_mut();
         
-        global.define_variable(name.to_string(), value)?;
+        global.define_variable(name.to_string(), value);
         
         Ok(())
     }
@@ -210,77 +222,95 @@ impl Interpreter {
         local.append_environment(env.clone());
     }
 
-    pub fn call_function(&mut self, name: &str, args: Vec<Value>) -> io::Result<Value> {        
+    pub fn call_native_function(&self, name: &str, args: Vec<Value>) -> io::Result<Value> {
         let registry = NativeRegistry::get();
-        {
-            let registry = registry.borrow();
-            let native = registry.get_native(name);
+        let registry = registry.borrow();
+        let native = registry.get_native(name);
 
-            match native {
-                Some(NativeTypes::NativeFunction(native_function)) => {
-                    let value = (native_function.function)(args.clone())?;
+        if let Some(NativeTypes::NativeFunction(native_function)) = native {
+            (native_function.function)(args.clone())
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} is not a function!", name)))
+        }
+    }
 
-                    return Ok(value);
-                },
-                _ => {}
-            }
+    pub fn call_internal_function(
+        &mut self,
+        name: &str,
+        args: Vec<Value>, 
+        parameters: &Vec<Parameter>, 
+        body: &Vec<Statement>, 
+        capture: Rc<RefCell<Environment>>,
+        return_type: &DataType
+    ) -> io::Result<Value> {
+        if args.len() != parameters.len() {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
         }
 
-        let value = self.get_variable(name)?;
+        self.enter_enviroment();
 
-        if let ValueType::Function { return_type: _, parameters, body, capture } = value.get_type() {
-            if args.len() != parameters.len() {
+        self.append_environment(capture.clone());
+
+        for (arg, parameter) in args.iter().zip(parameters) {
+            if arg.get_type().get_data_type() != parameter.data_type && !DataType::is_void(&arg.get_data_type()) {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
             }
 
-            self.enter_enviroment();
-
-            self.append_environment(capture.clone());
-
-            for (arg, parameter) in args.iter().zip(parameters) {
-                if arg.get_type().get_data_type() != parameter.data_type && !DataType::is_void(&arg.get_data_type()) {
-                    return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Missmatch in function's singature \"{}\"!", name)));
-                }
-
-                if let Some(reference) = arg.get_reference() {
-                    self.define_variable_by_reference(parameter.name.as_str(), reference)?;
-                } else {
-                    self.define_variable(parameter.name.as_str(), arg.clone())?;
-                }
-            }
-
-            let result = self.interpret_statements(body.to_vec())?;
-            
-            match result {
-                Return::Success(mut value) => {
-                    match value.get_type() {
-                        ValueType::List { references, data_type: _ } | ValueType::Tuple { references, data_types: _ } => {
-                            for reference in references {
-                                let list_value = self.get_variable_reference(*reference)?;
-                                self.move_to_parent(list_value);
-                            }
-                        },
-                        _ => {}
-                    }
-                    
-                    if let Some(reference) = value.get_reference() {
-                        if self.same_scope(reference) {
-                            value.clear_reference();
-                        }
-                    }
-                    
-                    self.exit_enviroment()?;
-                    
-                    return Ok(value);
-                },
-                Return::Nothing => {
-
-                    self.exit_enviroment()?;
-                    return Ok(Value::new(None, ValueType::Null));
-                }
+            if let Some(reference) = arg.get_reference() {
+                self.define_variable_by_reference(parameter.name.as_str(), reference)?;
+            } else {
+                self.define_variable(parameter.name.as_str(), arg.clone())?;
             }
         }
 
-        Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} is not a function!", name)))
+        let result = self.interpret_statements(body.to_vec())?;
+        
+        match result {
+            Return::Success(mut value) => {
+                if let ValueType::List { references, data_type: _ } | ValueType::Tuple { references, data_types: _ } = value.get_type() {
+                    for reference in references {
+                        let list_value = self.get_variable_reference(*reference)?;
+                        self.move_to_parent(list_value);
+                    }
+                }
+                
+                if let Some(reference) = value.get_reference() {
+                    if self.same_scope(reference) {
+                        value.clear_reference();
+                    }
+                }
+                
+                self.exit_enviroment()?;
+
+                if value.get_data_type() != *return_type {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData, 
+                        format!("Different return types in {} ({} != {})", name, return_type, value.get_data_type())
+                    ));
+                } 
+                
+                Ok(value)
+            },
+            Return::Nothing => {
+                self.exit_enviroment()?;
+                Ok(Value::new(None, ValueType::Null))
+            }
+        }
+    }
+
+    pub fn call_function(&mut self, name: &str, args: Vec<Value>) -> io::Result<Value> {        
+        let value = self.get_variable(name)?;
+
+        match value.get_type() {
+            ValueType::Function { return_type, parameters, body, capture } => {
+                self.call_internal_function(name, args, parameters, body, capture.clone(), return_type)
+            },
+            ValueType::RustFucntion { return_type: _ } => {
+                self.call_native_function(name, args)
+            },
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Variable {} is not a function!", name)))
+        }
+
+        
     }
 }

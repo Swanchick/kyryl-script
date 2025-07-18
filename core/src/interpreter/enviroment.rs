@@ -127,7 +127,7 @@ impl Environment {
         false
     }
 
-    pub fn define_variable(&mut self, name: String, value: Value) -> io::Result<()> {
+    pub fn define_variable(&mut self, name: String, value: Value) {
         match value.get_reference() {
             Some(reference) => {
                 let same_scope = self.same_scope_reference(reference);
@@ -148,8 +148,6 @@ impl Environment {
                 self.create_value(name, value);
             }
         }
-
-        Ok(())
     }
 
     pub fn assign_variable_on_reference(&mut self, reference: u64, mut value: Value) -> io::Result<()> {
