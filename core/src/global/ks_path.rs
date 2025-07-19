@@ -11,6 +11,12 @@ impl KsPath {
         self.path.as_path()
     }
 
+    pub fn new() -> KsPath {
+        KsPath { 
+            path: PathBuf::new() 
+        }
+    }
+
     pub fn from(path: &str) -> io::Result<KsPath> {
         let absolute_path = absolute(path)?;
 
@@ -19,12 +25,28 @@ impl KsPath {
         })
     }
 
+    pub fn from_path(path: &Path) -> KsPath {
+        KsPath {
+            path: path.to_path_buf()
+        }
+    }
+
     pub fn is_dir(&self) -> bool {
         self.path.is_dir()
     }
 
     pub fn is_file(&self) -> bool {
         self.path.is_file()
+    }
+
+    pub fn exists(&self) -> bool {
+        self.path.exists()
+    }
+
+    pub fn parent(&self) -> KsPath {
+        let parent = self.path.parent().unwrap();
+
+        KsPath::from_path(parent)
     }
 
     pub fn get_filename(&self) -> Option<&str> {

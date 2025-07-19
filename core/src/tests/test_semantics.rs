@@ -1,5 +1,6 @@
 use crate::lexer::lexer::Lexer;
 use crate::parser::parser::Parser;
+use crate::global::ks_path::KsPath;
 
 
 #[test]
@@ -9,7 +10,7 @@ fn test_variable_declatarion_with_type() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     parser.parse_block_statement().unwrap();
 }
 
@@ -21,7 +22,7 @@ fn test_variable_declatarion_with_type_error() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     let err = parser.parse_block_statement().unwrap_err();
 
 
@@ -41,7 +42,7 @@ fn test_function_enviroment_parameters() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     parser.parse_block_statement().unwrap();
 }
 
@@ -58,7 +59,7 @@ fn test_function_enviroment_parameters_error() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Different data types in expression and actual data type.");
 }
 
@@ -74,7 +75,7 @@ fn test_function_enviroment_parameters_out_of_function() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Variable bar not found!");
 }
 
@@ -90,7 +91,7 @@ fn test_function_enviroment_return_mismatch() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Mismatch return and function return types!");
 }
 
@@ -106,7 +107,7 @@ fn test_function_enviroment_if_condition_mismatch() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "If statment condition mismatch data_type, expected bool!");
 }
 
@@ -126,7 +127,7 @@ fn test_function_enviroment_if_enviroment_error() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Variable c not found!");
 }
 
@@ -144,7 +145,7 @@ fn test_function_enviroment_for_type_mismatch() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "For loop statement mismatch type!");
 }
 
@@ -160,7 +161,7 @@ fn test_function_enviroment_expression_mismatch() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Arithmetic type error!");
 }
 
@@ -175,7 +176,7 @@ fn test_function_enviroment_null_error() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Attempt to perform an operation with a null value");
 }
 
@@ -192,7 +193,7 @@ fn test_function_assigment_error() {
 
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Assigment value mismatch!");
 }
 
@@ -207,7 +208,7 @@ fn test_function_tuple_index() {
     let mut lexer = Lexer::new(source.to_string());
     lexer.lexer().unwrap();
 
-    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), lexer.get_token_pos().clone(), KsPath::new(), KsPath::new());
 
     assert_eq!(parser.parse_block_statement().unwrap_err().to_string(), "Different data types in expression and actual data type.")
 }

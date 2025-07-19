@@ -1,5 +1,6 @@
 use std::io;
 
+use crate::global::ks_path::KsPath;
 use crate::interpreter::interpreter::Interpreter;
 use crate::interpreter::value::ValueType;
 
@@ -15,7 +16,7 @@ fn get_expression(expression_str: &str) -> Expression {
     let mut lexer = Lexer::new(expression_str);
     lexer.lexer().unwrap();
     
-    let mut parser = Parser::new(lexer.get_tokens().clone(), Vec::new());
+    let mut parser = Parser::new(lexer.get_tokens().clone(), Vec::new(), KsPath::new(), KsPath::new());
     parser.parse_expression().unwrap()
 }
 

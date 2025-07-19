@@ -1,3 +1,4 @@
+use crate::global::ks_path::KsPath;
 use crate::lexer::lexer::Lexer;
 use crate::lexer::token::Token;
 use crate::lexer::token_pos::TokenPos;
@@ -13,7 +14,6 @@ use super::statement::Statement;
 use super::context::Context;
 
 use std::io;
-use std::path::PathBuf;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -21,10 +21,17 @@ pub struct Parser {
     current_token: usize,
     semantic_analyzer: SemanticAnalyzer,
     function_context: Context,
+    path: KsPath,
+    root: KsPath
 }
 
 impl Parser {
-    pub fn new(tokens: Vec<Token>, token_pos: Vec<TokenPos>) -> Parser {
+    pub fn new(
+        tokens: Vec<Token>, 
+        token_pos: Vec<TokenPos>, 
+        path: KsPath, 
+        root: KsPath
+    ) -> Parser {
         let mut semantic_analyzer = SemanticAnalyzer::new();
         
         let registry = NativeRegistry::get();
@@ -39,17 +46,25 @@ impl Parser {
                 }
             }
         }
-        
+
         Parser {
             tokens,
             token_pos,
             current_token: 0,
             semantic_analyzer: semantic_analyzer,
-            function_context: Context::None
+            function_context: Context::None,
+            path,
+            root
         }
     }
 
-    pub fn with_semantic_analyzer(tokens: Vec<Token>, token_pos: Vec<TokenPos>, mut semantic_analyzer: SemanticAnalyzer) -> Parser {
+    pub fn with_semantic_analyzer(
+        tokens: Vec<Token>, 
+        token_pos: Vec<TokenPos>, 
+        mut semantic_analyzer: SemanticAnalyzer, 
+        path: KsPath,
+        root: KsPath
+    ) -> Parser {
         let registry = NativeRegistry::get();
         {
             let registry = registry.borrow();
@@ -68,7 +83,9 @@ impl Parser {
             token_pos,
             current_token: 0,
             semantic_analyzer: semantic_analyzer,
-            function_context: Context::None
+            function_context: Context::None,
+            path,
+            root
         }
     }
 
@@ -258,11 +275,18 @@ impl Parser {
 
 
     fn parse_use(&mut self) -> io::Result<Statement> {
-        let mut path_vec: Vec<String> = Vec::new();
-        
+        let mut is_root = false;
+
+
         loop {
+            if self.match_token(&Token::Root) {
+                is_root = true;
+                self.consume_token(Token::ColonColon)?;
+                continue;
+            } 
+
             let name = self.consume_identifier()?;
-            path_vec.push(name);
+
 
             if !self.match_token(&Token::ColonColon) {
                 break;
@@ -271,43 +295,56 @@ impl Parser {
 
         self.consume_token(Token::Semicolon)?;
 
-        if let Some(last) = path_vec.last() {
-            let mut last = last.clone();
-            
-            last.push_str(".ks");
 
-            let len = path_vec.len();
-            path_vec[len - 1] = last;
-        }
+        todo!()
+        
+        // let mut path_vec: Vec<String> = Vec::new();
+        
+        // loop {
+        //     let name = self.consume_identifier()?;
+        //     path_vec.push(name);
+
+        //     if !self.match_token(&Token::ColonColon) {
+        //         break;
+        //     }
+        // }
+
+        // self.consume_token(Token::Semicolon)?;
+
+        // if let Some(last) = path_vec.last() {
+        //     let mut last = last.clone();
+            
+        //     last.push_str(".ks");
+
+        //     let len = path_vec.len();
+        //     path_vec[len - 1] = last;
+        // }
         
 
-        let mut path = PathBuf::new();
-        for path_str in path_vec {
-            path = path.join(path_str);
-        }
+        // let mut path = PathBuf::new();
+        // for path_str in path_vec {
+        //     path = path.join(path_str);
+        // }
 
-        if let Some(file_name) = path.to_str() {
-            let mut lexer: Lexer = Lexer::load(file_name)?;
-            lexer.lexer()?;
+        // if let Some(file_name) = path.to_str() {
+        //     let mut lexer: Lexer = Lexer::load(file_name)?;
+        //     lexer.lexer()?;
 
-            let mut parser = Parser::with_semantic_analyzer(
-                lexer.get_tokens().clone(), 
-                lexer.get_token_pos().clone(),
-                SemanticAnalyzer::with_global(self.semantic_analyzer.get_global())
-            );
-            
-            // Todo:
-            // if file in the same directory, but it is not root, then they could not specify the path to this file, since these files are in the same directory
+        //     let mut parser = Parser::with_semantic_analyzer(
+        //         lexer.get_tokens().clone(), 
+        //         lexer.get_token_pos().clone(),
+        //         SemanticAnalyzer::with_global(self.semantic_analyzer.get_global())
+        //     );
 
-            let body = parser.parse_block_statement()?;
+        //     let body = parser.parse_block_statement()?;
 
-            Ok(Statement::Use { 
-                file_name: file_name.to_string(), 
-                body 
-            })
-        } else {
-            Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot find file"))
-        }
+        //     Ok(Statement::Use { 
+        //         file_name: file_name.to_string(), 
+        //         body 
+        //     })
+        // } else {
+        //     Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot find file"))
+        // }
     }
 
     fn parse_early_return(&mut self, name: String) -> io::Result<Statement> {

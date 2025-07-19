@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::io;
 
+use crate::global::ks_path::KsPath;
 use crate::lexer::lexer::Lexer;
 use crate::parser::parser::Parser;
 use crate::interpreter::enviroment::Environment;
@@ -40,7 +41,10 @@ impl KyrylScript {
         let tokens = lexer.get_tokens().clone();
         let token_pos = lexer.get_token_pos().clone();
 
-        let mut parser = Parser::new(tokens, token_pos);
+        let path = KsPath::from(path)?;
+        let root = path.parent();
+
+        let mut parser = Parser::new(tokens, token_pos, path, root);
         let block = parser.start();
 
         if let Err(e) = block {
