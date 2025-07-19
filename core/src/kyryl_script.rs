@@ -10,13 +10,13 @@ use crate::interpreter::interpreter::Interpreter;
 
 pub struct KyrylScript {
     global: Rc<RefCell<Environment>>,
-    interpreter: Rc<RefCell<Interpreter>>,
+    interpreter: Interpreter,
 }
 
 impl KyrylScript {
     pub fn new() -> KyrylScript {
         let global = Rc::new(RefCell::new(Environment::new()));
-        let interpreter = Rc::new(RefCell::new(Interpreter::new(global.clone())));
+        let interpreter = Interpreter::new(global.clone());
         
         KyrylScript {
             global,
@@ -25,7 +25,7 @@ impl KyrylScript {
     }
 
     pub fn with_global(global: Rc<RefCell<Environment>>) -> KyrylScript {
-        let interpreter = Rc::new(RefCell::new(Interpreter::new(global.clone())));
+        let interpreter = Interpreter::new(global.clone());
         
         KyrylScript {
             global: global.clone(),
@@ -51,9 +51,8 @@ impl KyrylScript {
         }
 
         let block = block?;
-        let mut interpreter = self.interpreter.borrow_mut();
 
-        let interpreter_result = interpreter.interpret_statements(block);
+        let interpreter_result = self.interpreter.interpret_statements(block);
 
         if let Err(e) = interpreter_result {
             return Err(io::Error::new(

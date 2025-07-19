@@ -1,20 +1,26 @@
-use std::env::args;
+use std::env::{args, current_exe};
 
-use core::kyryl_script::KyrylScript;
-use ks_std::ks_register_std;
+// use core::kyryl_script::KyrylScript;
+// use ks_std::ks_register_std;
+use core::global::ks_path::KsPath;
 
 fn main() {
-    let args: Vec<String> = args().collect();
-    let path = args.get(1);
+    
+    let test_path = KsPath::from(".\\example\\main.ks").unwrap();
 
-    if let Some(path) = path {
-        ks_register_std();
+    println!("{:?}", test_path.is_ks_file());
+    
+    // let args: Vec<String> = args().collect();
+    // let path = args.get(1);
 
-        let mut ks = KyrylScript::new();
-        let ks_result = ks.run_from_file(path);
+    // if let Some(path) = path {
+    //     ks_register_std();
 
-        if let Err(e) = ks_result {
-            println!("{}", e);
-        }
-    }
+    //     let mut ks = KyrylScript::new();
+    //     let ks_result = ks.run_from_file(path);
+
+    //     if let Err(e) = ks_result {
+    //         println!("{}", e);
+    //     }
+    // }
 }
