@@ -1,6 +1,9 @@
 use std::io;
 use std::path::{absolute, Path, PathBuf};
 
+const KS_FILE_FORMAT: &str = ".ks";
+
+
 #[derive(Debug)]
 pub struct KsPath {
     path: PathBuf
@@ -36,7 +39,24 @@ impl KsPath {
     }
 
     pub fn is_file(&self) -> bool {
-        self.path.is_file()
+        let filename = self.get_filename();
+
+        if let Some(filename) = filename {
+            let mut filename = filename.to_string();
+
+            if filename.ends_with(KS_FILE_FORMAT) {
+                self.path.is_file()
+            }  else {
+                filename.push_str(KS_FILE_FORMAT);
+                let mut parent_path = self.parent();
+                
+                parent_path.push(filename);
+
+                parent_path.is_file()
+            }
+        } else {
+            false
+        }
     }
 
     pub fn exists(&self) -> bool {
@@ -59,21 +79,8 @@ impl KsPath {
         }
     }
 
-    pub fn is_ks_file(&self) -> bool {
-        if self.path.is_dir() {
-            return false;
-        }
-
-        let filename = self.get_filename();
-
-        if let Some(filename) = filename {
-            let mut filename = filename.to_string();
-            filename.drain(0..filename.len() - 2);
-
-            filename == "ks"
-        } else {
-            false
-        }
+    pub fn push(&mut self, path: String) {
+        self.path.push(path);
     }
 
     pub fn join(&mut self, path: &str) {
