@@ -275,29 +275,27 @@ impl Parser {
 
 
     fn parse_use(&mut self) -> io::Result<Statement> {
-        let mut is_root = false;
+        let mut current_path = self.path.parent();
 
-
-        loop {
-            if self.match_token(&Token::Root) {
-                is_root = true;
-                self.consume_token(Token::ColonColon)?;
-                continue;
-            } 
-
-            let name = self.consume_identifier()?;
-
-
-            if !self.match_token(&Token::ColonColon) {
-                break;
-            }
+        if self.match_token(&Token::Root) {
+            self.consume_token(Token::ColonColon)?;
+            current_path = self.root.clone();
         }
+        let name = self.consume_identifier()?;
+        current_path.push(name);
 
         self.consume_token(Token::Semicolon)?;
 
- 
-        todo!()
+        let statement = if current_path.is_file() {
+            self.parse_use_file(current_path, self.root.clone())
+        } else if current_path.is_dir() {
+            todo!()
+        } else {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot use directory {}")) 
+        }?;
         
+        todo!()   
+
         // let mut path_vec: Vec<String> = Vec::new();
         
         // loop {
@@ -345,6 +343,32 @@ impl Parser {
         // } else {
         //     Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot find file"))
         // }
+    }
+
+    fn parse_use_file(&self, path: KsPath, root: KsPath) -> io::Result<Statement> {
+        if let Some(source_path) = path.to_string() {
+            let mut lexer = Lexer::load(source_path)?;
+            lexer.lexer()?;
+
+            let mut parser = Parser::with_semantic_analyzer(
+                lexer.get_tokens().clone(), 
+                lexer.get_token_pos().clone(), 
+                SemanticAnalyzer::with_global(self.semantic_analyzer.get_global()), 
+                path.clone(), 
+                root
+            );
+
+            let body = parser.parse_block_statement()?;
+
+            // Todo:
+            // Change Use statment to contain module or public function
+            Ok(Statement::Use { 
+                file_name: source_path.to_string(), 
+                body 
+            })
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot find file"))
+        }
     }
 
     fn parse_early_return(&mut self, name: String) -> io::Result<Statement> {

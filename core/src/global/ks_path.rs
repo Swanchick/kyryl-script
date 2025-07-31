@@ -2,9 +2,10 @@ use std::io;
 use std::path::{absolute, Path, PathBuf};
 
 const KS_FILE_FORMAT: &str = ".ks";
+const KS_MODULE_FILE: &str = "mod.ks";
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KsPath {
     path: PathBuf
 }
@@ -34,8 +35,17 @@ impl KsPath {
         }
     }
 
+    pub fn from_path_buf(path: PathBuf) -> KsPath {
+        KsPath {
+            path: path.to_path_buf()
+        }
+    }
+
     pub fn is_dir(&self) -> bool {
-        self.path.is_dir()
+        let is_dir = self.path.is_dir();
+        let module_path = self.join(KS_MODULE_FILE);
+
+        is_dir && module_path.is_file()
     }
 
     pub fn is_file(&self) -> bool {
@@ -83,7 +93,11 @@ impl KsPath {
         self.path.push(path);
     }
 
-    pub fn join(&mut self, path: &str) {
-        self.path.push(path);
+    pub fn join(&self, path: &str) -> KsPath {
+        KsPath::from_path_buf(self.path.join(path))
+    }
+
+    pub fn to_string(&self) -> Option<&str> {
+        self.path.to_str()
     }
 }
