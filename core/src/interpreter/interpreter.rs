@@ -34,11 +34,11 @@ impl Interpreter {
             }
 
             registry.local = Some(local.clone());
+            let mut env = local.borrow_mut();
 
             for (name, native) in registry.get_natives() {
                 match native {
                     NativeTypes::NativeFunction(function) => {
-                        let mut env = global.borrow_mut();
                         let _ = env.define_variable(name.clone(), Value::new(
                             None, 
                             ValueType::RustFucntion { return_type: function.return_type.clone() }
