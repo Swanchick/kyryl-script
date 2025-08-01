@@ -1,4 +1,4 @@
-use crate::global::ks_path::KsPath;
+use crate::global::ks_path::{KsPath, KS_MODULE_FILE};
 use crate::lexer::lexer::Lexer;
 use crate::lexer::token::Token;
 use crate::lexer::token_pos::TokenPos;
@@ -110,6 +110,10 @@ impl Parser {
                 Err(io::Error::new(e.kind(), error))
             }
         }
+    }
+
+    pub fn get_semantic_analyzer(&self) -> &SemanticAnalyzer {
+        &self.semantic_analyzer
     }
 
     pub fn parse_block_statement(&mut self) -> io::Result<Vec<Statement>> {
@@ -289,60 +293,29 @@ impl Parser {
         let statement = if current_path.is_file() {
             self.parse_use_file(current_path, self.root.clone())
         } else if current_path.is_dir() {
-            todo!()
+            self.parse_use_dir(current_path, self.root.clone())
         } else {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot use directory {}")) 
         }?;
         
-        todo!()   
+        match self.advance() {
+            Some(Token::ColonColon) => {
+                if let Some(Token::LeftBrace) = self.advance() {
 
-        // let mut path_vec: Vec<String> = Vec::new();
-        
-        // loop {
-        //     let name = self.consume_identifier()?;
-        //     path_vec.push(name);
+                } else {
 
-        //     if !self.match_token(&Token::ColonColon) {
-        //         break;
-        //     }
-        // }
+                }
+            }
 
-        // self.consume_token(Token::Semicolon)?;
-
-        // if let Some(last) = path_vec.last() {
-        //     let mut last = last.clone();
+            Some(Token::Semicolon) => {
+                
+            }
             
-        //     last.push_str(".ks");
+            None => {}
+            _ => {}
+        }
 
-        //     let len = path_vec.len();
-        //     path_vec[len - 1] = last;
-        // }
-        
-
-        // let mut path = PathBuf::new();
-        // for path_str in path_vec {
-        //     path = path.join(path_str);
-        // }
-
-        // if let Some(file_name) = path.to_str() {
-        //     let mut lexer: Lexer = Lexer::load(file_name)?;
-        //     lexer.lexer()?;
-
-        //     let mut parser = Parser::with_semantic_analyzer(
-        //         lexer.get_tokens().clone(), 
-        //         lexer.get_token_pos().clone(),
-        //         SemanticAnalyzer::with_global(self.semantic_analyzer.get_global())
-        //     );
-
-        //     let body = parser.parse_block_statement()?;
-
-        //     Ok(Statement::Use { 
-        //         file_name: file_name.to_string(), 
-        //         body 
-        //     })
-        // } else {
-        //     Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot find file"))
-        // }
+        todo!()
     }
 
     fn parse_use_file(&self, path: KsPath, root: KsPath) -> io::Result<Statement> {
@@ -359,15 +332,40 @@ impl Parser {
             );
 
             let body = parser.parse_block_statement()?;
-
-            // Todo:
-            // Change Use statment to contain module or public function
             Ok(Statement::Use { 
                 file_name: source_path.to_string(), 
-                body 
+                body: body,
+                global: parser.get_semantic_analyzer().get_global()
             })
         } else {
-            Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot find file"))
+            Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot find file!"))
+        }
+    }
+
+    fn parse_use_dir(&self, mut path: KsPath, root: KsPath) -> io::Result<Statement> {
+        path.push(KS_MODULE_FILE.to_string());
+
+        if let Some(source_path) = path.to_string() {
+            let mut lexer = Lexer::load(source_path)?;
+            lexer.lexer()?;
+
+            let mut parser = Parser::with_semantic_analyzer(
+                lexer.get_tokens().clone(), 
+                lexer.get_token_pos().clone(), 
+                SemanticAnalyzer::with_global(self.semantic_analyzer.get_global()), 
+                path.clone(), 
+                root
+            );
+
+            let body = parser.parse_block_statement()?;
+
+            Ok(Statement::Use { 
+                file_name: source_path.to_string(), 
+                body: body, 
+                global: parser.get_semantic_analyzer().get_global() 
+            })
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidData, "Cannot find directory module!"))
         }
     }
 

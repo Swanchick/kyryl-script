@@ -1,7 +1,9 @@
 use std::fmt::Display;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use crate::parser::parameter::Parameter;
-
+use crate::parser::analyzer_enviroment::AnalyzerEnviroment;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum DataType {
@@ -12,13 +14,14 @@ pub enum DataType {
     Void(Option<Box<DataType>>),
     List(Box<DataType>),
     Tuple(Vec<DataType>),
+    Mod(Rc<RefCell<AnalyzerEnviroment>>),
     RustFunction {
         return_type: Box<DataType>
     },
     Function {
         parameters: Vec<DataType>,
         return_type: Box<DataType>
-    }
+    },
 }
 
 
@@ -40,8 +43,7 @@ impl DataType {
             DataType::List(data_type) => format!("list {:?}", data_type),
             DataType::Function{ parameters, return_type } => format!("function({:?}) -> {:?}", parameters, return_type),
             DataType::Tuple(types) => {
-                let mut out = String::new();
-                out.push('(');
+                let mut out = String::from("(");
                 let len = types.len();
 
                 for (i, data_type) in types.iter().enumerate() {
@@ -49,10 +51,31 @@ impl DataType {
 
                     out.push_str(type_string.as_str());
 
-                    if i != len - 1 {
-                        out.push_str(", ");
-                    } else {
+                    if i == len - 1 {
                         out.push(')');
+                    } else {
+                        out.push_str(", ");
+                    }
+                }
+
+                out
+            }
+            DataType::Mod(global) => {
+                let (variables, len) = {
+                    let global = global.borrow();
+                    let variables = global.get_variables().clone();
+                    let len = variables.len();
+                    (variables, len)
+                };
+
+                let mut out = String::from("{");
+                for (i, (name, data_type)) in variables.iter().enumerate() {
+                    out.push_str(format!("{} = {}", name, data_type).as_str());
+
+                    if i == len - 1 {
+                        out.push('}');
+                    } else {
+                        out.push_str(", ");
                     }
                 }
 

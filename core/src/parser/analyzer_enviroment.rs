@@ -5,7 +5,7 @@ use std::io;
 
 use crate::global::data_type::DataType;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AnalyzerEnviroment {
     parent: Option<Rc<RefCell<AnalyzerEnviroment>>>,
     variables: HashMap<String, DataType>

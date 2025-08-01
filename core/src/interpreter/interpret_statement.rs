@@ -206,7 +206,7 @@ impl<'a> InterpretStatement<'a> {
                 Ok(Return::Nothing)
             },
 
-            Statement::Use { file_name, body } => {
+            Statement::Use { file_name, body, global: _ } => {
                 let current_file = self.interpreter.source_file.clone();
 
                 self.interpreter.source_file = file_name;

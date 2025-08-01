@@ -1,8 +1,8 @@
 use std::io;
 use std::path::{absolute, Path, PathBuf};
 
+pub const KS_MODULE_FILE: &str = "mod.ks";
 const KS_FILE_FORMAT: &str = ".ks";
-const KS_MODULE_FILE: &str = "mod.ks";
 
 
 #[derive(Debug, Clone)]
