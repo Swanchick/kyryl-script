@@ -1,8 +1,8 @@
 use ks_vm_new::ir::instructions::{
-    ADD, AND, ASC, ASN, ASV, ASV8, ASV16, CALL, CALL8, CALL16, CLR, CPY, DEC, DIV, EQ, FREE, FREE8,
-    FREE16, GE, GT, INC, JMP, JMP8, JMP16, JNZ, JNZ8, JNZ16, JZ, JZ8, JZ16, LBF, LBT, LDC, LDC8,
-    LDC16, LDCP, LDCP8, LDCP16, LDF, LDFC, LDFN, LDI, LDI8, LDI16, LDI32, LDN, LDS, LDV, LDV8,
-    LDV16, LE, LEN, LT, MUL, NCALL, NE, NOT, OR, RET, STR, SUB,
+    ADD, AND, ASC, ASN, ASV, ASV8, ASV16, CALL, CLR, CPY, DEC, DIV, EQ, FREE, FREE8, FREE16, GE,
+    GT, INC, JMP, JNZ, JZ, LBF, LBT, LDC, LDC8, LDC16, LDCP, LDCP8, LDCP16, LDF, LDFC, LDFN, LDI,
+    LDI8, LDI16, LDI32, LDN, LDS, LDV, LDV8, LDV16, LE, LEN, LT, MUL, NCALL, NE, NOT, OR, RET, STR,
+    SUB,
 };
 
 use super::constant::Constant;
@@ -22,6 +22,13 @@ impl Serializer {
     }
 
     fn opcode_value_u64(&self, opcode: u8, value: u64) -> Vec<u8> {
+        let mut opcode = vec![opcode];
+        let mut value = value.to_le_bytes().to_vec();
+        opcode.append(&mut value);
+        opcode
+    }
+
+    fn opcode_value_u32(&self, opcode: u8, value: u32) -> Vec<u8> {
         let mut opcode = vec![opcode];
         let mut value = value.to_le_bytes().to_vec();
         opcode.append(&mut value);
@@ -88,29 +95,6 @@ impl Serializer {
         opcode
     }
 
-    fn compressed_i32(
-        &self,
-        instruction_8: u8,
-        instruction_16: u8,
-        instruction_32: u8,
-        number: i32,
-    ) -> Vec<u8> {
-        let mut opcode: Vec<u8> = vec![];
-
-        if let Ok(v) = i8::try_from(number) {
-            opcode.push(instruction_8);
-            opcode.append(&mut v.to_le_bytes().to_vec());
-        } else if let Ok(v) = i16::try_from(number) {
-            opcode.push(instruction_16);
-            opcode.append(&mut v.to_le_bytes().to_vec());
-        } else {
-            opcode.push(instruction_32);
-            opcode.append(&mut number.to_le_bytes().to_vec());
-        }
-
-        opcode
-    }
-
     fn compressed_i64(
         &self,
         instruction_8: u8,
@@ -147,26 +131,18 @@ impl Serializer {
         }
     }
 
-    pub fn jump(
-        &self,
-        instruction_8: u8,
-        instruction_16: u8,
-        instruction_32: u8,
-        index: usize,
-        offset: i32,
-    ) -> Vec<u8> {
+    pub fn jump(&self, instruction: u8, index: usize, offset: i32) -> Vec<u8> {
         let difference = index as i32 + offset;
 
         let jump_index = self.instruction_positions[index] as i32;
         let instruction_jump = self.instruction_positions[difference as usize] as i32;
         let actual_distance = instruction_jump - jump_index;
 
-        self.compressed_i32(
-            instruction_8,
-            instruction_16,
-            instruction_32,
-            actual_distance,
-        )
+        let mut opcode = vec![instruction];
+        let bytes = &actual_distance.to_le_bytes().to_vec();
+        opcode.extend_from_slice(bytes);
+
+        opcode
     }
 
     #[inline]
@@ -195,9 +171,9 @@ impl Serializer {
             Instruction::ClearAcc => vec![CLR],
             Instruction::Return => vec![RET],
             Instruction::Free(size) => self.compressed_u32(FREE8, FREE16, FREE, *size as u32),
-            Instruction::JumpIfFalse(offset) => self.jump(JZ8, JZ16, JZ, index, *offset),
-            Instruction::JumpIfTrue(offset) => self.jump(JNZ8, JNZ16, JNZ, index, *offset),
-            Instruction::Jump(offset) => self.jump(JMP8, JMP16, JMP, index, *offset),
+            Instruction::JumpIfFalse(offset) => self.jump(JZ, index, *offset),
+            Instruction::JumpIfTrue(offset) => self.jump(JNZ, index, *offset),
+            Instruction::Jump(offset) => self.jump(JMP, index, *offset),
             Instruction::Store => vec![STR],
             Instruction::Assign => vec![ASN],
             Instruction::AssignVariable(variable_id) => {
@@ -208,7 +184,7 @@ impl Serializer {
             Instruction::LoadVar(variable_id) => {
                 self.compressed_u32(LDV8, LDV16, LDV, *variable_id)
             }
-            Instruction::Call(arguments) => self.compressed_u32(CALL8, CALL16, CALL, *arguments),
+            Instruction::Call(arguments) => self.opcode_value_u32(CALL, *arguments),
             Instruction::CallNative(native_id, arguments) => {
                 self.dual_instruction(NCALL, *native_id, *arguments)
             }

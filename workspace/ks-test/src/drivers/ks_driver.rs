@@ -73,12 +73,20 @@ impl KsDriver {
 
         let program = compiler.program();
         let bytes = program.as_bytes();
-        println!("Compiled program: {:X?}", bytes);
+
+        println!("=============== bytes ===============");
+
+        for (i, opcode) in bytes.to_vec().iter().enumerate() {
+            println!("{}: {:X}", i, opcode);
+        }
+
+        println!("=====================================");
         Ok(bytes)
     }
 
     pub fn vm(bytes: Box<[u8]>, mut natives: Vec<Box<dyn KsCall>>) -> KsResult<()> {
         let mut vm = VM::from(bytes);
+        natives.reverse();
         while let Some(native) = natives.pop() {
             vm.add_native(native);
         }

@@ -72,13 +72,3 @@ pub const LDCP16: u8 = 0x85; // <u16>
 // Small sized stack (0x90-0x9F)
 pub const FREE8: u8 = 0x90; // <u8>
 pub const FREE16: u8 = 0x91; // <u16>
-pub const CALL8: u8 = 0x92; // <u8>
-pub const CALL16: u8 = 0x93; // <u16>
-
-// Small sized branching (0xA0-0xAF)
-pub const JZ8: u8 = 0xA0; // <u8>
-pub const JZ16: u8 = 0xA1; // <u16>
-pub const JNZ8: u8 = 0xA2; // <u8>
-pub const JNZ16: u8 = 0xA3; // <u16>
-pub const JMP8: u8 = 0xA4; // <u8>
-pub const JMP16: u8 = 0xA5; // <u16>

@@ -58,16 +58,6 @@ impl Instruction {
         }
     }
 
-    fn compressed_i32(&self, number: i32) -> usize {
-        if let Ok(_) = i8::try_from(number) {
-            BYTE_INSTRUCTION
-        } else if let Ok(_) = i16::try_from(number) {
-            WORD_INSTRUCTION
-        } else {
-            DWORD_INSTRUCTION
-        }
-    }
-
     fn compressed_i64(&self, number: i64) -> usize {
         if let Ok(_) = i8::try_from(number) {
             BYTE_INSTRUCTION
@@ -101,15 +91,15 @@ impl Instruction {
             Self::ClearAcc => SINGLE_INSTRUCTION,
             Self::Return => SINGLE_INSTRUCTION,
             Self::Free(size) => self.compressed_u32(*size as u32),
-            Self::JumpIfFalse(offset) => self.compressed_i32(*offset),
-            Self::JumpIfTrue(offset) => self.compressed_i32(*offset),
-            Self::Jump(offset) => self.compressed_i32(*offset),
+            Self::JumpIfFalse(_) => DWORD_INSTRUCTION,
+            Self::JumpIfTrue(_) => DWORD_INSTRUCTION,
+            Self::Jump(_) => DWORD_INSTRUCTION,
             Self::Store => SINGLE_INSTRUCTION,
             Self::Assign => SINGLE_INSTRUCTION,
             Self::AssignVariable(variable_id) => self.compressed_u32(*variable_id),
             Self::AssignCollection => SINGLE_INSTRUCTION,
             Self::LoadVar(variable_id) => self.compressed_u32(*variable_id),
-            Self::Call(arguments) => self.compressed_u32(*arguments),
+            Self::Call(_) => DWORD_INSTRUCTION,
             Self::LoadConst(Constant::Integer(integer)) => self.compressed_i64(*integer),
             Self::LoadConst(Constant::Float(_)) => QWORD_INSTRUCTION,
             Self::LoadConst(Constant::Boolean(_)) => SINGLE_INSTRUCTION,

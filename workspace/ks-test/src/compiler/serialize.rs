@@ -2,10 +2,10 @@ use ks_core::compiler_new::instructions::Instruction;
 use ks_core::compiler_new::{constant::Constant, serializer::Serializer};
 
 use ks_vm_new::ir::instructions::{
-    ADD, AND, ASC, ASN, ASV, ASV8, ASV16, CALL, CALL8, CALL16, CLR, CPY, DEC, DIV, EQ, FREE, FREE8,
-    FREE16, GE, GT, INC, JMP8, JNZ8, JZ8, LBF, LBT, LDC, LDC8, LDC16, LDCP, LDCP8, LDCP16, LDF,
-    LDFC, LDFN, LDI, LDI8, LDI16, LDI32, LDN, LDS, LDV, LDV8, LDV16, LE, LEN, LT, MUL, NCALL, NE,
-    NOT, OR, RET, STR, SUB,
+    ADD, AND, ASC, ASN, ASV, ASV8, ASV16, CALL, CLR, CPY, DEC, DIV, EQ, FREE, FREE8, FREE16, GE,
+    GT, INC, JMP, JNZ, JZ, LBF, LBT, LDC, LDC8, LDC16, LDCP, LDCP8, LDCP16, LDF, LDFC, LDFN, LDI,
+    LDI8, LDI16, LDI32, LDN, LDS, LDV, LDV8, LDV16, LE, LEN, LT, MUL, NCALL, NE, NOT, OR, RET, STR,
+    SUB,
 };
 
 macro_rules! serialize_instruction {
@@ -93,8 +93,8 @@ serialize_jumps!(
         Instruction::LoadConst(Constant::Integer(10))
     ],
     {
-        let mut expected = vec![JZ8];
-        expected.push(5);
+        let mut expected = vec![JZ];
+        expected.extend_from_slice(&[8, 0, 0, 0]);
         expected.push(ADD);
         expected.extend_from_slice(&[LDI8, 10]);
         expected.extend_from_slice(&[LDI8, 10]);
@@ -111,8 +111,8 @@ serialize_jumps!(
         Instruction::LoadConst(Constant::Integer(10))
     ],
     {
-        let mut expected = vec![JNZ8];
-        expected.push(5);
+        let mut expected = vec![JNZ];
+        expected.extend_from_slice(&[8, 0, 0, 0]);
         expected.push(ADD);
         expected.extend_from_slice(&[LDI8, 10]);
         expected.extend_from_slice(&[LDI8, 10]);
@@ -129,8 +129,8 @@ serialize_jumps!(
         Instruction::LoadConst(Constant::Integer(10))
     ],
     {
-        let mut expected = vec![JMP8];
-        expected.push(5);
+        let mut expected = vec![JMP];
+        expected.extend_from_slice(&[8, 0, 0, 0]);
         expected.push(ADD);
         expected.extend_from_slice(&[LDI8, 10]);
         expected.extend_from_slice(&[LDI8, 10]);
@@ -265,18 +265,6 @@ serialize_instructions!(load_var16, Instruction::LoadVar(u16::MAX as u32), {
 serialize_instructions!(call, Instruction::Call(u32::MAX as u32), {
     let mut expected = vec![CALL];
     expected.extend_from_slice(&u32::MAX.to_le_bytes());
-    expected
-});
-
-serialize_instructions!(call8, Instruction::Call(u8::MAX as u32), {
-    let mut expected = vec![CALL8];
-    expected.extend_from_slice(&u8::MAX.to_le_bytes());
-    expected
-});
-
-serialize_instructions!(call16, Instruction::Call(u16::MAX as u32), {
-    let mut expected = vec![CALL16];
-    expected.extend_from_slice(&u16::MAX.to_le_bytes());
     expected
 });
 

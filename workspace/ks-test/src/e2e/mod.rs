@@ -6,50 +6,85 @@ use ks_core::parser::data_type::DataType;
 use ks_global::utils::ks_result::KsResult;
 
 use crate::drivers::KsDriver;
-use crate::e2e::native::MockPrintLn;
+use crate::e2e::native::{Delay, DigitalWrite, MockPrint};
 
 mod native;
 
-#[test]
-fn if_statement() -> KsResult<()> {
+fn run(path: &str) -> KsResult<String> {
     let mut kyrylscript = KyrylScript::new();
     kyrylscript.parser_mut().register_variable(
-        "println",
+        "print",
         DataType::RustFunction {
             return_type: Box::new(DataType::void()),
         },
         true,
     );
-    kyrylscript.compiler_mut().register_native("println", 0);
+    kyrylscript.compiler_mut().register_native("print", 0);
 
-    let bytes = KsDriver::compiler(kyrylscript, "e2e/if_statement.ks")?;
+    kyrylscript.parser_mut().register_variable(
+        "digital_write",
+        DataType::RustFunction {
+            return_type: Box::new(DataType::void()),
+        },
+        true,
+    );
+    kyrylscript
+        .compiler_mut()
+        .register_native("digital_write", 1);
+
+    kyrylscript.parser_mut().register_variable(
+        "delay",
+        DataType::RustFunction {
+            return_type: Box::new(DataType::void()),
+        },
+        true,
+    );
+    kyrylscript.compiler_mut().register_native("delay", 2);
+
+    let bytes = KsDriver::compiler(kyrylscript, path)?;
     let output = Rc::new(RefCell::new(String::new()));
 
-    KsDriver::vm(bytes, vec![Box::new(MockPrintLn::from(output.clone()))])?;
+    KsDriver::vm(
+        bytes,
+        vec![
+            Box::new(MockPrint::from(output.clone())),
+            Box::new(DigitalWrite::from(output.clone())),
+            Box::new(Delay::from(output.clone())),
+        ],
+    )?;
 
-    assert_eq!(output.borrow().clone(), "023");
+    Ok(output.borrow().clone())
+}
+
+#[test]
+fn if_statement() -> KsResult<()> {
+    let output = run("e2e/if_statement.ks")?;
+    assert_eq!(output, "023");
 
     Ok(())
 }
 
 #[test]
 fn while_statement() -> KsResult<()> {
-    let mut kyrylscript = KyrylScript::new();
-    kyrylscript.parser_mut().register_variable(
-        "println",
-        DataType::RustFunction {
-            return_type: Box::new(DataType::void()),
-        },
-        true,
+    let output = run("e2e/while_statement.ks")?;
+    assert_eq!(output, "7\\ 7\\ 7\\ 7\\ 7\\ ");
+
+    Ok(())
+}
+
+#[test]
+fn function_call() -> KsResult<()> {
+    let output = run("e2e/function_call.ks")?;
+    assert_eq!(output, "30");
+    Ok(())
+}
+
+#[test]
+fn more_complex_call() -> KsResult<()> {
+    let output = run("e2e/more_complex_call.ks")?;
+    assert_eq!(
+        output,
+        "PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;"
     );
-    kyrylscript.compiler_mut().register_native("println", 0);
-
-    let bytes = KsDriver::compiler(kyrylscript, "e2e/while_statement.ks")?;
-    let output = Rc::new(RefCell::new(String::new()));
-
-    KsDriver::vm(bytes, vec![Box::new(MockPrintLn::from(output.clone()))])?;
-
-    assert_eq!(output.borrow().clone(), "7\\ 7\\ 7\\ 7\\ 7\\ ");
-
     Ok(())
 }
