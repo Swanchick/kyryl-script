@@ -82,6 +82,9 @@ fn function_call() -> KsResult<()> {
 #[test]
 fn more_complex_call() -> KsResult<()> {
     let output = run("e2e/more_complex_call.ks")?;
-    assert_eq!(output, "A5A6A5A6A5A6A5A6");
+    assert_eq!(
+        output,
+        "PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000"
+    );
     Ok(())
 }

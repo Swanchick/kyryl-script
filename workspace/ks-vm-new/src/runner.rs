@@ -8,10 +8,10 @@ use alloc::vec::Vec;
 use crate::data_size::{DWORD, DataSize32, DataSize64, INSTRUCTION, QWORD};
 use crate::ir::byte_reader::ByteReader;
 use crate::ir::instructions::{
-    ADD, AND, ASC, ASN, ASV, ASV8, ASV16, CALL, CALL8, CALL16, CLR, CPY, DEC, DIV, EQ, FREE, FREE8,
-    FREE16, GE, GT, INC, JMP, JMP8, JMP16, JNZ, JNZ8, JNZ16, JZ, JZ8, JZ16, LBF, LBT, LDC, LDC8,
-    LDC16, LDCP, LDCP8, LDCP16, LDF, LDFC, LDFN, LDI, LDI8, LDI16, LDI32, LDN, LDS, LDV, LDV8,
-    LDV16, LE, LEN, LT, MUL, NCALL, NE, NOT, OR, RET, STR, SUB,
+    ADD, AND, ASC, ASN, ASV, ASV8, ASV16, CALL, CLR, CPY, DEC, DIV, EQ, FREE, FREE8, FREE16, GE,
+    GT, INC, JMP, JNZ, JZ, LBF, LBT, LDC, LDC8, LDC16, LDCP, LDCP8, LDCP16, LDF, LDFC, LDFN, LDI,
+    LDI8, LDI16, LDI32, LDN, LDS, LDV, LDV8, LDV16, LE, LEN, LT, MUL, NCALL, NE, NOT, OR, RET, STR,
+    SUB,
 };
 use crate::{Assign, Function, NativeCall, VMError, VMHelper, VMResult};
 
@@ -130,12 +130,8 @@ impl Runner {
         self.step(data_size.instruction_size())
     }
 
-    fn jump(&mut self, reader: ByteReader, data_size: DataSize32) -> VMResult<()> {
-        let offset = match data_size {
-            DataSize32::Byte => reader.parse_i8()? as isize,
-            DataSize32::Word => reader.parse_i16()? as isize,
-            DataSize32::DWord => reader.parse_i32()? as isize,
-        };
+    fn jump(&mut self, reader: ByteReader) -> VMResult<()> {
+        let offset = reader.parse_i32()? as isize;
 
         self.pc = self
             .pc
@@ -471,13 +467,7 @@ impl Runner {
         self.step(INSTRUCTION)
     }
 
-    fn jump_if(
-        &mut self,
-        gvs: &mut GVS,
-        reader: ByteReader,
-        data_size: DataSize32,
-        boolean: bool,
-    ) -> VMResult<()> {
+    fn jump_if(&mut self, gvs: &mut GVS, reader: ByteReader, boolean: bool) -> VMResult<()> {
         let variable = self.acc.pop(gvs)?;
 
         if variable.value_type != BOOLEAN_TYPE {
@@ -485,16 +475,16 @@ impl Runner {
         }
 
         if variable.as_boolean() == boolean {
-            self.jump(reader, data_size)
+            self.jump(reader)
         } else {
-            self.step(data_size.instruction_size())
+            self.step(INSTRUCTION + DWORD)
         }
     }
 
-    fn call(&mut self, gvs: &mut GVS, reader: ByteReader, data_size: DataSize32) -> VMResult<()> {
-        let arguments = reader.from_data_size_32(&data_size)?;
+    fn call(&mut self, gvs: &mut GVS, reader: ByteReader) -> VMResult<()> {
+        let arguments = reader.parse_u32()? as usize;
 
-        self.step(data_size.instruction_size())?;
+        self.step(INSTRUCTION + DWORD)?;
 
         let slot = self.acc.len() - arguments - 1;
         let storage_id = self.acc.remove(slot);
@@ -836,9 +826,7 @@ impl Runner {
             LDV8 => self.load_var(gvs, reader, DataSize32::Byte),
             LDV16 => self.load_var(gvs, reader, DataSize32::Word),
             LDV => self.load_var(gvs, reader, DataSize32::DWord),
-            JMP8 => self.jump(reader, DataSize32::Byte),
-            JMP16 => self.jump(reader, DataSize32::Word),
-            JMP => self.jump(reader, DataSize32::DWord),
+            JMP => self.jump(reader),
             ADD => self.add(gvs),
             SUB => self.minus(gvs),
             MUL => self.mul(gvs),
@@ -863,15 +851,9 @@ impl Runner {
             FREE16 => self.free(gvs, reader, DataSize32::Word),
             FREE => self.free(gvs, reader, DataSize32::DWord),
             CLR => self.clear_acc(gvs),
-            JZ8 => self.jump_if(gvs, reader, DataSize32::Byte, false),
-            JZ16 => self.jump_if(gvs, reader, DataSize32::Word, false),
-            JZ => self.jump_if(gvs, reader, DataSize32::DWord, false),
-            JNZ8 => self.jump_if(gvs, reader, DataSize32::Byte, true),
-            JNZ16 => self.jump_if(gvs, reader, DataSize32::Word, true),
-            JNZ => self.jump_if(gvs, reader, DataSize32::DWord, true),
-            CALL8 => self.call(gvs, reader, DataSize32::Byte),
-            CALL16 => self.call(gvs, reader, DataSize32::Word),
-            CALL => self.call(gvs, reader, DataSize32::DWord),
+            JZ => self.jump_if(gvs, reader, false),
+            JNZ => self.jump_if(gvs, reader, true),
+            CALL => self.call(gvs, reader),
             RET => self.on_return(gvs),
             LDFN => self.load_function(gvs, reader),
             LDCP8 => self.load_capture(gvs, reader, DataSize32::Byte),
