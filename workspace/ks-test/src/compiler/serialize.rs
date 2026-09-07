@@ -94,7 +94,7 @@ serialize_jumps!(
     ],
     {
         let mut expected = vec![JZ];
-        expected.extend_from_slice(&[5, 0, 0, 0]);
+        expected.extend_from_slice(&[8, 0, 0, 0]);
         expected.push(ADD);
         expected.extend_from_slice(&[LDI8, 10]);
         expected.extend_from_slice(&[LDI8, 10]);
@@ -112,7 +112,7 @@ serialize_jumps!(
     ],
     {
         let mut expected = vec![JNZ];
-        expected.extend_from_slice(&[5, 0, 0, 0]);
+        expected.extend_from_slice(&[8, 0, 0, 0]);
         expected.push(ADD);
         expected.extend_from_slice(&[LDI8, 10]);
         expected.extend_from_slice(&[LDI8, 10]);
@@ -130,7 +130,7 @@ serialize_jumps!(
     ],
     {
         let mut expected = vec![JMP];
-        expected.extend_from_slice(&[5, 0, 0, 0]);
+        expected.extend_from_slice(&[8, 0, 0, 0]);
         expected.push(ADD);
         expected.extend_from_slice(&[LDI8, 10]);
         expected.extend_from_slice(&[LDI8, 10]);

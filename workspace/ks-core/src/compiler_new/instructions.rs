@@ -99,7 +99,7 @@ impl Instruction {
             Self::AssignVariable(variable_id) => self.compressed_u32(*variable_id),
             Self::AssignCollection => SINGLE_INSTRUCTION,
             Self::LoadVar(variable_id) => self.compressed_u32(*variable_id),
-            Self::Call(arguments) => self.compressed_u32(*arguments),
+            Self::Call(_) => DWORD_INSTRUCTION,
             Self::LoadConst(Constant::Integer(integer)) => self.compressed_i64(*integer),
             Self::LoadConst(Constant::Float(_)) => QWORD_INSTRUCTION,
             Self::LoadConst(Constant::Boolean(_)) => SINGLE_INSTRUCTION,
