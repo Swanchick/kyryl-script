@@ -5,17 +5,17 @@ use ks_vm_new::{
     BOOLEAN_TYPE, FLOAT_TYPE, INT_TYPE, KsCall, NativeHelper, STRING_TYPE, VMError, VMResult,
 };
 
-pub struct MockPrintLn {
+pub struct MockPrint {
     pub output: Rc<RefCell<String>>,
 }
 
-impl From<Rc<RefCell<String>>> for MockPrintLn {
+impl From<Rc<RefCell<String>>> for MockPrint {
     fn from(output: Rc<RefCell<String>>) -> Self {
         Self { output }
     }
 }
 
-impl KsCall for MockPrintLn {
+impl KsCall for MockPrint {
     fn call(&mut self, arguments: usize, helper: NativeHelper) -> VMResult<()> {
         let gvs = helper.gvs;
 

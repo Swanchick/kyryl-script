@@ -86,6 +86,7 @@ impl KsDriver {
 
     pub fn vm(bytes: Box<[u8]>, mut natives: Vec<Box<dyn KsCall>>) -> KsResult<()> {
         let mut vm = VM::from(bytes);
+        natives.reverse();
         while let Some(native) = natives.pop() {
             vm.add_native(native);
         }

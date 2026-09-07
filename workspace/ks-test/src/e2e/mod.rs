@@ -6,7 +6,7 @@ use ks_core::parser::data_type::DataType;
 use ks_global::utils::ks_result::KsResult;
 
 use crate::drivers::KsDriver;
-use crate::e2e::native::{Delay, DigitalWrite, MockPrintLn};
+use crate::e2e::native::{Delay, DigitalWrite, MockPrint};
 
 mod native;
 
@@ -47,7 +47,7 @@ fn run(path: &str) -> KsResult<String> {
     KsDriver::vm(
         bytes,
         vec![
-            Box::new(MockPrintLn::from(output.clone())),
+            Box::new(MockPrint::from(output.clone())),
             Box::new(DigitalWrite::from(output.clone())),
             Box::new(Delay::from(output.clone())),
         ],
@@ -84,7 +84,7 @@ fn more_complex_call() -> KsResult<()> {
     let output = run("e2e/more_complex_call.ks")?;
     assert_eq!(
         output,
-        "PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000PA5 -> high;1000PA6 -> high;1000PA5 -> low;1000PA6 -> low;1000"
+        "PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;PA5 -> high;delay = 1000;PA6 -> high;delay = 1000;PA5 -> low;delay = 1000;PA6 -> low;delay = 1000;"
     );
     Ok(())
 }
