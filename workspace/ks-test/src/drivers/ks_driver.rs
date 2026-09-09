@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use ks_core::lexer::lexer::Lexer;
 use ks_core::parser::parser::Parser;
 use ks_core::parser::statement::Statement;
@@ -64,7 +66,7 @@ impl KsDriver {
         Ok(compiler)
     }
 
-    pub fn compiler(mut kyryl_script: KyrylScript, path: &str) -> KsResult<Box<[u8]>> {
+    pub fn compiler(mut kyryl_script: KyrylScript, path: &str) -> KsResult<Arc<[u8]>> {
         let statements = kyryl_script.statements(&format!("tests/{}", path))?;
         let mut compiler = kyryl_script.take_compiler();
         compiler.compile(statements)?;
@@ -84,7 +86,7 @@ impl KsDriver {
         Ok(bytes)
     }
 
-    pub fn vm(bytes: Box<[u8]>, mut natives: Vec<Box<dyn KsCall>>) -> KsResult<()> {
+    pub fn vm(bytes: Arc<[u8]>, mut natives: Vec<Box<dyn KsCall>>) -> KsResult<()> {
         let mut vm = VM::from(bytes);
         natives.reverse();
         while let Some(native) = natives.pop() {
@@ -117,7 +119,7 @@ impl KsDriver {
             instruction: instructions[0],
             instructions: &instructions,
             gvs: &mut gvs,
-            native_stack: &mut Vec::new(),
+            native_call: &mut None,
             runner_id: 0,
         };
 
@@ -147,7 +149,7 @@ impl KsDriver {
         };
 
         let mut vm = VM::new(
-            Program::serialize(instructions).as_bytes(),
+            Program::serialize(instructions).as_bytes().into(),
             vec![runner],
             gvs,
             native,
@@ -256,7 +258,7 @@ impl KsDriver {
             instruction: instruction[runner.pc],
             instructions: &instruction,
             gvs: &mut gvs,
-            native_stack: &mut Vec::new(),
+            native_call: &mut None,
             runner_id: 0,
         };
 

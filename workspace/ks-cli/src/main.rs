@@ -16,7 +16,7 @@ fn main() -> KsResult<()> {
 
         let program = kyryl_script.compile_from_file_new(path)?;
 
-        let mut vm = VM::from(program.instructions);
+        let mut vm = VM::from(program.as_bytes());
         vm_register_std(&mut vm);
 
         vm.init();
