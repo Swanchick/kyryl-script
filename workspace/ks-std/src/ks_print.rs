@@ -1,10 +1,3 @@
-// use std::collections::HashMap;
-
-// use ks_global::utils::ks_result::KsResult;
-// use ks_vm::environment::{Environment, Reference};
-// use ks_vm::variable::Variable;
-// use ks_vm::variable::value::Value;
-
 use ks_vm::{FLOAT_TYPE, INT_TYPE, KsCall, NativeHelper, STRING_TYPE, VMResult};
 
 pub struct KsPrintln;

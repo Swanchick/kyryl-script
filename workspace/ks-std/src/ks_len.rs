@@ -1,10 +1,3 @@
-// use ks_global::utils::ks_error::KsError;
-// use ks_global::utils::ks_result::KsResult;
-
-// use ks_vm::environment::Environment;
-// use ks_vm::variable::Variable;
-// use ks_vm::variable::value::Value;
-
 use ks_vm::{Collection, KsCall, NativeHelper, VMError, VMResult, Variable};
 
 pub struct KsLen;
