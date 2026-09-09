@@ -1,4 +1,4 @@
-use crate::{GVS, Runner};
+use crate::{GVS, Runner, VMResult, Variable};
 
 pub struct NativeHelper<'a> {
     pub runner: &'a mut Runner,
@@ -8,6 +8,10 @@ pub struct NativeHelper<'a> {
 impl<'a> NativeHelper<'a> {
     pub fn new(runner: &'a mut Runner, gvs: &'a mut GVS) -> Self {
         Self { runner, gvs }
+    }
+
+    pub fn last(&mut self) -> VMResult<&Variable> {
+        self.runner.acc.last(self.gvs)
     }
 }
 

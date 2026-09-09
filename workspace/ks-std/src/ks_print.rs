@@ -5,6 +5,56 @@
 // use ks_vm::variable::Variable;
 // use ks_vm::variable::value::Value;
 
+use ks_vm::{FLOAT_TYPE, INT_TYPE, KsCall, NativeHelper, STRING_TYPE, VMResult};
+
+pub struct KsPrintln;
+
+impl KsCall for KsPrintln {
+    fn call<'a>(&mut self, arguments: usize, helper: NativeHelper<'a>) -> VMResult<()> {
+        let gvs = helper.gvs;
+
+        for _ in 0..arguments {
+            let argument = helper.runner.acc.last(gvs)?.clone();
+
+            match argument.value_type {
+                INT_TYPE => print!("{}", (argument.value as i64).to_string()),
+                FLOAT_TYPE => print!("{}", (f64::from_bits(argument.value)).to_string()),
+                STRING_TYPE => print!("{}", gvs.collection_string(argument.value as u32)?),
+                _ => {}
+            }
+
+            helper.runner.acc.pop_data()?;
+        }
+
+        print!("\n");
+
+        Ok(())
+    }
+}
+
+pub struct KsPrint;
+
+impl KsCall for KsPrint {
+    fn call<'a>(&mut self, arguments: usize, helper: NativeHelper<'a>) -> VMResult<()> {
+        let gvs = helper.gvs;
+
+        for _ in 0..arguments {
+            let argument = helper.runner.acc.last(gvs)?.clone();
+
+            match argument.value_type {
+                INT_TYPE => print!("{}", (argument.value as i64).to_string()),
+                FLOAT_TYPE => print!("{}", (f64::from_bits(argument.value)).to_string()),
+                STRING_TYPE => print!("{}", gvs.collection_string(argument.value as u32)?),
+                _ => {}
+            }
+
+            helper.runner.acc.pop_data()?;
+        }
+
+        Ok(())
+    }
+}
+
 // fn collection_to_string(
 //     environment: &mut Environment,
 //     references: &[Reference],

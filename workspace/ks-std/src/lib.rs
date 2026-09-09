@@ -1,5 +1,9 @@
 use ks_core::kyryl_script::KyrylScript;
 use ks_core::parser::data_type::DataType;
+use ks_vm::VM;
+
+use crate::ks_len::KsLen;
+use crate::ks_print::{KsPrint, KsPrintln};
 
 mod ks_debug;
 mod ks_len;
@@ -67,4 +71,10 @@ pub fn ks_register_std(kyryl_script: &mut KyrylScript) {
         },
         true,
     );
+}
+
+fn vm_register_std(vm: &mut VM) {
+    vm.add_native(Box::new(KsPrintln));
+    vm.add_native(Box::new(KsPrint));
+    vm.add_native(Box::new(KsLen));
 }
