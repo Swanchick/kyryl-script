@@ -88,3 +88,10 @@ fn more_complex_call() -> KsResult<()> {
     );
     Ok(())
 }
+
+#[test]
+fn assignment() -> KsResult<()> {
+    let output = run("e2e/assignment.ks")?;
+    assert_eq!(output, "7");
+    Ok(())
+}

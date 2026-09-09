@@ -236,7 +236,10 @@ impl Parser {
                         let is_native_function = self.is_native_function(&name)?;
                         let context = self.last_function_context_mut()?;
 
-                        if !context.variables.contains(&name) && !is_native_function {
+                        if !is_native_function
+                            && !context.captured_variables.contains(&name)
+                            && !context.variables.contains(&name)
+                        {
                             context.captured_variables.push(name);
                         }
 
@@ -399,7 +402,6 @@ impl Parser {
             }
 
             let last_context = self.last_function_context_mut()?;
-
             if last_context.variables.contains(&capture) {
                 continue;
             }

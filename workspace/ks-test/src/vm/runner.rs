@@ -1827,8 +1827,14 @@ fn variable_assign() -> VMResult<()> {
     assert_eq!(driver.runner.pc, 1);
 
     assert_eq!(driver.gvs.storage.len(), 2);
-    assert_eq!(driver.gvs.storage[0], None);
-    assert_eq!(driver.gvs.storage[1], Some(expected_variable));
+    assert_eq!(
+        driver.gvs.storage[0],
+        Some(expected_variable.clone().with_owners(1))
+    );
+    assert_eq!(
+        driver.gvs.storage[1],
+        Some(expected_variable.with_owners(1))
+    );
 
     assert_eq!(driver.runner.stack.get(0), Some(&1));
     assert_eq!(driver.runner.assign, Assign::None);

@@ -110,20 +110,23 @@ impl Runner {
         self.step(size as isize)
     }
 
+    #[inline]
+    fn padding(&self) -> u32 {
+        if let Some(call_stack) = self.call_stack.last() {
+            call_stack.stack_pointer as u32
+        } else {
+            0
+        }
+    }
+
     fn load_var(
         &mut self,
         gvs: &mut GVS,
         reader: ByteReader,
         data_size: DataSize32,
     ) -> VMResult<()> {
-        let padding = if let Some(call_stack) = self.call_stack.last() {
-            call_stack.stack_pointer
-        } else {
-            0
-        } as u32;
-
+        let padding = self.padding();
         let slot = padding + reader.from_data_size_32(&data_size)? as u32;
-
         let storage_id = self.stack.storage_id(slot)?;
         self.acc.push_storage_id(gvs, storage_id)?;
 
@@ -560,12 +563,12 @@ impl Runner {
         let collection_id = function.collection_id()?;
         let collection = gvs.collection_stack(collection_id as CollectionId)?;
 
-        let storage_id = collection.get(slot_id).ok_or(format!(
+        let storage_id = *collection.get(slot_id).ok_or(format!(
             "The function does not have captured variable with slot_id {}",
             slot_id
         ))?;
 
-        self.acc.push_storage_id(gvs, *storage_id)?;
+        self.acc.push_storage_id(gvs, storage_id)?;
 
         self.step(data_size.instruction_size())
     }
@@ -678,15 +681,27 @@ impl Runner {
         self.step(INSTRUCTION)
     }
 
-    fn assign_for_variable(&mut self, gvs: &mut GVS, slot_id: StorageId) -> VMResult<()> {
+    fn assign_for_variable(
+        &mut self,
+        gvs: &mut GVS,
+        slot_id: Slot,
+        assign_storage_id: Slot,
+    ) -> VMResult<()> {
         let slot_id = slot_id as usize;
 
         let storage_id = self.stack.data[slot_id];
+
+        let variable_owners = gvs.variable(storage_id)?.owners;
+
+        let variable = gvs
+            .variable(assign_storage_id)?
+            .clone()
+            .with_owners(variable_owners);
+
+        gvs.store_at(storage_id, variable);
+
         gvs.storage_remove_owner(storage_id)?;
-
-        let new_storage_id = self.acc.pop_data()?;
-
-        self.stack.data[slot_id] = new_storage_id;
+        gvs.storage_remove_owner(assign_storage_id)?;
 
         Ok(())
     }
@@ -717,8 +732,10 @@ impl Runner {
     }
 
     fn assign(&mut self, gvs: &mut GVS) -> VMResult<()> {
+        let assign_storage_id = self.acc.pop_data()?;
+
         match self.assign {
-            Assign::Variable(slot_id) => self.assign_for_variable(gvs, slot_id),
+            Assign::Variable(slot_id) => self.assign_for_variable(gvs, slot_id, assign_storage_id),
             Assign::Collection(collection_id, index) => {
                 self.assign_for_collection(gvs, collection_id, index)
             }
@@ -730,7 +747,9 @@ impl Runner {
     }
 
     fn assign_variable(&mut self, reader: ByteReader, data_size: DataSize32) -> VMResult<()> {
-        let slot_id = reader.from_data_size_32(&data_size)? as u32;
+        let padding = self.padding();
+        let slot_id = padding + reader.from_data_size_32(&data_size)? as u32;
+
         self.assign = Assign::Variable(slot_id);
         self.step(data_size.instruction_size())
     }
@@ -809,6 +828,7 @@ impl Runner {
     pub fn run<'a>(&mut self, helper: VMHelper<'a>) -> VMResult<()> {
         let gvs = helper.gvs;
         let reader = ByteReader::new(self.pc, helper.instructions);
+        println!("{}: {:X?}", self.pc, helper.instruction);
 
         match helper.instruction {
             LDN => self.load_null(gvs),

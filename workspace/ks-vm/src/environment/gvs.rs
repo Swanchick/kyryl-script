@@ -226,6 +226,10 @@ impl GVS {
         }
     }
 
+    pub fn store_at(&mut self, storage_id: StorageId, variable: Variable) {
+        self.storage[storage_id as usize] = Some(variable);
+    }
+
     fn collection_iter<VARIABLE, STACK>(
         &mut self,
         storage_id: StorageId,
