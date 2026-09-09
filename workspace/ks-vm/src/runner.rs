@@ -700,7 +700,6 @@ impl Runner {
             .with_owners(variable_owners);
 
         gvs.store_at(storage_id, variable);
-
         gvs.storage_remove_owner(assign_storage_id)?;
 
         Ok(())
@@ -739,10 +738,7 @@ impl Runner {
     }
 
     fn assign(&mut self, gvs: &mut GVS) -> VMResult<()> {
-        println!("ACC: {:?}", self.acc);
-
         let assign_storage_id = self.acc.pop_data()?;
-        println!("asdashdkahsd");
 
         match self.assign {
             Assign::Variable(slot_id) => self.assign_for_variable(gvs, slot_id, assign_storage_id),
@@ -838,7 +834,6 @@ impl Runner {
     pub fn run<'a>(&mut self, helper: VMHelper<'a>) -> VMResult<()> {
         let gvs = helper.gvs;
         let reader = ByteReader::new(self.pc, helper.instructions);
-        println!("{}: {:X?}", self.pc, helper.instruction);
 
         match helper.instruction {
             LDN => self.load_null(gvs),
