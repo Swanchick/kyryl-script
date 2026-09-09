@@ -5,6 +5,20 @@
 // use ks_vm::variable::Variable;
 // use ks_vm::variable::value::Value;
 
+use ks_vm::{KsCall, NativeHelper, VMError, VMResult};
+
+pub struct KsLen;
+
+impl KsCall for KsLen {
+    fn call<'a>(&mut self, arguments: usize, helper: NativeHelper<'a>) -> VMResult<()> {
+        if arguments != 1 {
+            return Err(VMError::from("Invalid arguments!"));
+        }
+
+        Ok(())
+    }
+}
+
 // pub fn ks_len(_: &mut Environment, args: Vec<Variable>) -> KsResult<Variable> {
 //     if args.len() > 1 {
 //         return Err(KsError::runtime("Too many arguments!"));

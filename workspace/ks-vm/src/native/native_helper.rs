@@ -5,6 +5,12 @@ pub struct NativeHelper<'a> {
     pub gvs: &'a mut GVS,
 }
 
+impl<'a> NativeHelper<'a> {
+    pub fn new(runner: &'a mut Runner, gvs: &'a mut GVS) -> Self {
+        Self { runner, gvs }
+    }
+}
+
 // For now we give the whole access to the languge
 //
 // Todo:

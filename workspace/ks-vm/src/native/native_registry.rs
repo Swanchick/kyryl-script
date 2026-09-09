@@ -32,7 +32,7 @@ impl NativeRegistry {
             index
         )))?;
 
-        let helper = NativeHelper { runner, gvs };
+        let helper = NativeHelper::new(runner, gvs);
 
         function.call(arguments as usize, helper)?;
 
