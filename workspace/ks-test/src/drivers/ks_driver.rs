@@ -9,7 +9,7 @@ use ks_core::{
 use ks_global::utils::ks_error::KsError;
 use ks_global::utils::ks_result::KsResult;
 use ks_std::ks_register_std;
-use ks_vm_new::{
+use ks_vm::{
     Assign, CallStack, Collection, GVS, KsCall, NativeRegistry, Runner, Stack, VM, VMError,
     VMHelper, VMResult, Variable,
 };

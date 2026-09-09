@@ -4,8 +4,8 @@ use std::rc::Rc;
 use ks_core::compiler::constant::Constant;
 use ks_core::compiler::instructions::Instruction;
 
-use ks_vm_new::types::CollectionId;
-use ks_vm_new::{KsCall, NativeHelper, NativeRegistry, STRING_TYPE, VMResult};
+use ks_vm::types::CollectionId;
+use ks_vm::{KsCall, NativeHelper, NativeRegistry, STRING_TYPE, VMResult};
 
 use crate::drivers::KsDriver;
 

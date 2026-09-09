@@ -1,5 +1,5 @@
 [package]
-name = "ks-vm-new"
+name = "ks-vm"
 authors.workspace = true
 version.workspace = true
 edition = "2024"
