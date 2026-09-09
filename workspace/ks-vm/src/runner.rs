@@ -685,7 +685,7 @@ impl Runner {
         &mut self,
         gvs: &mut GVS,
         slot_id: Slot,
-        assign_storage_id: Slot,
+        assign_storage_id: StorageId,
     ) -> VMResult<()> {
         let slot_id = slot_id as usize;
         let storage_id = self.stack.data[slot_id];
@@ -711,6 +711,7 @@ impl Runner {
         gvs: &mut GVS,
         collection_id: CollectionId,
         index: usize,
+        assign_storage_id: StorageId,
     ) -> VMResult<()> {
         let storage_id = {
             let collection = gvs.collection_stack(collection_id)?;
@@ -721,12 +722,18 @@ impl Runner {
             }
         }?;
 
+        let variable_owners = gvs.variable(storage_id)?.owners;
+
         gvs.storage_remove_owner(storage_id)?;
 
-        let new_storage_id = self.acc.pop_data()?;
+        let variable = gvs
+            .variable(assign_storage_id)?
+            .clone()
+            .with_owners(variable_owners);
 
-        let collection = gvs.collection_stack_mut(collection_id)?;
-        collection[index] = new_storage_id;
+        gvs.store_at(storage_id, variable);
+
+        gvs.storage_remove_owner(assign_storage_id)?;
 
         Ok(())
     }
@@ -740,7 +747,7 @@ impl Runner {
         match self.assign {
             Assign::Variable(slot_id) => self.assign_for_variable(gvs, slot_id, assign_storage_id),
             Assign::Collection(collection_id, index) => {
-                self.assign_for_collection(gvs, collection_id, index)
+                self.assign_for_collection(gvs, collection_id, index, assign_storage_id)
             }
             Assign::None => Err(VMError::from("No assign available")),
         }?;
