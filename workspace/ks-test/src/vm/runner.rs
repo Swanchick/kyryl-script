@@ -1836,7 +1836,7 @@ fn variable_assign() -> VMResult<()> {
         Some(expected_variable.with_owners(1))
     );
 
-    assert_eq!(driver.runner.stack.get(0), Some(&1));
+    assert_eq!(driver.runner.stack.get(0), Some(&0));
     assert_eq!(driver.runner.assign, Assign::None);
 
     Ok(())

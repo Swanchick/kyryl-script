@@ -688,10 +688,11 @@ impl Runner {
         assign_storage_id: Slot,
     ) -> VMResult<()> {
         let slot_id = slot_id as usize;
-
         let storage_id = self.stack.data[slot_id];
 
         let variable_owners = gvs.variable(storage_id)?.owners;
+
+        gvs.storage_remove_owner(storage_id)?;
 
         let variable = gvs
             .variable(assign_storage_id)?
@@ -700,7 +701,6 @@ impl Runner {
 
         gvs.store_at(storage_id, variable);
 
-        gvs.storage_remove_owner(storage_id)?;
         gvs.storage_remove_owner(assign_storage_id)?;
 
         Ok(())
@@ -732,7 +732,10 @@ impl Runner {
     }
 
     fn assign(&mut self, gvs: &mut GVS) -> VMResult<()> {
+        println!("ACC: {:?}", self.acc);
+
         let assign_storage_id = self.acc.pop_data()?;
+        println!("asdashdkahsd");
 
         match self.assign {
             Assign::Variable(slot_id) => self.assign_for_variable(gvs, slot_id, assign_storage_id),
