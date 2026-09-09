@@ -796,13 +796,12 @@ impl Runner {
 
     fn call_native(
         &mut self,
-        native_stack: &mut Vec<NativeCall>,
+        native_call: &mut Option<NativeCall>,
         runner_id: usize,
         reader: ByteReader,
     ) -> VMResult<()> {
         let (native_id, arguments) = reader.parse_dual()?;
-        let native_call = NativeCall::new(native_id, arguments, runner_id);
-        native_stack.push(native_call);
+        *native_call = Some(NativeCall::new(native_id, arguments, runner_id));
         self.step(INSTRUCTION + DWORD * 2)?;
         Ok(())
     }
@@ -864,7 +863,7 @@ impl Runner {
             ASV16 => self.assign_variable(reader, DataSize32::Word),
             ASV => self.assign_variable(reader, DataSize32::DWord),
             ASC => self.assign_collection(gvs),
-            NCALL => self.call_native(helper.native_stack, helper.runner_id, reader),
+            NCALL => self.call_native(helper.native_call, helper.runner_id, reader),
             opcode => Err(VMError::from(format!("Unknown instruction {:X}", opcode))),
         }?;
 

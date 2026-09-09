@@ -2,19 +2,22 @@
 use alloc::vec::Vec;
 
 #[cfg(not(feature = "std"))]
-use alloc::boxed::Box;
+use alloc::sync::Arc;
+
+#[cfg(feature = "std")]
+use std::sync::Arc;
 
 use crate::{GVS, KsCall, NativeCall, NativeRegistry, Runner, VMHelper, VMResult};
 
 pub struct VM {
-    program: Box<[u8]>,
+    program: Arc<[u8]>,
     pub runners: Vec<Runner>,
     pub gvs: GVS,
     pub native: NativeRegistry,
 }
 
-impl From<Box<[u8]>> for VM {
-    fn from(program: Box<[u8]>) -> Self {
+impl From<Arc<[u8]>> for VM {
+    fn from(program: Arc<[u8]>) -> Self {
         Self {
             program,
             runners: Vec::new(),
@@ -25,7 +28,7 @@ impl From<Box<[u8]>> for VM {
 }
 
 impl VM {
-    pub fn new(program: Box<[u8]>, runners: Vec<Runner>, gvs: GVS, native: NativeRegistry) -> Self {
+    pub fn new(program: Arc<[u8]>, runners: Vec<Runner>, gvs: GVS, native: NativeRegistry) -> Self {
         Self {
             program,
             runners,
@@ -39,43 +42,45 @@ impl VM {
         self.runners.push(runner);
     }
 
-    fn call_native(&mut self, native_call: NativeCall) -> VMResult<()> {
-        self.native.call(
-            native_call.native_id as usize,
-            native_call.arguments,
-            &mut self.runners[native_call.runner_id],
-            &mut self.gvs,
-        )?;
+    fn call_native(&mut self, native_call: Option<NativeCall>) -> VMResult<()> {
+        if let Some(native_call) = native_call {
+            self.native.call(
+                native_call.native_id as usize,
+                native_call.arguments,
+                &mut self.runners[native_call.runner_id],
+                &mut self.gvs,
+            )?;
+        }
 
         Ok(())
     }
 
     pub fn step(&mut self) -> VMResult<()> {
-        let instructions = &self.program;
-        let mut native_stack = Vec::new();
+        let instructions = self.program.clone();
         let mut empty_runner_ids = Vec::new();
 
         for runner_id in 0..self.runners.len() {
             let runner = &mut self.runners[runner_id];
             let pc = runner.pc;
 
-            if let Some(instruction) = instructions.get(pc) {
-                let instruction = *instruction;
-                let vm_helper = VMHelper {
-                    instruction,
-                    instructions,
-                    gvs: &mut self.gvs,
-                    native_stack: &mut native_stack,
-                    runner_id,
-                };
-
-                runner.run(vm_helper)?;
-            } else {
+            if pc >= instructions.len() {
                 empty_runner_ids.push(runner_id);
+                continue;
             }
-        }
 
-        while let Some(native_call) = native_stack.pop() {
+            let instruction = instructions[pc];
+
+            let mut native_call = None;
+
+            let vm_helper = VMHelper {
+                instruction,
+                instructions: &instructions,
+                gvs: &mut self.gvs,
+                native_call: &mut native_call,
+                runner_id,
+            };
+
+            runner.run(vm_helper)?;
             self.call_native(native_call)?;
         }
 
@@ -86,7 +91,7 @@ impl VM {
         Ok(())
     }
 
-    pub fn reset(&mut self, program: Box<[u8]>) {
+    pub fn reset(&mut self, program: Arc<[u8]>) {
         self.runners.clear();
         self.gvs = GVS::new();
         self.program = program;

@@ -2026,7 +2026,7 @@ fn assign_collection_from_collection() -> VMResult<()> {
 #[test]
 fn native_call_was_added() -> VMResult<()> {
     let mut gvs = GVS::new();
-    let mut native_stack = Vec::new();
+    let mut native_call = None;
     let mut runner = Runner::new();
 
     let native_id = 1;
@@ -2040,7 +2040,7 @@ fn native_call_was_added() -> VMResult<()> {
         instruction: instructions[0],
         instructions: &instructions,
         gvs: &mut gvs,
-        native_stack: &mut native_stack,
+        native_call: &mut native_call,
         runner_id: 0,
     };
 
@@ -2048,8 +2048,7 @@ fn native_call_was_added() -> VMResult<()> {
 
     assert_eq!(runner.pc, 9);
 
-    assert_eq!(native_stack.len(), 1);
-    assert_eq!(native_stack[0], NativeCall::new(1, 5, 0));
+    assert_eq!(native_call, Some(NativeCall::new(1, 5, 0)));
 
     Ok(())
 }

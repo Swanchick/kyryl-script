@@ -1,11 +1,4 @@
-// use ks_global::utils::ks_error::KsError;
-// use ks_global::utils::ks_result::KsResult;
-
-// use ks_vm::environment::Environment;
-// use ks_vm::variable::Variable;
-// use ks_vm::variable::value::Value;
-
-use ks_vm::{KsCall, NativeHelper, VMError, VMResult};
+use ks_vm::{Collection, KsCall, NativeHelper, VMError, VMResult, Variable};
 
 pub struct KsLen;
 
@@ -15,28 +8,31 @@ impl KsCall for KsLen {
             return Err(VMError::from("Invalid arguments!"));
         }
 
-        Ok(())
+        let gvs = helper.gvs;
+        let runner = helper.runner;
+
+        let variable = runner.acc.last(gvs)?.clone();
+
+        if !(variable.is_stack() || variable.is_string()) {
+            return Err(VMError::from(
+                "Invalid varaible type, required string or stack",
+            ));
+        }
+
+        let collection = gvs
+            .collections
+            .get(variable.value as usize)
+            .ok_or("Cannot find collection")?;
+
+        let len = match collection {
+            Collection::String(string) => Ok(string.len()),
+            Collection::Stack(stack) => Ok(stack.len()),
+            Collection::Free => Err(VMError::from("The collection is freed")),
+        }? as i64;
+
+        runner.acc.pop(gvs)?;
+
+        let len = Variable::from(len);
+        runner.acc.push(gvs, len)
     }
 }
-
-// pub fn ks_len(_: &mut Environment, args: Vec<Variable>) -> KsResult<Variable> {
-//     if args.len() > 1 {
-//         return Err(KsError::runtime("Too many arguments!"));
-//     }
-
-//     let variable = &args[0];
-//     match variable.value() {
-//         Value::List(references) | Value::Tuple(references) => {
-//             let variable = Variable::empty(Value::Integer(references.len() as i32));
-
-//             Ok(variable)
-//         }
-//         Value::String(string) => {
-//             let variable = Variable::empty(Value::Integer(string.len() as i32));
-
-//             Ok(variable)
-//         }
-
-//         _ => Err(KsError::native("Invalid type argument!")),
-//     }
-// }

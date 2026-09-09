@@ -1,30 +1,35 @@
-// use ks_global::utils::ks_error::KsError;
-// use ks_global::utils::ks_result::KsResult;
-// use ks_vm::environment::Environment;
-// use ks_vm::native::native_helper::NativeHelper;
-// use ks_vm::variable::Variable;
-// use ks_vm::variable::value::Value;
+use ks_vm::{INT_TYPE, KsCall, NativeHelper, VMError, VMResult, Variable, types::StorageId};
 
-// pub fn ks_range(environment: &mut Environment, args: Vec<Variable>) -> KsResult<Variable> {
-//     if args.len() > 1 {
-//         return Err(KsError::native("Too many arguments!"));
-//     }
+pub struct KsRange;
 
-//     if let Value::Integer(int) = args[0].value() {
-//         let mut variables: Vec<Variable> = Vec::new();
+impl KsCall for KsRange {
+    fn call<'a>(&mut self, arguments: usize, helper: NativeHelper<'a>) -> VMResult<()> {
+        if arguments != 1 {
+            return Err(VMError::from("Invalid arguments!"));
+        }
 
-//         for i in 0..(*int as usize) {
-//             let variable = Variable::empty(Value::Integer(i as i32));
+        let gvs = helper.gvs;
+        let runner = helper.runner;
 
-//             variables.push(variable);
-//         }
+        let variable = runner.acc.last(gvs)?.clone();
 
-//         let mut helper = NativeHelper::from(environment);
+        if !(variable.is_primitive() && variable.value_type == INT_TYPE) {
+            return Err(VMError::from("Invalid varaible type, required int"));
+        }
 
-//         let references = helper.create_collections(variables)?;
+        runner.acc.pop(gvs)?;
 
-//         Ok(Variable::empty(Value::List(references)))
-//     } else {
-//         Err(KsError::native("Wrong type. Was expected int!"))
-//     }
-// }
+        let mut stack = Vec::<StorageId>::new();
+
+        for index in 0..variable.value {
+            let variable = Variable::from(index as i64);
+            let storage_id = gvs.store(variable);
+            stack.push(storage_id);
+        }
+
+        let stack_id = gvs.collection_store_stack(stack);
+        let stack = Variable::collection(stack_id);
+
+        runner.acc.push(gvs, stack)
+    }
+}
