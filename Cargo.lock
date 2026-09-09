@@ -53,7 +53,6 @@ dependencies = [
  "ks-core",
  "ks-global",
  "ks-std",
- "ks-vm",
  "ks-vm-new",
 ]
 
@@ -62,7 +61,6 @@ name = "ks-core"
 version = "0.5.0"
 dependencies = [
  "ks-global",
- "ks-vm",
  "ks-vm-new",
 ]
 
@@ -85,7 +83,6 @@ version = "0.5.0"
 dependencies = [
  "ks-core",
  "ks-global",
- "ks-vm",
 ]
 
 [[package]]
@@ -95,16 +92,8 @@ dependencies = [
  "ks-core",
  "ks-global",
  "ks-std",
- "ks-vm",
  "ks-vm-new",
  "paste",
-]
-
-[[package]]
-name = "ks-vm"
-version = "0.5.0"
-dependencies = [
- "ks-global",
 ]
 
 [[package]]

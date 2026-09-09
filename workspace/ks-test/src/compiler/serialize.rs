@@ -1,5 +1,5 @@
-use ks_core::compiler_new::instructions::Instruction;
-use ks_core::compiler_new::{constant::Constant, serializer::Serializer};
+use ks_core::compiler::instructions::Instruction;
+use ks_core::compiler::{constant::Constant, serializer::Serializer};
 
 use ks_vm_new::ir::instructions::{
     ADD, AND, ASC, ASN, ASV, ASV8, ASV16, CALL, CLR, CPY, DEC, DIV, EQ, FREE, FREE8, FREE16, GE,

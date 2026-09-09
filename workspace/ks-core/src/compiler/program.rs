@@ -1,4 +1,4 @@
-use crate::compiler_new::serializer::Serializer;
+use crate::compiler::serializer::Serializer;
 
 use super::instructions::Instruction;
 
