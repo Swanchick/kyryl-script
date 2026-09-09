@@ -1,4 +1,4 @@
-use crate::compiler_new::types::VariableId;
+use crate::compiler::types::VariableId;
 
 use super::constant::Constant;
 

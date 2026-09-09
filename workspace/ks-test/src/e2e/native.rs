@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use ks_vm_new::{
+use ks_vm::{
     BOOLEAN_TYPE, FLOAT_TYPE, INT_TYPE, KsCall, NativeHelper, STRING_TYPE, VMError, VMResult,
 };
 

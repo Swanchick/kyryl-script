@@ -1,25 +1,17 @@
-use ks_global::utils::ks_result::KsResult;
-
-use crate::environment::{Environment, Reference};
-use crate::variable::Variable;
+use crate::{GVS, Runner};
 
 pub struct NativeHelper<'a> {
-    environment: &'a mut Environment,
+    pub runner: &'a mut Runner,
+    pub gvs: &'a mut GVS,
 }
 
 impl<'a> NativeHelper<'a> {
-    pub fn from(environment: &'a mut Environment) -> NativeHelper<'a> {
-        NativeHelper { environment }
-    }
-
-    pub fn create_collections(&mut self, variables: Vec<Variable>) -> KsResult<Vec<Reference>> {
-        let mut references: Vec<Reference> = Vec::new();
-
-        for variable in variables {
-            let reference = self.environment.define_reference(variable)?;
-            references.push(reference);
-        }
-
-        Ok(references)
+    pub fn new(runner: &'a mut Runner, gvs: &'a mut GVS) -> Self {
+        Self { runner, gvs }
     }
 }
+
+// For now we give the whole access to the languge
+//
+// Todo:
+// Make defined functions to safely control the language

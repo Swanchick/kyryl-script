@@ -1,40 +1,41 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
+#[cfg(not(feature = "std"))]
+use alloc::boxed::Box;
+#[cfg(not(feature = "std"))]
+use alloc::format;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 
-use super::native_buffer::NativeBuffer;
-use super::native_types::NativeType;
-
-thread_local! {
-    static NATIVE_REGISTRY: Rc<RefCell<NativeRegistry>> = NativeRegistry::new();
-}
+use super::{KsCall, NativeHelper};
+use crate::types::Arguments;
+use crate::{GVS, Runner, VMError, VMResult};
 
 pub struct NativeRegistry {
-    natives: HashMap<String, NativeType>,
+    pub functions: Vec<Box<dyn KsCall>>,
 }
 
 impl NativeRegistry {
-    pub fn get() -> Rc<RefCell<NativeRegistry>> {
-        NATIVE_REGISTRY.with(|registry| registry.clone())
-    }
-
-    pub fn new() -> Rc<RefCell<NativeRegistry>> {
-        Rc::new(RefCell::new(NativeRegistry {
-            natives: HashMap::new(),
-        }))
-    }
-
-    pub fn add_buffer(&mut self, buffer: NativeBuffer) {
-        for (name, native) in buffer.get_table() {
-            self.natives.insert(name.to_owned(), native.clone());
+    pub fn new() -> Self {
+        Self {
+            functions: Vec::new(),
         }
     }
 
-    pub fn get_natives(&self) -> &HashMap<String, NativeType> {
-        &self.natives
-    }
+    pub fn call(
+        &mut self,
+        index: usize,
+        arguments: Arguments,
+        runner: &mut Runner,
+        gvs: &mut GVS,
+    ) -> VMResult<()> {
+        let function = self.functions.get_mut(index).ok_or(VMError::from(format!(
+            "Cannot find function with index {}",
+            index
+        )))?;
 
-    pub fn get_native(&self, name: &str) -> Option<&NativeType> {
-        self.natives.get(name)
+        let helper = NativeHelper::new(runner, gvs);
+
+        function.call(arguments as usize, helper)?;
+
+        Ok(())
     }
 }

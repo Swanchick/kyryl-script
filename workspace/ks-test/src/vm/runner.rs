@@ -1,16 +1,16 @@
-use ks_core::compiler_new::serializer::Serializer;
-use ks_vm_new::ir::instructions::{
+use ks_core::compiler::serializer::Serializer;
+use ks_vm::ir::instructions::{
     ADD, AND, ASC, ASN, ASV, ASV8, ASV16, CALL, CLR, CPY, DEC, DIV, EQ, FREE, FREE8, FREE16, GE,
     GT, INC, JMP, JNZ, JZ, LBF, LBT, LDC, LDC8, LDC16, LDCP, LDCP8, LDCP16, LDF, LDFC, LDFN, LDI,
     LDI8, LDI16, LDI32, LDN, LDS, LDV, LDV8, LDV16, LE, LEN, LT, MUL, NE, NOT, OR, RET, STR, SUB,
 };
-use ks_vm_new::types::Pointer;
-use ks_vm_new::{Assign, VMHelper};
-use ks_vm_new::{
+use ks_vm::types::Pointer;
+use ks_vm::{Assign, VMHelper};
+use ks_vm::{
     CallStack, Collection, Function, GVS, NativeCall, Runner, Stack, VMError, VMResult, Variable,
 };
 
-use ks_core::compiler_new::instructions::Instruction;
+use ks_core::compiler::instructions::Instruction;
 
 use crate::drivers::KsDriver;
 use crate::drivers::utils::operation;

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use ks_core::{
-    compiler_new::compiler::CompilerNew,
+    compiler::compiler::Compiler,
     lexer::lexer::Lexer,
     parser::{data_type::DataType, parser::Parser},
 };
@@ -33,7 +33,7 @@ fn register_parser_std(parser: &mut Parser) {
     );
 }
 
-fn register_compiler_std(compiler: &mut CompilerNew) {
+fn register_compiler_std(compiler: &mut Compiler) {
     compiler.register_native("digital_write", 0);
     compiler.register_native("delay", 1);
     compiler.register_native("println", 2);
@@ -48,7 +48,7 @@ fn compile(path: &str) -> KsResult<Vec<u8>> {
     parser.set_tokens(lexer.get_tokens().to_vec(), lexer.get_token_pos().to_vec());
     let block = parser.start()?;
 
-    let mut compiler = CompilerNew::new();
+    let mut compiler = Compiler::new();
     register_compiler_std(&mut compiler);
     compiler.compile(block)?;
 

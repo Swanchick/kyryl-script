@@ -2,7 +2,7 @@ use ks_global::utils::ks_error::KsError;
 use ks_global::utils::ks_result::KsResult;
 use std::collections::HashMap;
 
-use crate::compiler_new::types::NativeId;
+use crate::compiler::types::NativeId;
 
 use super::collection::Collection;
 use super::slot::Slot;

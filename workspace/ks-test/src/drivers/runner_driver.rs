@@ -1,4 +1,4 @@
-use ks_vm_new::{GVS, Runner};
+use ks_vm::{GVS, Runner};
 
 #[derive(Debug)]
 pub struct RunnerDriver {

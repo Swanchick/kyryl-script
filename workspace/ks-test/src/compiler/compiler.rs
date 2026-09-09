@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use ks_core::compiler_new::constant::Constant;
-use ks_core::compiler_new::instructions::Instruction;
+use ks_core::compiler::constant::Constant;
+use ks_core::compiler::instructions::Instruction;
 use ks_core::kyryl_script::KyrylScript;
 use ks_core::parser::data_type::DataType;
 use ks_global::utils::ks_result::KsResult;
