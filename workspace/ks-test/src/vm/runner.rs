@@ -1827,10 +1827,16 @@ fn variable_assign() -> VMResult<()> {
     assert_eq!(driver.runner.pc, 1);
 
     assert_eq!(driver.gvs.storage.len(), 2);
-    assert_eq!(driver.gvs.storage[0], None);
-    assert_eq!(driver.gvs.storage[1], Some(expected_variable));
+    assert_eq!(
+        driver.gvs.storage[0],
+        Some(expected_variable.clone().with_owners(1))
+    );
+    assert_eq!(
+        driver.gvs.storage[1],
+        Some(expected_variable.with_owners(1))
+    );
 
-    assert_eq!(driver.runner.stack.get(0), Some(&1));
+    assert_eq!(driver.runner.stack.get(0), Some(&0));
     assert_eq!(driver.runner.assign, Assign::None);
 
     Ok(())
@@ -1838,7 +1844,7 @@ fn variable_assign() -> VMResult<()> {
 
 #[test]
 fn collection_assign() -> VMResult<()> {
-    let expected_collection = Collection::Stack(vec![0, 4, 2]);
+    let expected_collection = Collection::Stack(vec![0, 1, 2]);
     let expected_variable = Variable::from(362).with_owners(2);
 
     let storage = vec![
@@ -1868,8 +1874,14 @@ fn collection_assign() -> VMResult<()> {
     assert_eq!(driver.runner.pc, 1);
 
     assert_eq!(driver.gvs.storage.len(), 5);
-    assert_eq!(driver.gvs.storage[1], None);
-    assert_eq!(driver.gvs.storage[4], Some(expected_variable));
+    assert_eq!(
+        driver.gvs.storage[1],
+        Some(expected_variable.clone().with_owners(1))
+    );
+    assert_eq!(
+        driver.gvs.storage[4],
+        Some(expected_variable.with_owners(1))
+    );
 
     assert_eq!(driver.gvs.collections[0], expected_collection);
 

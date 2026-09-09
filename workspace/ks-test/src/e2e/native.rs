@@ -31,7 +31,7 @@ impl KsCall for MockPrint {
                 _ => {}
             }
 
-            helper.runner.acc.pop_data()?;
+            helper.runner.acc.pop(gvs)?;
         }
 
         Ok(())
