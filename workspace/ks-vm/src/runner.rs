@@ -281,6 +281,11 @@ impl Runner {
             (INT_TYPE, FLOAT_TYPE) | (FLOAT_TYPE, INT_TYPE) | (FLOAT_TYPE, FLOAT_TYPE) => {
                 Ok(Variable::from(left.as_f64()? == right.as_f64()?))
             }
+            (BOOLEAN_TYPE, BOOLEAN_TYPE) => {
+                Ok(Variable::from(left.as_boolean() == right.as_boolean()))
+            }
+            (NULL_TYPE, NULL_TYPE) => Ok(Variable::from(true)),
+            (NULL_TYPE, _) | (_, NULL_TYPE) => Ok(Variable::from(false)),
             (STRING_TYPE, STRING_TYPE) => {
                 let left_string = gvs.collection_string(left.value as CollectionId)?;
                 let right_string = gvs.collection_string(right.value as CollectionId)?;
