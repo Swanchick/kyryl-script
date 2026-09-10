@@ -95,3 +95,10 @@ fn assignment() -> KsResult<()> {
     assert_eq!(output, "7");
     Ok(())
 }
+
+#[test]
+fn declaration_after_assignment() -> KsResult<()> {
+    let output = run("e2e/declaration_after_assignment.ks")?;
+    assert_eq!(output, "20");
+    Ok(())
+}

@@ -681,18 +681,19 @@ impl Runner {
         self.step(INSTRUCTION)
     }
 
-    fn assign_for_variable(
+    fn assign_storage_id(
         &mut self,
         gvs: &mut GVS,
-        slot_id: Slot,
+        storage_id: StorageId,
         assign_storage_id: StorageId,
     ) -> VMResult<()> {
-        let slot_id = slot_id as usize;
-        let storage_id = self.stack.data[slot_id];
-
         let variable_owners = gvs.variable(storage_id)?.owners;
 
+        let before_free_storage_len = gvs.free_storage.len();
         gvs.storage_remove_owner(storage_id)?;
+        if before_free_storage_len != gvs.free_storage.len() {
+            gvs.free_storage.pop();
+        }
 
         let variable = gvs
             .variable(assign_storage_id)?
@@ -703,6 +704,18 @@ impl Runner {
         gvs.storage_remove_owner(assign_storage_id)?;
 
         Ok(())
+    }
+
+    fn assign_for_variable(
+        &mut self,
+        gvs: &mut GVS,
+        slot_id: Slot,
+        assign_storage_id: StorageId,
+    ) -> VMResult<()> {
+        let slot_id = slot_id as usize;
+        let storage_id = self.stack.data[slot_id];
+
+        self.assign_storage_id(gvs, storage_id, assign_storage_id)
     }
 
     fn assign_for_collection(
@@ -721,20 +734,7 @@ impl Runner {
             }
         }?;
 
-        let variable_owners = gvs.variable(storage_id)?.owners;
-
-        gvs.storage_remove_owner(storage_id)?;
-
-        let variable = gvs
-            .variable(assign_storage_id)?
-            .clone()
-            .with_owners(variable_owners);
-
-        gvs.store_at(storage_id, variable);
-
-        gvs.storage_remove_owner(assign_storage_id)?;
-
-        Ok(())
+        self.assign_storage_id(gvs, storage_id, assign_storage_id)
     }
 
     fn assign(&mut self, gvs: &mut GVS) -> VMResult<()> {
