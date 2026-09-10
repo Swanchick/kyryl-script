@@ -5,22 +5,23 @@ use alloc::string::ToString;
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
 
-use crate::data_size::{DWORD, DataSize32, DataSize64, INSTRUCTION, QWORD};
-use crate::ir::byte_reader::ByteReader;
-use crate::ir::instructions::{
+use crate::environment::variable::{
+    BOOLEAN_TYPE, FLOAT_TYPE, INT_TYPE, NULL_TYPE, STACK_TYPE, STRING_TYPE,
+};
+use crate::environment::{GVS, Stack, Variable};
+
+use crate::types::{CollectionId, Pointer, Slot, StorageId};
+use crate::{Assign, Function, NativeCall, VMError, VMHelper, VMResult};
+
+use super::call_stack::CallStack;
+use super::data_size::{DWORD, DataSize32, DataSize64, INSTRUCTION, QWORD};
+use super::ir::byte_reader::ByteReader;
+use super::ir::instructions::{
     ADD, AND, ASC, ASN, ASV, ASV8, ASV16, CALL, CLR, CPY, DEC, DIV, EQ, FREE, FREE8, FREE16, GE,
     GT, INC, JMP, JNZ, JZ, LBF, LBT, LDC, LDC8, LDC16, LDCP, LDCP8, LDCP16, LDF, LDFC, LDFN, LDI,
     LDI8, LDI16, LDI32, LDN, LDS, LDV, LDV8, LDV16, LE, LEN, LT, MUL, NCALL, NE, NOT, OR, RET, STR,
     SUB,
 };
-use crate::{Assign, Function, NativeCall, VMError, VMHelper, VMResult};
-
-use super::call_stack::CallStack;
-use super::environment::variable::{
-    BOOLEAN_TYPE, FLOAT_TYPE, INT_TYPE, NULL_TYPE, STACK_TYPE, STRING_TYPE,
-};
-use super::environment::{GVS, Stack, Variable};
-use super::types::{CollectionId, Pointer, Slot, StorageId};
 
 #[derive(Debug)]
 pub struct Runner {

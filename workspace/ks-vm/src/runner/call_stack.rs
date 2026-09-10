@@ -1,4 +1,4 @@
-use super::types::{Pointer, StorageId};
+use crate::types::{Pointer, StorageId};
 
 #[derive(Debug)]
 pub struct CallStack {

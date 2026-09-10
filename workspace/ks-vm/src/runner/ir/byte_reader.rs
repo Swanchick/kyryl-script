@@ -1,7 +1,7 @@
 use core::str::from_utf8;
 
+use crate::DataSize32;
 use crate::VMResult;
-use crate::data_size::DataSize32;
 use crate::types::Pointer;
 
 pub struct ByteReader<'a> {

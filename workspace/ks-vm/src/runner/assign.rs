@@ -1,4 +1,4 @@
-use super::types::{CollectionId, Slot};
+use crate::types::{CollectionId, Slot};
 
 #[derive(Debug, PartialEq)]
 pub enum Assign {
