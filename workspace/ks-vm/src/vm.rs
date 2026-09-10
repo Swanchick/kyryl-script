@@ -7,7 +7,10 @@ use alloc::sync::Arc;
 #[cfg(feature = "std")]
 use std::sync::Arc;
 
-use crate::{GVS, KsCall, NativeCall, NativeRegistry, Runner, VMHelper, VMResult};
+use crate::{
+    GVS, KsCall, NativeCall, NativeRegistry, Runner, VMHelper, VMResult,
+    runner::runner_status::RunnerStatus,
+};
 
 pub struct VM {
     program: Arc<[u8]>,
@@ -61,26 +64,18 @@ impl VM {
 
         for runner_id in 0..self.runners.len() {
             let runner = &mut self.runners[runner_id];
-            let pc = runner.pc;
-
-            if pc >= instructions.len() {
-                empty_runner_ids.push(runner_id);
-                continue;
-            }
-
-            let instruction = instructions[pc];
-
             let mut native_call = None;
-
             let vm_helper = VMHelper {
-                instruction,
                 instructions: &instructions,
                 gvs: &mut self.gvs,
                 native_call: &mut native_call,
                 runner_id,
             };
 
-            runner.run(vm_helper)?;
+            let status = runner.run(vm_helper)?;
+            if let RunnerStatus::OutOfProgram = status {
+                empty_runner_ids.push(runner_id);
+            }
             self.call_native(native_call)?;
         }
 
