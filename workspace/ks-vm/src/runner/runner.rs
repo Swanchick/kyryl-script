@@ -10,6 +10,7 @@ use crate::environment::variable::{
 };
 use crate::environment::{GVS, Stack, Variable};
 
+use crate::runner::runner_status::RunnerStatus;
 use crate::types::{CollectionId, Pointer, Slot, StorageId};
 use crate::{Assign, Function, NativeCall, VMError, VMHelper, VMResult};
 
@@ -30,6 +31,7 @@ pub struct Runner {
     pub stack: Stack,
     pub call_stack: Vec<CallStack>,
     pub assign: Assign,
+    pub status: RunnerStatus,
 }
 
 impl Default for Runner {
@@ -46,6 +48,7 @@ impl Runner {
             stack: Stack::new(),
             call_stack: Vec::new(),
             assign: Assign::None,
+            status: RunnerStatus::None,
         }
     }
 
@@ -513,13 +516,12 @@ impl Runner {
     }
 
     fn on_return(&mut self, gvs: &mut GVS) -> VMResult<()> {
-        let call_stack = self
-            .call_stack
-            .pop()
-            .ok_or("CallStack is empty, cannot execute return")?;
-
-        gvs.storage_remove_owner(call_stack.storage_id)?;
-        self.pc = call_stack.return_pointer;
+        if let Some(call_stack) = self.call_stack.pop() {
+            gvs.storage_remove_owner(call_stack.storage_id)?;
+            self.pc = call_stack.return_pointer;
+        } else {
+            self.status = RunnerStatus::OutOfCallStacks;
+        }
 
         Ok(())
     }
@@ -837,11 +839,20 @@ impl Runner {
         Ok(())
     }
 
-    pub fn run<'a>(&mut self, helper: VMHelper<'a>) -> VMResult<()> {
+    pub fn run<'a>(&mut self, helper: VMHelper<'a>) -> VMResult<&RunnerStatus> {
+        self.status = RunnerStatus::None;
+
+        if self.pc >= helper.instructions.len() {
+            self.status = RunnerStatus::OutOfProgram;
+            return Ok(&self.status);
+        }
+
+        let instruction = helper.instructions[self.pc];
+
         let gvs = helper.gvs;
         let reader = ByteReader::new(self.pc, helper.instructions);
 
-        match helper.instruction {
+        match instruction {
             LDN => self.load_null(gvs),
             LBT => self.load_true(gvs),
             LBF => self.load_false(gvs),
@@ -898,6 +909,6 @@ impl Runner {
             opcode => Err(VMError::from(format!("Unknown instruction {:X}", opcode))),
         }?;
 
-        Ok(())
+        Ok(&self.status)
     }
 }

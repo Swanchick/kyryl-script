@@ -2215,7 +2215,6 @@ fn native_call_was_added() -> VMResult<()> {
     let instructions = serializer.serialize();
 
     let vm_helper = VMHelper {
-        instruction: instructions[0],
         instructions: &instructions,
         gvs: &mut gvs,
         native_call: &mut native_call,

@@ -11,6 +11,7 @@ use ks_core::{
 use ks_global::utils::ks_error::KsError;
 use ks_global::utils::ks_result::KsResult;
 use ks_std::ks_register_std;
+use ks_vm::runner::runner_status::RunnerStatus;
 use ks_vm::{
     Assign, CallStack, Collection, GVS, KsCall, NativeRegistry, Runner, Stack, VM, VMError,
     VMHelper, VMResult, Variable,
@@ -116,7 +117,6 @@ impl KsDriver {
         let mut runner = Runner::new();
 
         let vm_helper = VMHelper {
-            instruction: instructions[0],
             instructions: &instructions,
             gvs: &mut gvs,
             native_call: &mut None,
@@ -239,6 +239,7 @@ impl KsDriver {
             stack,
             call_stack,
             assign,
+            status: RunnerStatus::None,
         })
     }
 
@@ -255,7 +256,6 @@ impl KsDriver {
         };
 
         let vm_helper = VMHelper {
-            instruction: instruction[runner.pc],
             instructions: &instruction,
             gvs: &mut gvs,
             native_call: &mut None,
