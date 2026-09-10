@@ -529,6 +529,172 @@ fn eq_string_string() -> VMResult<()> {
     Ok(())
 }
 
+#[test]
+fn eq_boolean_boolean_true() -> VMResult<()> {
+    let left = true;
+    let right = true;
+
+    let mut variable_left = Variable::from(left);
+    variable_left.owners = 2;
+    let mut variable_right = Variable::from(right);
+    variable_right.owners = 2;
+    let mut variable_result = Variable::from(left == right);
+    variable_result.owners = 1;
+
+    let runner = KsDriver::runner_default(
+        Some(Stack::from(vec![0, 1])),
+        Some(Stack::from(vec![0, 1])),
+        None,
+        None,
+        None,
+    );
+    let gvs = KsDriver::gvs_storage(
+        Some(vec![Some(variable_left), Some(variable_right)]),
+        None,
+        None,
+        None,
+    );
+
+    let driver = KsDriver::runner_configured(runner, gvs, vec![EQ])?;
+
+    assert_eq!(driver.runner.pc, 1);
+    assert_eq!(driver.runner.acc.len(), 1);
+    assert_eq!(driver.runner.acc.get(0), Some(&2));
+
+    let gvs_variable1_left = driver.gvs.storage[0].clone().unwrap();
+    let gvs_variable1_right = driver.gvs.storage[1].clone().unwrap();
+    let gvs_variable1_result = driver.gvs.storage[2].clone().unwrap();
+
+    assert_eq!(gvs_variable1_left.owners, 1);
+    assert_eq!(gvs_variable1_right.owners, 1);
+    assert_eq!(gvs_variable1_result, variable_result);
+
+    Ok(())
+}
+
+#[test]
+fn eq_boolean_boolean_false() -> VMResult<()> {
+    let left = false;
+    let right = true;
+
+    let mut variable_left = Variable::from(left);
+    variable_left.owners = 2;
+    let mut variable_right = Variable::from(right);
+    variable_right.owners = 2;
+    let mut variable_result = Variable::from(left == right);
+    variable_result.owners = 1;
+
+    let runner = KsDriver::runner_default(
+        Some(Stack::from(vec![0, 1])),
+        Some(Stack::from(vec![0, 1])),
+        None,
+        None,
+        None,
+    );
+    let gvs = KsDriver::gvs_storage(
+        Some(vec![Some(variable_left), Some(variable_right)]),
+        None,
+        None,
+        None,
+    );
+
+    let driver = KsDriver::runner_configured(runner, gvs, vec![EQ])?;
+
+    assert_eq!(driver.runner.pc, 1);
+    assert_eq!(driver.runner.acc.len(), 1);
+    assert_eq!(driver.runner.acc.get(0), Some(&2));
+
+    let gvs_variable1_left = driver.gvs.storage[0].clone().unwrap();
+    let gvs_variable1_right = driver.gvs.storage[1].clone().unwrap();
+    let gvs_variable1_result = driver.gvs.storage[2].clone().unwrap();
+
+    assert_eq!(gvs_variable1_left.owners, 1);
+    assert_eq!(gvs_variable1_right.owners, 1);
+    assert_eq!(gvs_variable1_result, variable_result);
+
+    Ok(())
+}
+
+#[test]
+fn eq_null_null_true() -> VMResult<()> {
+    let mut variable_left = Variable::null();
+    variable_left.owners = 2;
+    let mut variable_right = Variable::null();
+    variable_right.owners = 2;
+    let mut variable_result = Variable::from(true);
+    variable_result.owners = 1;
+
+    let runner = KsDriver::runner_default(
+        Some(Stack::from(vec![0, 1])),
+        Some(Stack::from(vec![0, 1])),
+        None,
+        None,
+        None,
+    );
+    let gvs = KsDriver::gvs_storage(
+        Some(vec![Some(variable_left), Some(variable_right)]),
+        None,
+        None,
+        None,
+    );
+
+    let driver = KsDriver::runner_configured(runner, gvs, vec![EQ])?;
+
+    assert_eq!(driver.runner.pc, 1);
+    assert_eq!(driver.runner.acc.len(), 1);
+    assert_eq!(driver.runner.acc.get(0), Some(&2));
+
+    let gvs_variable1_left = driver.gvs.storage[0].clone().unwrap();
+    let gvs_variable1_right = driver.gvs.storage[1].clone().unwrap();
+    let gvs_variable1_result = driver.gvs.storage[2].clone().unwrap();
+
+    assert_eq!(gvs_variable1_left.owners, 1);
+    assert_eq!(gvs_variable1_right.owners, 1);
+    assert_eq!(gvs_variable1_result, variable_result);
+
+    Ok(())
+}
+
+#[test]
+fn eq_null_null_false() -> VMResult<()> {
+    let mut variable_left = Variable::from(100);
+    variable_left.owners = 2;
+    let mut variable_right = Variable::null();
+    variable_right.owners = 2;
+    let mut variable_result = Variable::from(false);
+    variable_result.owners = 1;
+
+    let runner = KsDriver::runner_default(
+        Some(Stack::from(vec![0, 1])),
+        Some(Stack::from(vec![0, 1])),
+        None,
+        None,
+        None,
+    );
+    let gvs = KsDriver::gvs_storage(
+        Some(vec![Some(variable_left), Some(variable_right)]),
+        None,
+        None,
+        None,
+    );
+
+    let driver = KsDriver::runner_configured(runner, gvs, vec![EQ])?;
+
+    assert_eq!(driver.runner.pc, 1);
+    assert_eq!(driver.runner.acc.len(), 1);
+    assert_eq!(driver.runner.acc.get(0), Some(&2));
+
+    let gvs_variable1_left = driver.gvs.storage[0].clone().unwrap();
+    let gvs_variable1_right = driver.gvs.storage[1].clone().unwrap();
+    let gvs_variable1_result = driver.gvs.storage[2].clone().unwrap();
+
+    assert_eq!(gvs_variable1_left.owners, 1);
+    assert_eq!(gvs_variable1_right.owners, 1);
+    assert_eq!(gvs_variable1_result, variable_result);
+
+    Ok(())
+}
+
 operation!(greater_eq, vec![GE], >=);
 operation!(greater, vec![GT], >);
 operation!(less_eq, vec![LE], <=);
