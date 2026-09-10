@@ -404,11 +404,11 @@ impl Runner {
         let collection_id = variable.value as CollectionId;
         let stack = gvs.collection_stack(collection_id)?.to_vec();
 
-        // Todo: Implement deep cloning for matrices
         let stack = stack
             .iter()
             .map(|storage_id| {
-                let variable = gvs.variable(*storage_id)?.clone();
+                let mut variable = gvs.variable(*storage_id)?.clone();
+                variable.owners = 1;
                 let storage_id = gvs.store(variable);
                 Ok(storage_id)
             })
