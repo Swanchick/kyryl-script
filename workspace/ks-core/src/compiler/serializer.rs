@@ -129,14 +129,22 @@ impl Serializer {
             self.instruction_positions.push(pc);
             pc += instruction.size();
         }
+
+        self.instruction_positions.push(pc);
     }
 
     pub fn jump(&self, instruction: u8, index: usize, offset: i32) -> Vec<u8> {
         let difference = index as i32 + offset;
 
-        let jump_index = self.instruction_positions[index] as i32;
-        let instruction_jump = self.instruction_positions[difference as usize] as i32;
-        let actual_distance = instruction_jump - jump_index;
+        let instruction_positions_len = self.instruction_positions.len();
+
+        let actual_distance = if difference >= instruction_positions_len as i32 {
+            self.instruction_positions[instruction_positions_len - 1] as i32
+        } else {
+            let jump_index = self.instruction_positions[index] as i32;
+            let instruction_jump = self.instruction_positions[difference as usize] as i32;
+            instruction_jump - jump_index
+        };
 
         let mut opcode = vec![instruction];
         let bytes = &actual_distance.to_le_bytes().to_vec();

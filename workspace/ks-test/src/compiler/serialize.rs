@@ -344,3 +344,8 @@ serialize_instructions!(
 
 serialize_instruction!(load_from_collection, Instruction::LoadFromCollection, LDFC);
 serialize_instruction!(collection_len, Instruction::CollectionLen, LEN);
+
+serialize_instructions!(jump_at_the_end_of_the_program, Instruction::Jump(100), {
+    println!("{}", Instruction::Jump(100).size());
+    vec![JMP, 5, 0, 0, 0]
+});
